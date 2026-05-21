@@ -62,6 +62,11 @@ In your Railway service → **Variables**, add every variable from the table bel
 | `SESSION_SECRET` | Any random string ≥ 32 characters |
 | `AES_ENCRYPTION_KEY` | Exactly 64 hex characters (32 bytes, used to encrypt OAuth tokens) |
 | `FRONTEND_URL` | Your Vercel frontend URL, e.g. `https://shipdesk.vercel.app` |
+| `NODE_ENV` | Set to `production` |
+
+> **⚠️ Important — set `NODE_ENV=production` as a Railway Variable, NOT in `railway.toml`.**
+> If `NODE_ENV=production` is in `railway.toml`'s `[environment]` block it applies during the build phase too, causing npm to skip `devDependencies` (including `typescript`), which breaks the build with `tsc: not found`.
+> Setting it as a Railway Variable makes it runtime-only.
 
 > **Generate secrets quickly:**
 > ```bash
@@ -92,14 +97,30 @@ In your Railway service → **Variables**, add every variable from the table bel
 | `EMAIL_FROM` | From address, e.g. `noreply@yourdomain.com` |
 | `CLIENT_PORTAL_BASE_URL` | Base URL for client portals, e.g. `https://portal.shipdesk.io` |
 
-### 2c. Deploy
+### 2c. Railway Settings (important)
+
+In your Railway service → **Settings**, confirm:
+
+| Setting | Value |
+|---|---|
+| **Source Repo** | your GitHub repo |
+| **Branch** | `main` |
+| **Root Directory** | *(leave blank — Railway reads `railway.toml` from repo root)* |
+| **Builder** | Nixpacks *(auto-detected)* |
+| **Auto-deploy on push** | Enabled |
+| **Wait for CI** | Off *(unless you have GitHub Actions)* |
+
+In **Settings → Networking**, click **Generate Domain** to get your public backend URL (e.g. `https://shipdesk-server.up.railway.app`). Add this URL to Clerk's allowed origins and to Vercel's `VITE_API_BASE_URL`.
+
+### 2d. Deploy
 
 Railway will automatically:
-1. Run `npm install` (root, workspace-aware)
+1. Run `npm install --include=dev` (installs all deps including TypeScript compiler)
 2. Run `npx prisma generate`
-3. Run `npx prisma migrate deploy` (applies all pending migrations)
-4. Run `npm run build` in the server workspace (generates Prisma client + compiles TypeScript)
-5. Start the server with `node dist/index.js`
+3. Baseline the existing DB with `prisma migrate resolve --applied`
+4. Run `npx prisma migrate deploy` (applies any pending migrations)
+5. Run `npm run build` → compiles TypeScript to `dist/`
+6. Start the server with `node dist/index.js`
 
 The healthcheck hits `/health`. Once it returns `200`, your backend is live at a URL like:
 ```
