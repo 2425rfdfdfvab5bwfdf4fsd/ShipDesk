@@ -1,9 +1,0 @@
-
-> shipdesk-server@1.0.0 dev
-> tsx watch src/index.ts
-
-[1G[0KShipDesk server running on port 3000
-Environment: development
-[90m6:53:38 AM[39m [96m[tsx][39m [95mchange[39m in [92m./src/middleware/auth.ts[39m [33mRestarting...[39m
-cShipDesk server running on port 3000
-Environment: development
