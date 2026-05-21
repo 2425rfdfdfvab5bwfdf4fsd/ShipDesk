@@ -24,7 +24,12 @@ app.set("trust proxy", 1);
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
   /^https:\/\/[a-z0-9-]+\.portal\.shipdesk\.io$/,
+  /^https:\/\/shipdesk\.io$/,
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/,
+  /^https:\/\/[a-z0-9-]+\.up\.railway\.app$/,
+  /^https:\/\/[a-z0-9-]+\.onrender\.com$/,
   /^https:\/\/[a-z0-9-]+\.replit\.dev$/,
   /^https:\/\/[a-z0-9-]+\.repl\.co$/,
   ...(process.env.NODE_ENV === "development"

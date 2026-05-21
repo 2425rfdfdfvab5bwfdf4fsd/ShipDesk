@@ -1,8 +1,13 @@
 [build]
 builder = "nixpacks"
-buildCommand = "cd server && npm install && npx prisma generate && npx prisma migrate deploy && npm run build"
+buildCommand = "npm install && cd server && npx prisma generate && npx prisma migrate deploy && npm run build"
 
 [deploy]
 startCommand = "cd server && node dist/index.js"
 healthcheckPath = "/health"
-healthcheckTimeout = 30
+healthcheckTimeout = 60
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[environment]
+NODE_ENV = "production"
