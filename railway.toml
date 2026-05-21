@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && cd server && npx prisma generate && npx prisma migrate deploy && npm run build"
+buildCommand = "npm install && cd server && npx prisma generate && npx prisma migrate resolve --applied 20240101000000_init 2>/dev/null || true && npx prisma migrate deploy && npm run build"
 
 [deploy]
 startCommand = "cd server && node dist/index.js"
