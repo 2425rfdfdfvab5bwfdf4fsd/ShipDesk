@@ -1,0 +1,403 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace Workspace?
+}
+
+model Workspace {
+  id                 String   @id @default(uuid())
+  ownerId            String   @unique
+  name               String
+  agencyName         String?
+  slug               String   @unique
+  logoUrl            String?
+  primaryColor       String   @default("#6366F1")
+  customDomain       String?
+  onboardingComplete Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  owner         User            @relation(fields: [ownerId], references: [id])
+  projects      Project[]
+  clients       Client[]
+  githubConn    GitHubConnection?
+  linearConn    LinearConnection?
+  members       WorkspaceMember[]
+}
+
+model Project {
+  id                  String        @id @default(uuid())
+  workspaceId         String
+  name                String
+  description         String?
+  status              ProjectStatus @default(ACTIVE)
+  startDate           DateTime?
+  githubRepoId        Int?
+  githubRepoFullName  String?
+  githubWebhookId     Int?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  workspace     Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  reports       Report[]
+  files         ProjectFile[]
+  messages      Message[]
+  invoices      Invoice[]
+  scopeChanges  ScopeChange[]
+  githubEvents  GitHubEvent[]
+  clientAccess  ClientProjectAccess[]
+  invitations   ClientInvitation[]
+  rateLimitLogs RateLimitLog[]
+  msgNotifLogs  MessageNotificationLog[]
+  vercelConn    VercelConnection?
+
+  @@index([workspaceId])
+  @@index([status])
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model Client {
+  id          String   @id @default(uuid())
+  workspaceId String
+  email       String
+  name        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace    Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  access       ClientProjectAccess[]
+  invitations  ClientInvitation[]
+  sessions     ClientSession[]
+  scopeChanges ScopeChange[]
+
+  @@unique([workspaceId, email])
+  @@index([workspaceId])
+}
+
+model ClientProjectAccess {
+  id        String    @id @default(uuid())
+  clientId  String
+  projectId String
+  grantedAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, projectId])
+  @@index([clientId])
+  @@index([projectId])
+}
+
+model ClientInvitation {
+  id         String    @id @default(uuid())
+  clientId   String
+  projectId  String
+  tokenHash  String    @unique
+  sentAt     DateTime  @default(now())
+  expiresAt  DateTime
+  acceptedAt DateTime?
+
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, projectId])
+}
+
+model ClientSession {
+  id             String   @id @default(uuid())
+  clientId       String
+  workspaceId    String
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+  lastActivityAt DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+}
+
+model GitHubConnection {
+  id                   String   @id @default(uuid())
+  workspaceId          String   @unique
+  githubUserId         Int
+  githubLogin          String
+  accessTokenEncrypted String
+  scopes               String
+  connectedAt          DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model GitHubEvent {
+  id           String          @id @default(uuid())
+  projectId    String
+  eventType    GitHubEventType
+  payload      Json
+  repoFullName String
+  status       GitHubEventStatus @default(RECEIVED)
+  receivedAt   DateTime        @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([receivedAt])
+  @@index([projectId, receivedAt])
+}
+
+enum GitHubEventType {
+  push
+  pull_request
+  release
+}
+
+enum GitHubEventStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+}
+
+model Report {
+  id            String        @id @default(uuid())
+  projectId     String
+  weekStartDate DateTime
+  weekEndDate   DateTime
+  title         String
+  content       Json
+  status        ReportStatus  @default(DRAFT)
+  generatedAt   DateTime      @default(now())
+  publishedAt   DateTime?
+  generatedBy   GeneratedBy
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+}
+
+enum ReportStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum GeneratedBy {
+  SCHEDULED
+  MANUAL
+}
+
+model Invoice {
+  id          String        @id @default(uuid())
+  projectId   String
+  title       String
+  description String?
+  amount      Decimal       @db.Decimal(10, 2)
+  currency    Currency      @default(USD)
+  status      InvoiceStatus @default(UNPAID)
+  dueDate     DateTime?
+  paymentUrl  String
+  lsOrderId   String?
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PAID
+  OVERDUE
+}
+
+enum Currency {
+  USD
+  EUR
+  GBP
+  CAD
+  AUD
+}
+
+model ScopeChange {
+  id               String            @id @default(uuid())
+  projectId        String
+  clientId         String
+  title            String
+  description      String
+  urgency          Urgency
+  status           ScopeChangeStatus @default(PENDING)
+  quoteDescription String?
+  quotePrice       Decimal?          @db.Decimal(10, 2)
+  quoteCurrency    Currency?
+  paymentUrl       String?
+  lsOrderId        String?
+  submittedAt      DateTime          @default(now())
+  quotedAt         DateTime?
+  respondedAt      DateTime?
+  paidAt           DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([clientId])
+  @@index([status])
+}
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ScopeChangeStatus {
+  PENDING
+  QUOTED
+  APPROVED
+  DECLINED
+  PAID
+}
+
+model Message {
+  id                 String     @id @default(uuid())
+  projectId          String
+  senderId           String
+  senderType         SenderType
+  senderName         String
+  body               String
+  readByDeveloperAt  DateTime?
+  readByClientAt     DateTime?
+  createdAt          DateTime   @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([projectId, createdAt(sort: Desc)])
+}
+
+enum SenderType {
+  DEVELOPER
+  CLIENT
+}
+
+model ProjectFile {
+  id                 String       @id @default(uuid())
+  projectId          String
+  uploadedBy         String
+  uploaderType       UploaderType
+  uploaderName       String
+  fileName           String
+  fileSize           Int
+  mimeType           String
+  cloudinaryPublicId String
+  cloudinarySecureUrl String
+  deletedAt          DateTime?
+  createdAt          DateTime     @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+enum UploaderType {
+  DEVELOPER
+  CLIENT
+}
+
+model RateLimitLog {
+  id        String   @id @default(uuid())
+  projectId String
+  action    String
+  date      String
+  count     Int      @default(0)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, action, date])
+}
+
+model MessageNotificationLog {
+  id                    String        @id @default(uuid())
+  projectId             String
+  recipientType         RecipientType
+  recipientId           String
+  lastNotificationSentAt DateTime     @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, recipientType, recipientId])
+}
+
+enum RecipientType {
+  DEVELOPER
+  CLIENT
+}
+
+model LinearConnection {
+  id                      String   @id @default(uuid())
+  workspaceId             String   @unique
+  linearUserId            String
+  linearOrganizationId    String
+  accessTokenEncrypted    String
+  refreshTokenEncrypted   String
+  tokenExpiresAt          DateTime
+  connectedAt             DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model VercelConnection {
+  id               String   @id @default(uuid())
+  projectId        String   @unique
+  vercelProjectId  String
+  apiTokenEncrypted String
+  connectedAt      DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model WorkspaceMember {
+  id          String          @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole   @default(MEMBER)
+  joinedAt    DateTime        @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+}
+
+enum WorkspaceRole {
+  OWNER
+  MEMBER
+}

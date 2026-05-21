@@ -1,0 +1,6 @@
+
+> shipdesk-server@1.0.0 dev
+> tsx watch src/index.ts
+
+[1G[0KShipDesk server running on port 3000
+Environment: development
