@@ -7,7 +7,6 @@ import fs from "fs";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { defaultLimiter } from "./middleware/rateLimiter.js";
 
-import healthRouter from "./routes/health.js";
 import workspaceRouter from "./routes/workspace.js";
 import projectsRouter from "./routes/projects.js";
 import githubRouter from "./routes/github.js";
