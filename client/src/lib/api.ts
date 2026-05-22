@@ -16,7 +16,15 @@ api.interceptors.request.use(async (config) => {
 });
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const contentType = (res.headers["content-type"] as string) || "";
+    if (contentType.includes("text/html")) {
+      return Promise.reject(
+        new Error("API unreachable — set VITE_API_BASE_URL to your backend URL")
+      );
+    }
+    return res;
+  },
   (err) => {
     if (err.response?.status === 401) {
       const errorCode = err.response?.data?.error;
