@@ -6,7 +6,7 @@ import {
   CheckCircle, PauseCircle, XCircle, Loader2, Search, Unlink, Lock,
   FileText, Receipt, GitPullRequest, LayoutDashboard, BarChart2,
   FolderOpen, MessageSquare, ScrollText, ArrowRightLeft, Server, Settings2,
-  Edit2, UserMinus, Zap, MoreHorizontal, ChevronDown, ChevronUp,
+  Edit2, UserMinus, Zap, MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -150,7 +150,9 @@ export function ProjectDetailPage() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [headerHeight, setHeaderHeight] = useState(0);
-  const [showMobileTabs, setShowMobileTabs] = useState(true);
+  const [isMobileLayout, setIsMobileLayout] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 1024 : false
+  );
   const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -160,6 +162,13 @@ export function ProjectDetailPage() {
     observer.observe(el);
     setHeaderHeight(el.offsetHeight);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const check = () => setIsMobileLayout(window.innerWidth < 1024);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   const { data: project, isLoading } = useProject(id);
@@ -318,7 +327,7 @@ export function ProjectDetailPage() {
                 <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" />
               </div>
 
-              {/* Mobile actions — compact dropdown + tabs toggle */}
+              {/* Mobile actions — compact dropdown */}
               <div className="flex sm:hidden items-center gap-1 shrink-0">
                 <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" iconOnly />
                 <DropdownMenu>
@@ -336,23 +345,12 @@ export function ProjectDetailPage() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 gap-1 px-2 text-xs"
-                  onClick={() => setShowMobileTabs((v) => !v)}
-                  data-testid="button-toggle-tabs"
-                >
-                  {showMobileTabs
-                    ? <><ChevronUp className="h-3 w-3" /> Hide tabs</>
-                    : <><ChevronDown className="h-3 w-3" /> Show tabs</>}
-                </Button>
               </div>
             </div>
           </div>
 
-          {/* Mobile tab bar — 2 rows × 4 columns, collapsible */}
-          <TabsList className={`sm:hidden bg-transparent border-none rounded-none h-auto p-0 grid grid-cols-4 w-full transition-all duration-200 ${showMobileTabs ? "" : "hidden"}`}>
+          {/* Mobile tab bar — 2 rows × 4 columns, always visible */}
+          <TabsList className="sm:hidden bg-transparent border-none rounded-none h-auto p-0 grid grid-cols-4 w-full">
             {TAB_CONFIG.map(({ value, label, icon: Icon }) => (
               <TabsTrigger
                 key={value}
@@ -580,7 +578,11 @@ export function ProjectDetailPage() {
           <TabsContent
             value="messages"
             className="mt-0 relative"
-            style={{ height: headerHeight > 0 ? `calc(100dvh - ${headerHeight}px)` : "calc(100dvh - 160px)" }}
+            style={{
+              height: headerHeight > 0
+                ? `calc(100dvh - ${headerHeight + (isMobileLayout ? 56 : 0)}px)`
+                : `calc(100dvh - ${isMobileLayout ? 216 : 160}px)`,
+            }}
           >
             <MessageThread
               messages={messages}
