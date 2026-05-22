@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Plus, FolderOpen, DollarSign, GitMerge, TrendingUp, Search } from "lucide-react";
+import { Plus, FolderOpen, DollarSign, GitMerge, TrendingUp, Search, Archive, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,30 +19,25 @@ function StatCard({
   value,
   icon: Icon,
   sub,
-  delay,
+  accent,
 }: {
   label: string;
   value: string | number;
   icon: React.ElementType;
   sub?: string;
-  delay?: number;
+  accent?: boolean;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: delay || 0 }}
-      className="bg-card border rounded-xl p-4"
-    >
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Icon className="h-4 w-4 text-primary" />
+    <div className="bg-card border rounded-xl p-3 flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-medium text-muted-foreground tracking-wide uppercase">{label}</span>
+        <div className={`w-6 h-6 rounded-md flex items-center justify-center ${accent ? "bg-amber-500/10" : "bg-primary/8"}`}>
+          <Icon className={`h-3.5 w-3.5 ${accent ? "text-amber-500" : "text-primary"}`} />
         </div>
       </div>
-      <div className="text-2xl font-bold">{value}</div>
-      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
-    </motion.div>
+      <div className="text-xl font-bold leading-none tabular-nums">{value}</div>
+      {sub && <p className="text-[11px] text-muted-foreground leading-tight">{sub}</p>}
+    </div>
   );
 }
 
@@ -63,9 +57,7 @@ export function DashboardPage() {
 
   const unpaidByProject = (invoicesData?.invoices || []).reduce<Record<string, number>>(
     (acc, inv) => {
-      if (inv.status !== "PAID") {
-        acc[inv.projectId] = (acc[inv.projectId] || 0) + 1;
-      }
+      if (inv.status !== "PAID") acc[inv.projectId] = (acc[inv.projectId] || 0) + 1;
       return acc;
     },
     {}
@@ -104,165 +96,185 @@ export function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-10 bg-background border-b px-6 py-3">
-        <div className="flex items-center justify-between gap-3 mb-2.5">
-          <div>
-            <h1 className="text-lg font-bold leading-tight">
-              {workspace ? `${workspace.agencyName || workspace.name}` : "Dashboard"}
+
+      {/* ── Sticky header ── */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b px-4 sm:px-6 py-2.5">
+        {/* Row 1: title + button (always) */}
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-bold leading-tight truncate">
+              {workspace ? workspace.agencyName || workspace.name : "Dashboard"}
             </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-[11px] text-muted-foreground">
               {activeCount} active project{activeCount !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button size="sm" onClick={() => setShowNewProject(true)} className="gap-1.5 shrink-0">
-            <Plus className="h-4 w-4" /> New Project
+          <Button
+            size="sm"
+            onClick={() => setShowNewProject(true)}
+            className="h-7 gap-1 px-2.5 text-xs shrink-0"
+            data-testid="button-new-project"
+          >
+            <Plus className="h-3.5 w-3.5" /> New Project
           </Button>
         </div>
-        {/* Search bar */}
+        {/* Row 2: search (full-width) */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search projects…"
-            className="pl-8 h-8 text-sm"
+            className="pl-7 h-7 text-xs"
             data-testid="input-project-search"
           />
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      {/* ── Page body ── */}
+      <div className="px-4 sm:px-6 py-4 space-y-5">
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Active Projects" value={activeCount} icon={FolderOpen} delay={0} />
-        <StatCard
-          label="Unpaid Invoices"
-          value={unpaidTotal}
-          icon={DollarSign}
-          sub={unpaidTotal > 0 ? "Needs attention" : "All clear"}
-          delay={0.05}
-        />
-        <StatCard
-          label="Pending Scope"
-          value={pendingScope}
-          icon={GitMerge}
-          sub={pendingScope > 0 ? "Awaiting response" : "None pending"}
-          delay={0.1}
-        />
-        <StatCard
-          label="Portal"
-          value={workspace?.slug ? "Live" : "—"}
-          icon={TrendingUp}
-          sub={workspace?.slug ? `${workspace.slug}.portal.shipdesk.io` : "Set up workspace"}
-          delay={0.15}
-        />
-      </div>
-
-      {/* Onboarding checklist */}
-      <OnboardingChecklist />
-
-      {/* Project grid */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            {showArchived ? "Archived Projects" : "Active Projects"}
-          </h2>
-          <button
-            onClick={() => setShowArchived(!showArchived)}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {showArchived ? "← Show active" : "Show archived →"}
-          </button>
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <StatCard label="Active" value={activeCount} icon={FolderOpen} />
+          <StatCard
+            label="Unpaid"
+            value={unpaidTotal}
+            icon={DollarSign}
+            sub={unpaidTotal > 0 ? "Needs attention" : "All clear"}
+            accent={unpaidTotal > 0}
+          />
+          <StatCard
+            label="Scope"
+            value={pendingScope}
+            icon={GitMerge}
+            sub={pendingScope > 0 ? "Awaiting response" : "None pending"}
+            accent={pendingScope > 0}
+          />
+          <StatCard
+            label="Portal"
+            value={workspace?.slug ? "Live" : "—"}
+            icon={TrendingUp}
+            sub={workspace?.slug ? `${workspace.slug}.shipdesk.io` : "Set up workspace"}
+          />
         </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-36 rounded-xl" />
-            ))}
+        {/* Onboarding checklist — hidden once all complete */}
+        <OnboardingChecklist />
+
+        {/* Project grid */}
+        <div>
+          {/* Section header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1.5">
+              {showArchived
+                ? <Archive className="h-3.5 w-3.5 text-muted-foreground" />
+                : <LayoutGrid className="h-3.5 w-3.5 text-muted-foreground" />}
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                {showArchived ? "Archived" : "Active Projects"}
+              </h2>
+              {!isLoading && (
+                <span className="text-[10px] text-muted-foreground/60 font-mono">
+                  ({filteredProjects.length})
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => { setShowArchived(!showArchived); setSearch(""); }}
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent"
+              data-testid="button-toggle-archived"
+            >
+              {showArchived ? (
+                <><LayoutGrid className="h-3 w-3" /> Active</>
+              ) : (
+                <><Archive className="h-3 w-3" /> Archived</>
+              )}
+            </button>
           </div>
-        ) : filteredProjects.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-20 bg-muted/30 rounded-xl border border-dashed"
-          >
-            <FolderOpen className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-            <p className="text-muted-foreground text-sm mb-4">
-              {search
-                ? `No projects matching "${search}"`
-                : showArchived
-                ? "No archived projects."
-                : "No projects yet. Create your first one!"}
-            </p>
-            {!showArchived && !search && (
-              <Button onClick={() => setShowNewProject(true)} size="sm" className="gap-1.5">
-                <Plus className="h-4 w-4" /> Create Project
-              </Button>
-            )}
-          </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredProjects.map((project, i) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
+
+          {/* Grid */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-28 rounded-xl" />
+              ))}
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="text-center py-14 bg-muted/20 rounded-xl border border-dashed">
+              <FolderOpen className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
+              <p className="text-xs text-muted-foreground mb-3">
+                {search
+                  ? `No projects matching "${search}"`
+                  : showArchived
+                  ? "No archived projects."
+                  : "No projects yet. Create your first one."}
+              </p>
+              {!showArchived && !search && (
+                <Button onClick={() => setShowNewProject(true)} size="sm" className="h-7 gap-1 px-2.5 text-xs">
+                  <Plus className="h-3.5 w-3.5" /> Create Project
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {filteredProjects.map((project) => (
                 <ProjectCard
+                  key={project.id}
                   project={project}
                   unpaidInvoiceCount={unpaidByProject[project.id] || 0}
                 />
-              </motion.div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* New project modal */}
+      {/* ── New project modal ── */}
       <Dialog open={showNewProject} onOpenChange={setShowNewProject}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>New Project</DialogTitle>
+            <DialogTitle className="text-base">New Project</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="proj-name">Project Name *</Label>
+          <div className="space-y-3 py-1">
+            <div className="space-y-1">
+              <Label htmlFor="proj-name" className="text-xs">Project Name *</Label>
               <Input
                 id="proj-name"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Client Website Redesign"
                 maxLength={100}
+                className="h-8 text-sm"
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                data-testid="input-project-name"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="proj-desc">Description <span className="text-muted-foreground">(optional)</span></Label>
+            <div className="space-y-1">
+              <Label htmlFor="proj-desc" className="text-xs">
+                Description <span className="text-muted-foreground">(optional)</span>
+              </Label>
               <Textarea
                 id="proj-desc"
                 value={newDesc}
                 onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="Brief description of this project..."
+                placeholder="Brief description of this project…"
                 maxLength={500}
-                className="resize-none"
+                className="resize-none text-sm"
                 rows={3}
+                data-testid="input-project-desc"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewProject(false)}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowNewProject(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreate} disabled={!newName.trim() || createProject.isPending}>
-              {createProject.isPending ? "Creating..." : "Create Project"}
+            <Button size="sm" onClick={handleCreate} disabled={!newName.trim() || createProject.isPending}>
+              {createProject.isPending ? "Creating…" : "Create Project"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </div>
     </div>
   );
 }
