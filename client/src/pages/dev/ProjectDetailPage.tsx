@@ -339,14 +339,33 @@ export function ProjectDetailPage() {
             </div>
           </div>
 
-          {/* Tab bar — horizontally scrollable */}
-          <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <TabsList className="bg-transparent border-none rounded-none h-auto p-0 gap-0 w-max pl-3 sm:pl-5 pr-3 sm:pr-5">
+          {/* Mobile tab bar — 2 rows × 4 columns */}
+          <TabsList className="sm:hidden bg-transparent border-none rounded-none h-auto p-0 grid grid-cols-4 w-full">
+            {TAB_CONFIG.map(({ value, label, icon: Icon }) => (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="relative rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-col gap-0.5 px-1 py-2 text-[10px] font-medium text-muted-foreground data-[state=active]:text-foreground"
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+                {value === "messages" && unreadMessages > 0 && (
+                  <span className="absolute top-1 right-2 inline-flex items-center justify-center h-3.5 min-w-3.5 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold leading-none">
+                    {unreadMessages > 9 ? "9+" : unreadMessages}
+                  </span>
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {/* Desktop tab bar — single scrollable row */}
+          <div className="hidden sm:block overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <TabsList className="bg-transparent border-none rounded-none h-auto p-0 gap-0 w-max pl-5 pr-5">
               {TAB_CONFIG.map(({ value, label, icon: Icon }) => (
                 <TabsTrigger
                   key={value}
                   value={value}
-                  className="relative rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1 px-2.5 sm:px-3.5 py-2.5 text-xs font-medium text-muted-foreground data-[state=active]:text-foreground whitespace-nowrap"
+                  className="relative rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1 px-3.5 py-2.5 text-xs font-medium text-muted-foreground data-[state=active]:text-foreground whitespace-nowrap"
                 >
                   <Icon className="h-3 w-3" />
                   {label}
