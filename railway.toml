@@ -1,9 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install --include=dev && cd server && npx prisma generate && npm run build"
+buildCommand = "npm install --include=dev && npm run build --workspace=server"
 
 [deploy]
-startCommand = "cd server && npx prisma migrate deploy 2>/dev/null || true && node dist/index.js"
+startCommand = "node_modules/.bin/prisma migrate deploy --schema=server/prisma/schema.prisma 2>/dev/null || true && cd server && node dist/index.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 60
 restartPolicyType = "on_failure"
