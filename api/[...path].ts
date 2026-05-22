@@ -34,6 +34,7 @@ export default async function handler(req: any, res: any) {
       method: req.method ?? "GET",
       headers,
       body: hasBody ? JSON.stringify(req.body) : undefined,
+      redirect: "manual",
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -41,6 +42,16 @@ export default async function handler(req: any, res: any) {
       error: "BACKEND_UNREACHABLE",
       message: `Could not reach backend at ${backendUrl}: ${msg}`,
     });
+    return;
+  }
+
+  // Forward redirect responses (e.g. GitHub OAuth) directly to the browser
+  if (upstream.status >= 300 && upstream.status < 400) {
+    const location = upstream.headers.get("location");
+    const setCookie = upstream.headers.get("set-cookie");
+    if (setCookie) res.setHeader("set-cookie", setCookie);
+    if (location) res.setHeader("location", location);
+    res.status(upstream.status).send();
     return;
   }
 

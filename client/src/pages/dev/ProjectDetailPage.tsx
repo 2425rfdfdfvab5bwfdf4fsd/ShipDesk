@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useAuth } from "@clerk/clerk-react";
 import { useParams, useLocation } from "wouter";
 import { ArrowLeft, AlertTriangle, Github, Users, Mail, Plus, Send, Trash2, CheckCircle, PauseCircle, XCircle, Loader2, Search, Unlink, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,31 @@ import { toast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { ScopeChange } from "@/types";
+
+function GitHubConnectButton({
+  className,
+  variant = "outline",
+  label,
+}: {
+  className?: string;
+  variant?: "outline" | "link";
+  label?: string;
+}) {
+  const { getToken } = useAuth();
+  const handleConnect = useCallback(async () => {
+    const token = await getToken();
+    if (token) {
+      window.location.href = `/api/github/connect?token=${token}`;
+    }
+  }, [getToken]);
+
+  return (
+    <Button variant={variant} size="sm" className={className} onClick={handleConnect} data-testid="button-github-connect">
+      <Github className="h-3 w-3" />
+      {label ?? "Connect"}
+    </Button>
+  );
+}
 
 function ReportViewerDialog({
   reportId,
@@ -293,9 +319,7 @@ export function ProjectDetailPage() {
                       <AlertTriangle className="h-3 w-3" />
                       No GitHub connected
                     </Badge>
-                    <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs" asChild>
-                      <a href="/api/github/connect"><Github className="h-3 w-3" /> Connect</a>
-                    </Button>
+                    <GitHubConnectButton className="gap-1.5 h-7 text-xs" />
                   </div>
                 )}
               </div>
@@ -533,7 +557,7 @@ export function ProjectDetailPage() {
                     {reposError && (
                       <p className="text-xs text-destructive">
                         GitHub not connected.{" "}
-                        <a href="/api/github/connect" className="underline">Connect GitHub first →</a>
+                        <GitHubConnectButton variant="link" className="h-auto p-0 text-xs underline" label="Connect GitHub first →" />
                       </p>
                     )}
                     {!reposLoading && !reposError && githubRepos && (

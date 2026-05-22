@@ -3,6 +3,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import axios from "axios";
+import { verifyToken } from "@clerk/backend";
 import { db } from "../lib/prisma.js";
 import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
@@ -11,9 +12,35 @@ import * as githubService from "../services/githubService.js";
 
 const router = Router();
 
-router.get("/connect", requireAuth, (req: AuthRequest, res: Response) => {
+// Accepts auth via Bearer header (API calls) OR ?token= query param (browser redirects).
+// Browser navigations cannot set Authorization headers, so the frontend passes the
+// Clerk session token as a query param when navigating here for GitHub OAuth.
+router.get("/connect", async (req: Request, res: Response) => {
+  const authHeader = req.headers.authorization;
+  const rawToken = authHeader?.startsWith("Bearer ")
+    ? authHeader.substring(7)
+    : (req.query.token as string | undefined);
+
+  if (!rawToken) {
+    res.status(401).json({ error: "UNAUTHORIZED" });
+    return;
+  }
+
+  let userId: string;
+  try {
+    const { sub: clerkUserId } = await verifyToken(rawToken, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
+    const user = await db.user.findUnique({ where: { clerkId: clerkUserId } });
+    if (!user) throw new Error("User not found");
+    userId = user.id;
+  } catch {
+    res.status(401).json({ error: "UNAUTHORIZED" });
+    return;
+  }
+
   const state = jwt.sign(
-    { userId: req.userId, nonce: crypto.randomBytes(8).toString("hex") },
+    { userId, nonce: crypto.randomBytes(8).toString("hex") },
     process.env.SESSION_SECRET || "secret",
     { expiresIn: "10m" }
   );
