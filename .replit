@@ -44,6 +44,12 @@ channel = "stable-25_05"
 [userenv.shared]
 PORT = "3000"
 
+[userenv.development]
+NODE_ENV = "development"
+
+[userenv.production]
+NODE_ENV = "production"
+
 [deployment]
 deploymentTarget = "autoscale"
 run = ["node", "./dist/index.cjs"]
