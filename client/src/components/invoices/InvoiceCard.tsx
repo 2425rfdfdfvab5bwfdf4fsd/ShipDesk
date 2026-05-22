@@ -1,4 +1,4 @@
-import { DollarSign, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { DollarSign, CheckCircle, Clock, AlertTriangle, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Invoice } from "@/types";
@@ -12,53 +12,53 @@ interface InvoiceCardProps {
 }
 
 const STATUS_CONFIG = {
-  UNPAID: { label: "Unpaid", variant: "warning" as const, icon: Clock },
-  PAID: { label: "Paid", variant: "success" as const, icon: CheckCircle },
+  UNPAID:  { label: "Unpaid",  variant: "warning"     as const, icon: Clock },
+  PAID:    { label: "Paid",    variant: "success"     as const, icon: CheckCircle },
   OVERDUE: { label: "Overdue", variant: "destructive" as const, icon: AlertTriangle },
 };
 
 export function InvoiceCard({ invoice, onMarkPaid, onDelete, showPayButton }: InvoiceCardProps) {
-  const config = STATUS_CONFIG[invoice.status];
+  const config = STATUS_CONFIG[invoice.status] ?? STATUS_CONFIG.UNPAID;
   const Icon = config.icon;
 
   return (
-    <div className="border rounded-lg p-4 bg-card">
-      <div className="flex items-start justify-between gap-3 mb-2">
+    <div className="border rounded-lg p-3 bg-card" data-testid={`invoice-card-${invoice.id}`}>
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-sm">{invoice.title}</h4>
+          <h4 className="font-medium text-sm truncate">{invoice.title}</h4>
           {invoice.description && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{invoice.description}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{invoice.description}</p>
           )}
         </div>
-        <Badge variant={config.variant} className="gap-1 flex-shrink-0">
-          <Icon className="h-3 w-3" />
+        <Badge variant={config.variant} className="gap-1 shrink-0 text-[10px] px-1.5 py-0.5">
+          <Icon className="h-2.5 w-2.5" />
           {config.label}
         </Badge>
       </div>
 
-      <div className="flex items-center justify-between mt-3">
+      <div className="flex items-center justify-between mt-2.5 gap-2">
         <div>
-          <p className="text-lg font-bold">
+          <p className="text-base font-bold leading-tight">
             {formatCurrency(invoice.amount, invoice.currency)}
           </p>
           {invoice.dueDate && (
-            <p className="text-xs text-muted-foreground">Due {formatDate(invoice.dueDate)}</p>
+            <p className="text-[10px] text-muted-foreground">Due {formatDate(invoice.dueDate)}</p>
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           {showPayButton && invoice.status !== "PAID" && invoice.paymentUrl && (
-            <Button size="sm" asChild>
-              <a href={invoice.paymentUrl} target="_blank" rel="noopener noreferrer">
-                Pay Now
-              </a>
+            <Button size="sm" className="h-7 text-xs px-2.5" asChild>
+              <a href={invoice.paymentUrl} target="_blank" rel="noopener noreferrer">Pay Now</a>
             </Button>
           )}
           {onMarkPaid && invoice.status !== "PAID" && (
             <Button
               variant="outline"
               size="sm"
+              className="h-7 text-xs px-2.5"
               onClick={() => onMarkPaid(invoice.id)}
+              data-testid={`button-mark-paid-${invoice.id}`}
             >
               Mark Paid
             </Button>
@@ -67,10 +67,12 @@ export function InvoiceCard({ invoice, onMarkPaid, onDelete, showPayButton }: In
             <Button
               variant="ghost"
               size="sm"
-              className="text-destructive hover:text-destructive"
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
               onClick={() => onDelete(invoice.id)}
+              title="Delete invoice"
+              data-testid={`button-delete-invoice-${invoice.id}`}
             >
-              Delete
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>

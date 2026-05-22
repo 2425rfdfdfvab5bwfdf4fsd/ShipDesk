@@ -28,11 +28,11 @@ export function FileList({ files, onUpload, onDelete, uploading, isLoading, canU
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {canUpload && onUpload && (
         <div
           className={cn(
-            "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
+            "border-2 border-dashed rounded-lg p-5 text-center transition-colors",
             uploading
               ? "border-muted-foreground/20 bg-muted/30 cursor-not-allowed"
               : dragOver
@@ -45,24 +45,25 @@ export function FileList({ files, onUpload, onDelete, uploading, isLoading, canU
           onClick={() => { if (!uploading) fileInputRef.current?.click(); }}
         >
           {uploading ? (
-            <Loader2 className="h-8 w-8 mx-auto text-muted-foreground mb-2 animate-spin" />
+            <Loader2 className="h-5 w-5 mx-auto text-muted-foreground mb-2 animate-spin" />
           ) : (
-            <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+            <Upload className="h-5 w-5 mx-auto text-muted-foreground mb-2" />
           )}
-          <p className="text-sm text-muted-foreground mb-3">
-            {uploading ? "Uploading file…" : "Drag and drop a file here, or"}
+          <p className="text-xs text-muted-foreground mb-2">
+            {uploading ? "Uploading…" : "Drag & drop, or"}
           </p>
           {!uploading && (
             <Button
               variant="outline"
               size="sm"
+              className="h-7 text-xs"
               onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
               data-testid="button-browse-files"
             >
               Browse files
             </Button>
           )}
-          <p className="text-xs text-muted-foreground mt-2">Max 50 MB</p>
+          <p className="text-[10px] text-muted-foreground mt-1.5">Max 50 MB</p>
           <input
             ref={fileInputRef}
             type="file"
@@ -77,13 +78,13 @@ export function FileList({ files, onUpload, onDelete, uploading, isLoading, canU
       )}
 
       {isLoading ? (
-        <div className="space-y-2">
-          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-[60px] rounded-lg" />)}
+        <div className="space-y-1.5">
+          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
         </div>
       ) : files.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-            <FolderOpen className="h-5 w-5 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center py-10 sm:py-14 text-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+            <FolderOpen className="h-4 w-4 text-muted-foreground" />
           </div>
           <div>
             <p className="text-sm font-medium">No files yet</p>
@@ -93,45 +94,45 @@ export function FileList({ files, onUpload, onDelete, uploading, isLoading, canU
           </div>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {files.map((file) => (
             <div
               key={file.id}
-              className="border rounded-lg p-3 flex items-center gap-3 bg-card"
+              className="border rounded-lg px-3 py-2.5 flex items-center gap-2.5 bg-card"
               data-testid={`file-row-${file.id}`}
             >
-              <FileIcon className="h-8 w-8 text-muted-foreground flex-shrink-0" />
+              <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate" data-testid={`text-filename-${file.id}`}>
+                <p className="text-xs font-medium truncate" data-testid={`text-filename-${file.id}`}>
                   {file.fileName}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] text-muted-foreground">
                   {formatBytes(file.fileSize)} · {file.uploaderName} · {formatDate(file.createdAt)}
                 </p>
               </div>
-              <div className="flex gap-1 shrink-0">
+              <div className="flex gap-0.5 shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-7 w-7"
                   title="Open file"
                   data-testid={`button-open-file-${file.id}`}
                   asChild
                 >
                   <a href={file.cloudinarySecureUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" />
+                    <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 </Button>
                 {onDelete && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     onClick={() => onDelete(file.id)}
                     title="Delete file"
                     data-testid={`button-delete-file-${file.id}`}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 )}
               </div>

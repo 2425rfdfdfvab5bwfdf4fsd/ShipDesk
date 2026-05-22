@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { CalendarDays, Zap, Clock, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ReportMeta } from "@/types";
@@ -12,47 +11,41 @@ interface ReportCardProps {
 
 export function ReportCard({ report, onClick }: ReportCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       onClick={onClick}
       className={cn(
-        "border rounded-lg p-4 bg-card hover:shadow-md transition-shadow",
-        onClick && "cursor-pointer"
+        "border rounded-lg p-3 bg-card transition-colors",
+        onClick && "cursor-pointer hover:bg-accent/40 active:bg-accent/60"
       )}
+      data-testid={`report-card-${report.id}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-sm leading-snug">{report.title}</h4>
-          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+          <h4 className="font-medium text-sm leading-snug truncate">{report.title}</h4>
+          <div className="flex flex-wrap items-center gap-2.5 mt-1.5 text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1">
-              <CalendarDays className="h-3 w-3" />
+              <CalendarDays className="h-2.5 w-2.5" />
               {formatDate(report.weekStartDate)} – {formatDate(report.weekEndDate)}
             </span>
             <span className="flex items-center gap-1">
-              {report.generatedBy === "MANUAL" ? (
-                <Zap className="h-3 w-3" />
-              ) : (
-                <Clock className="h-3 w-3" />
-              )}
+              {report.generatedBy === "MANUAL" ? <Zap className="h-2.5 w-2.5" /> : <Clock className="h-2.5 w-2.5" />}
               {report.generatedBy === "MANUAL" ? "Manual" : "Scheduled"}
             </span>
           </div>
         </div>
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           {report.status === "PUBLISHED" ? (
-            <Badge variant="success" className="gap-1">
-              <CheckCircle className="h-3 w-3" />
-              Published
+            <Badge variant="success" className="gap-1 text-[10px] px-1.5 py-0.5">
+              <CheckCircle className="h-2.5 w-2.5" /> Published
             </Badge>
           ) : (
-            <Badge variant="secondary">Draft</Badge>
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">Draft</Badge>
           )}
         </div>
       </div>
-      <p className="text-xs text-muted-foreground mt-2">
+      <p className="text-[10px] text-muted-foreground mt-1.5">
         Generated {formatRelative(report.generatedAt)}
       </p>
-    </motion.div>
+    </div>
   );
 }
