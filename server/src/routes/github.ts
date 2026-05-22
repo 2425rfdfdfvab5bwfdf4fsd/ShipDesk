@@ -74,8 +74,10 @@ router.get("/connect", async (req: Request, res: Response) => {
     sameSite: "lax",
   });
 
-  const callbackUrl = process.env.GITHUB_OAUTH_CALLBACK_URL || `${process.env.BACKEND_URL}/api/github/callback`;
-  const url = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&scope=repo,read:user&state=${state}&redirect_uri=${encodeURIComponent(callbackUrl)}`;
+  // Do NOT include redirect_uri — GitHub uses the URL registered in the OAuth App settings.
+  // Sending a redirect_uri that differs even slightly from the registered one causes a
+  // "Be careful!" block page from GitHub.
+  const url = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&scope=repo,read:user&state=${state}`;
   res.redirect(url);
 });
 
