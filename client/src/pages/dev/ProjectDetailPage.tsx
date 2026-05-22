@@ -58,16 +58,37 @@ function GitHubConnectButton({
 
 function ReportViewerDialog({ reportId, onClose }: { reportId: string; onClose: () => void }) {
   const { data: report, isLoading } = useReport(reportId);
-  const updateReport = useUpdateReport();
-  if (isLoading) return <Skeleton className="h-64 w-full" />;
+  const publishReport = useUpdateReport();
+  const editReport = useUpdateReport();
+
+  if (isLoading) return (
+    <div className="space-y-4 py-2">
+      <Skeleton className="h-6 w-2/3" />
+      <Skeleton className="h-4 w-1/4" />
+      <Skeleton className="h-28 w-full" />
+      <Skeleton className="h-28 w-full" />
+      <Skeleton className="h-40 w-full" />
+    </div>
+  );
   if (!report) return null;
   return (
     <ReportViewer
       report={report}
       canEdit
-      onPublish={(id) => { updateReport.mutate({ id, data: { status: "PUBLISHED" } }); onClose(); toast({ title: "Report published to client" }); }}
-      onEdit={(id, content) => { updateReport.mutate({ id, data: { content: { rawMarkdown: content } } }); toast({ title: "Report saved" }); }}
-      isPublishing={updateReport.isPending}
+      onPublish={async (id) => {
+        try {
+          await publishReport.mutateAsync({ id, data: { status: "PUBLISHED" } });
+          onClose();
+          toast({ title: "Report published to client" });
+        } catch {
+          toast({ variant: "destructive", title: "Failed to publish report", description: "Please try again." });
+        }
+      }}
+      onEdit={(id, content) => {
+        editReport.mutate({ id, data: { content: { rawMarkdown: content } } });
+        toast({ title: "Report saved" });
+      }}
+      isPublishing={publishReport.isPending}
     />
   );
 }
@@ -129,7 +150,7 @@ export function ProjectDetailPage() {
   const [editDescription, setEditDescription] = useState("");
 
   const { data: project, isLoading } = useProject(id);
-  const { data: reportsData } = useReports(id);
+  const { data: reportsData, isLoading: reportsLoading } = useReports(id);
   const { data: invoicesData } = useInvoices(id);
   const { data: scopeChanges } = useScopeChanges(id);
   const { data: messagesData } = useMessages(id);
@@ -441,26 +462,56 @@ export function ProjectDetailPage() {
               description="AI-generated weekly status updates for your client."
               action={<GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" variant="outline" />}
             />
-            {reports.length === 0 ? (
-              <EmptyState icon={BarChart2} title="No reports yet" description={hasGitHub ? "Generate your first report to share progress with your client." : "Connect a GitHub repository to start generating AI reports."} />
+            {reportsLoading ? (
+              <div className="space-y-3">
+                {[0, 1, 2].map((i) => <Skeleton key={i} className="h-[88px] rounded-lg" />)}
+              </div>
+            ) : reports.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                  <BarChart2 className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">No reports yet</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                    {hasGitHub
+                      ? "Generate your first report to share progress with your client."
+                      : "Connect a GitHub repository to start generating AI reports."}
+                  </p>
+                </div>
+                {hasGitHub && <GenerateReportButton projectId={id} hasGitHub={true} size="sm" />}
+              </div>
             ) : (
               <div className="space-y-3">
                 {reports.map((r) => (
-                  <div key={r.id} className="relative group">
+                  <div key={r.id} className="group">
                     <ReportCard report={r} onClick={() => setShowReportViewer(r.id)} />
                     {r.status === "DRAFT" && (
-                      <button
-                        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        title="Delete draft"
-                        data-testid={`button-delete-report-${r.id}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteReport.mutate(r.id);
-                          toast({ title: "Draft deleted" });
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          className="h-7 px-2.5 rounded-md text-xs flex items-center gap-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                          data-testid={`button-publish-report-${r.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateReport.mutate({ id: r.id, data: { status: "PUBLISHED" } });
+                            toast({ title: "Report published to client" });
+                          }}
+                        >
+                          <CheckCircle className="h-3 w-3" /> Publish
+                        </button>
+                        <button
+                          className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          title="Delete draft"
+                          data-testid={`button-delete-report-${r.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteReport.mutate(r.id);
+                            toast({ title: "Draft deleted" });
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))}
