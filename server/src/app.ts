@@ -77,13 +77,26 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-    version: "1.0.0",
-  });
+app.get("/health", async (_req, res) => {
+  try {
+    await import("./lib/prisma.js").then((m) => m.db.$queryRaw`SELECT 1`);
+    res.json({
+      status: "ok",
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      version: "1.0.0",
+      db: "ok",
+    });
+  } catch (err) {
+    console.error("Health check DB ping failed:", err);
+    res.status(503).json({
+      status: "error",
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      version: "1.0.0",
+      db: "unreachable",
+    });
+  }
 });
 
 app.use(defaultLimiter);
