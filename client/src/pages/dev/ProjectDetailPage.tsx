@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useParams, useLocation } from "wouter";
 import {
@@ -148,6 +148,19 @@ export function ProjectDetailPage() {
   const [editingInfo, setEditingInfo] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      setHeaderHeight(el.offsetHeight);
+    });
+    observer.observe(el);
+    setHeaderHeight(el.offsetHeight);
+    return () => observer.disconnect();
+  }, []);
 
   const { data: project, isLoading } = useProject(id);
   const { data: reportsData, isLoading: reportsLoading } = useReports(id);
@@ -274,7 +287,7 @@ export function ProjectDetailPage() {
         className="flex flex-col flex-1"
       >
         {/* ── Sticky header ── */}
-        <div className="border-b bg-card sticky top-0 z-10">
+        <div ref={headerRef} className="border-b bg-card sticky top-0 z-10">
           <div className="px-4 sm:px-6 pt-3">
             <button
               onClick={() => navigate("/dashboard")}
@@ -318,18 +331,23 @@ export function ProjectDetailPage() {
                 <TabsTrigger
                   key={value}
                   value={value}
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 px-3 sm:px-4 py-3 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground whitespace-nowrap"
+                  className="relative rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 px-3 sm:px-4 py-3 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground whitespace-nowrap"
                 >
                   <Icon className="h-3.5 w-3.5 hidden sm:block" />
                   {label}
+                  {value === "messages" && unreadMessages > 0 && (
+                    <span className="ml-1 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold leading-none">
+                      {unreadMessages > 9 ? "9+" : unreadMessages}
+                    </span>
+                  )}
                 </TabsTrigger>
               ))}
             </TabsList>
           </div>
         </div>
 
-        {/* ── Tab content (scrollable) ── */}
-        <div className="flex-1 overflow-auto">
+        {/* ── Tab content ── */}
+        <div className="flex-1 min-h-0 overflow-auto">
 
           {/* Overview */}
           <TabsContent value="overview" className="mt-0 p-4 sm:p-6 space-y-5">
@@ -538,19 +556,22 @@ export function ProjectDetailPage() {
           </TabsContent>
 
           {/* Messages */}
-          <TabsContent value="messages" className="mt-0">
-            <div className="h-[calc(100vh-220px)] min-h-[400px] flex flex-col">
-              <MessageThread
-                messages={messages}
-                currentSenderType="DEVELOPER"
-                projectName={project?.name}
-                onSend={async (body) => {
-                  await sendMessage.mutateAsync({ projectId: id, body });
-                }}
-                isSending={sendMessage.isPending}
-                isLoading={messagesLoading}
-              />
-            </div>
+          <TabsContent
+            value="messages"
+            className="mt-0 relative"
+            style={{ height: headerHeight > 0 ? `calc(100dvh - ${headerHeight}px)` : "calc(100dvh - 180px)" }}
+          >
+            <MessageThread
+              messages={messages}
+              currentSenderType="DEVELOPER"
+              projectName={project?.name}
+              unreadCount={unreadMessages}
+              onSend={async (body) => {
+                await sendMessage.mutateAsync({ projectId: id, body });
+              }}
+              isSending={sendMessage.isPending}
+              isLoading={messagesLoading}
+            />
           </TabsContent>
 
           {/* Invoices */}
