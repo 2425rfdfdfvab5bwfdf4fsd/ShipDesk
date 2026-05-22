@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useCreateInvoice } from "@/hooks/useInvoices";
 import { useProjects } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
@@ -67,6 +67,7 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Create Invoice</DialogTitle>
+          <DialogDescription>Add a new invoice and generate a payment link for your client.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">

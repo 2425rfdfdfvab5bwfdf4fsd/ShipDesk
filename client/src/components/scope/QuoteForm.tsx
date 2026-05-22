@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { ScopeChange, Currency } from "@/types";
 
@@ -81,6 +81,7 @@ export function QuoteForm({ scopeChange, onClose, onSubmit }: QuoteFormProps) {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Write Quote</DialogTitle>
+          <DialogDescription>Respond to the client's scope change request with a price and description.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">

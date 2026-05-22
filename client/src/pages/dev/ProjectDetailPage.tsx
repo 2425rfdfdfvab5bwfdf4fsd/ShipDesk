@@ -6,13 +6,15 @@ import {
   CheckCircle, PauseCircle, XCircle, Loader2, Search, Unlink, Lock,
   FileText, Receipt, GitPullRequest, LayoutDashboard, BarChart2,
   FolderOpen, MessageSquare, ScrollText, ArrowRightLeft, Server, Settings2,
+  Edit2, UserMinus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReportCard } from "@/components/reports/ReportCard";
 import { ReportViewer } from "@/components/reports/ReportViewer";
@@ -26,15 +28,15 @@ import { FileList } from "@/components/files/FileList";
 import { BuildLogsViewer } from "@/components/deployments/BuildLogsViewer";
 import { useProject, useUpdateProject, useDeleteProject } from "@/hooks/useProjects";
 import { useGitHubRepos, useConnectRepo, useDisconnectRepo, useGitHubStatus } from "@/hooks/useGitHub";
-import { useReport, useReports, useUpdateReport } from "@/hooks/useReports";
+import { useReport, useReports, useUpdateReport, useDeleteReport } from "@/hooks/useReports";
 import { useInvoices, useMarkInvoicePaid, useDeleteInvoice } from "@/hooks/useInvoices";
 import { useScopeChanges, useSubmitQuote, useMarkScopeChangePaid } from "@/hooks/useScopeChanges";
 import { useMessages, useSendMessage, useMarkMessagesRead } from "@/hooks/useMessages";
 import { useFiles, useCreateFile, useDeleteFile, useUploadSignature } from "@/hooks/useFiles";
+import { useProjectClients, useInviteClient, useRevokeClientAccess } from "@/hooks/useClients";
 import { toast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
-import { api } from "@/lib/api";
-import { ScopeChange } from "@/types";
+import type { ScopeChange } from "@/types";
 
 function GitHubConnectButton({
   className, variant = "outline", label,
@@ -122,6 +124,9 @@ export function ProjectDetailPage() {
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [showRepoPicker, setShowRepoPicker] = useState(false);
   const [repoSearch, setRepoSearch] = useState("");
+  const [editingInfo, setEditingInfo] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   const { data: project, isLoading } = useProject(id);
   const { data: reportsData } = useReports(id);
@@ -146,6 +151,10 @@ export function ProjectDetailPage() {
   const connectRepo = useConnectRepo();
   const disconnectRepo = useDisconnectRepo();
   const updateReport = useUpdateReport();
+  const deleteReport = useDeleteReport();
+  const { data: projectClients, isLoading: clientsLoading } = useProjectClients(id);
+  const inviteClient = useInviteClient();
+  const revokeClient = useRevokeClientAccess();
 
   const STATUS_TRANSITIONS: Record<string, string[]> = { ACTIVE: ["PAUSED", "COMPLETED"], PAUSED: ["ACTIVE", "COMPLETED"], COMPLETED: [] };
 
@@ -387,7 +396,25 @@ export function ProjectDetailPage() {
               <EmptyState icon={BarChart2} title="No reports yet" description={hasGitHub ? "Generate your first report to share progress with your client." : "Connect a GitHub repository to start generating AI reports."} />
             ) : (
               <div className="space-y-3">
-                {reports.map((r) => <ReportCard key={r.id} report={r} onClick={() => setShowReportViewer(r.id)} />)}
+                {reports.map((r) => (
+                  <div key={r.id} className="relative group">
+                    <ReportCard report={r} onClick={() => setShowReportViewer(r.id)} />
+                    {r.status === "DRAFT" && (
+                      <button
+                        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        title="Delete draft"
+                        data-testid={`button-delete-report-${r.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteReport.mutate(r.id);
+                          toast({ title: "Draft deleted" });
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </TabsContent>
@@ -458,7 +485,7 @@ export function ProjectDetailPage() {
 
           {/* Deployments */}
           <TabsContent value="deployments" className="mt-0 p-4 sm:p-6">
-            <SectionHeader title="Deployments" description="Latest Railway build output for this project." />
+            <SectionHeader title="Deployments" description="Sample build log output — connect a deployment integration to stream live logs." />
             <BuildLogsViewer />
           </TabsContent>
 
@@ -466,6 +493,71 @@ export function ProjectDetailPage() {
           <TabsContent value="settings" className="mt-0 p-4 sm:p-6">
             <div className="max-w-xl space-y-5">
               <h2 className="font-semibold text-base">Project Settings</h2>
+
+              {/* Project Info — editable */}
+              <div className="bg-card border rounded-xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">Project Info</p>
+                  {!editingInfo && (
+                    <Button variant="ghost" size="sm" className="gap-1.5 h-7 text-xs text-muted-foreground"
+                      onClick={() => { setEditName(project.name); setEditDescription(project.description || ""); setEditingInfo(true); }}
+                      data-testid="button-edit-project-info"
+                    >
+                      <Edit2 className="h-3 w-3" /> Edit
+                    </Button>
+                  )}
+                </div>
+                {editingInfo ? (
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="edit-name">Project Name</Label>
+                      <Input id="edit-name" value={editName} onChange={(e) => setEditName(e.target.value)} maxLength={100} data-testid="input-project-name" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="edit-desc">Description</Label>
+                      <Textarea id="edit-desc" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} maxLength={500} rows={3} className="resize-none" placeholder="Optional project description…" data-testid="input-project-description" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" className="h-7 text-xs" disabled={!editName.trim() || updateProject.isPending}
+                        data-testid="button-save-project-info"
+                        onClick={async () => {
+                          try {
+                            await updateProject.mutateAsync({ id: project.id, data: { name: editName.trim(), description: editDescription.trim() || null } });
+                            setEditingInfo(false);
+                            toast({ title: "Project updated" });
+                          } catch {
+                            toast({ variant: "destructive", title: "Failed to update project" });
+                          }
+                        }}
+                      >
+                        {updateProject.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditingInfo(false)}>Cancel</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 text-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="text-muted-foreground shrink-0">Name</span>
+                      <span className="font-medium text-right">{project.name}</span>
+                    </div>
+                    {project.description && (
+                      <div className="flex items-start justify-between gap-4">
+                        <span className="text-muted-foreground shrink-0">Description</span>
+                        <span className="text-right text-xs leading-relaxed">{project.description}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-muted-foreground">Project ID</span>
+                      <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground">{project.id.slice(0, 8)}…</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-muted-foreground">Created</span>
+                      <span className="text-xs">{formatDate(project.createdAt)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Status */}
               <div className="bg-card border rounded-xl p-5 space-y-4">
@@ -488,6 +580,65 @@ export function ProjectDetailPage() {
                   </div>
                 )}
                 {project.status === "COMPLETED" && <p className="text-xs text-muted-foreground">Completed projects cannot change status.</p>}
+              </div>
+
+              {/* Client Access */}
+              <div className="bg-card border rounded-xl p-5 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold">Client Access</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">People with access to this project's portal.</p>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs shrink-0"
+                    onClick={() => setShowInviteModal(true)}
+                    data-testid="button-invite-client-settings"
+                  >
+                    <Plus className="h-3 w-3" /> Invite
+                  </Button>
+                </div>
+                {clientsLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : !projectClients || projectClients.length === 0 ? (
+                  <div className="flex items-center gap-2.5 rounded-lg border border-dashed px-4 py-3">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground">No clients invited yet. Click Invite to send a magic link.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y rounded-lg border overflow-hidden">
+                    {projectClients.map((client) => (
+                      <div key={client.id} className="flex items-center gap-3 px-3 py-2.5" data-testid={`client-row-${client.id}`}>
+                        <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0 text-xs font-semibold text-muted-foreground">
+                          {(client.name || client.email).charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          {client.name && <p className="text-sm font-medium truncate">{client.name}</p>}
+                          <p className="text-xs text-muted-foreground truncate">{client.email}</p>
+                        </div>
+                        <Badge
+                          variant={client.status === "ACTIVE" ? "success" : client.status === "EXPIRED" ? "secondary" : "warning"}
+                          className="text-xs shrink-0"
+                        >
+                          {client.status === "ACTIVE" ? "Active" : client.status === "EXPIRED" ? "Expired" : "Pending"}
+                        </Badge>
+                        <button
+                          className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                          title="Revoke access"
+                          data-testid={`button-revoke-client-${client.id}`}
+                          disabled={revokeClient.isPending}
+                          onClick={() => {
+                            revokeClient.mutate({ projectId: id, clientId: client.id });
+                            toast({ title: "Access revoked" });
+                          }}
+                        >
+                          <UserMinus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* GitHub */}
@@ -548,21 +699,6 @@ export function ProjectDetailPage() {
                 )}
               </div>
 
-              {/* Project Info */}
-              <div className="bg-card border rounded-xl p-5 space-y-3">
-                <p className="text-sm font-semibold">Project Info</p>
-                <div className="space-y-2.5 text-sm">
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground">Project ID</span>
-                    <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground">{project.id.slice(0, 8)}…</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-muted-foreground">Created</span>
-                    <span className="text-xs">{formatDate(project.createdAt)}</span>
-                  </div>
-                </div>
-              </div>
-
               {/* Danger zone */}
               <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-5 space-y-3">
                 <div>
@@ -584,6 +720,7 @@ export function ProjectDetailPage() {
       <Dialog open={!!showReportViewer} onOpenChange={() => setShowReportViewer(null)}>
         <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogTitle className="sr-only">Report Viewer</DialogTitle>
+          <DialogDescription className="sr-only">View and publish the AI-generated status report.</DialogDescription>
           {showReportViewer && <ReportViewerDialog reportId={showReportViewer} onClose={() => setShowReportViewer(null)} />}
         </DialogContent>
       </Dialog>
@@ -602,9 +739,12 @@ export function ProjectDetailPage() {
 
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle className="text-destructive">Delete Project?</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete Project?</DialogTitle>
+            <DialogDescription>This action is permanent and cannot be undone.</DialogDescription>
+          </DialogHeader>
           <p className="text-sm text-muted-foreground py-2">
-            This will permanently delete <strong>{project?.name}</strong> and all associated data including reports, invoices, and messages. This cannot be undone.
+            This will permanently delete <strong>{project?.name}</strong> and all associated data including reports, invoices, and messages.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
@@ -615,36 +755,53 @@ export function ProjectDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showInviteModal} onOpenChange={() => setShowInviteModal(false)}>
+      <Dialog open={showInviteModal} onOpenChange={(open) => { if (!open) { setShowInviteModal(false); setInviteEmail(""); } }}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Invite Client</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Invite Client</DialogTitle>
+            <DialogDescription>Send a magic link to give someone access to this project's client portal.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Client Email *</Label>
-              <Input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="client@example.com" data-testid="input-invite-email"
-                onKeyDown={(e) => e.key === "Enter" && inviteEmail && (
-                  api.post(`/api/projects/${id}/invite`, { email: inviteEmail })
-                    .then(() => { setInviteEmail(""); setShowInviteModal(false); toast({ title: "Invitation sent" }); })
-                    .catch(() => toast({ variant: "destructive", title: "Failed to send invitation" }))
-                )}
+              <Label htmlFor="invite-email">Client Email *</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="client@example.com"
+                data-testid="input-invite-email"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && inviteEmail && !inviteClient.isPending) {
+                    inviteClient.mutate(
+                      { projectId: id, email: inviteEmail },
+                      {
+                        onSuccess: () => { setInviteEmail(""); setShowInviteModal(false); toast({ title: "Invitation sent", description: `Magic link sent to ${inviteEmail}` }); },
+                        onError: () => toast({ variant: "destructive", title: "Failed to send invitation" }),
+                      }
+                    );
+                  }
+                }}
               />
             </div>
-            <p className="text-xs text-muted-foreground">A magic link will be emailed to this address granting access to the client portal for this project.</p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowInviteModal(false)}>Cancel</Button>
-            <Button disabled={!inviteEmail} data-testid="button-send-invite"
-              onClick={async () => {
-                try {
-                  await api.post(`/api/projects/${id}/invite`, { email: inviteEmail });
-                  setInviteEmail(""); setShowInviteModal(false);
-                  toast({ title: "Invitation sent", description: `Magic link sent to ${inviteEmail}` });
-                } catch {
-                  toast({ variant: "destructive", title: "Failed to send invitation" });
-                }
+            <Button variant="outline" onClick={() => { setShowInviteModal(false); setInviteEmail(""); }}>Cancel</Button>
+            <Button
+              disabled={!inviteEmail || inviteClient.isPending}
+              data-testid="button-send-invite"
+              onClick={() => {
+                inviteClient.mutate(
+                  { projectId: id, email: inviteEmail },
+                  {
+                    onSuccess: () => { setInviteEmail(""); setShowInviteModal(false); toast({ title: "Invitation sent", description: `Magic link sent to ${inviteEmail}` }); },
+                    onError: () => toast({ variant: "destructive", title: "Failed to send invitation" }),
+                  }
+                );
               }}
             >
-              <Mail className="h-4 w-4 mr-2" /> Send Invitation
+              {inviteClient.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
+              Send Invitation
             </Button>
           </DialogFooter>
         </DialogContent>
