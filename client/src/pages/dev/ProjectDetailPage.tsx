@@ -543,6 +543,7 @@ export function ProjectDetailPage() {
               <MessageThread
                 messages={messages}
                 currentSenderType="DEVELOPER"
+                projectName={project?.name}
                 onSend={async (body) => {
                   await sendMessage.mutateAsync({ projectId: id, body });
                 }}
