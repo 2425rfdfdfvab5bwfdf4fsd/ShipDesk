@@ -6,7 +6,7 @@ import {
   CheckCircle, PauseCircle, XCircle, Loader2, Search, Unlink, Lock,
   FileText, Receipt, GitPullRequest, LayoutDashboard, BarChart2,
   FolderOpen, MessageSquare, ScrollText, ArrowRightLeft, Server, Settings2,
-  Edit2, UserMinus,
+  Edit2, UserMinus, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -135,7 +135,7 @@ export function ProjectDetailPage() {
   const { data: messagesData } = useMessages(id);
   const { data: files } = useFiles(id);
   const { data: uploadSig } = useUploadSignature(id);
-  const { data: githubStatus } = useGitHubStatus();
+  const { data: githubStatus, isLoading: githubStatusLoading } = useGitHubStatus();
   const { data: githubRepos, isLoading: reposLoading, error: reposError } = useGitHubRepos(repoSearch || undefined, showRepoPicker);
 
   const markRead = useMarkMessagesRead();
@@ -239,6 +239,7 @@ export function ProjectDetailPage() {
   const reports = reportsData?.reports || [];
   const invoices = invoicesData?.invoices || [];
   const messages = messagesData?.messages || [];
+  const unreadMessages = messages.filter((m) => m.senderType === "CLIENT" && !m.readByDeveloperAt).length;
 
   return (
     <div className="flex flex-col min-h-full">
@@ -311,49 +312,85 @@ export function ProjectDetailPage() {
 
           {/* Overview */}
           <TabsContent value="overview" className="mt-0 p-4 sm:p-6 space-y-5">
-            {/* Stat cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="bg-card border rounded-xl p-4 flex items-start gap-3">
+
+            {/* Stat cards — 4-up grid, each navigates to its tab */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <button
+                className="bg-card border rounded-xl p-4 flex items-start gap-3 hover:bg-accent/50 transition-colors text-left w-full"
+                onClick={() => setActiveTab("reports")}
+                data-testid="stat-card-reports"
+              >
                 <div className="h-9 w-9 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0">
                   <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground font-medium">Reports</p>
                   <p className="text-2xl font-bold leading-tight">{reports.length}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{publishedReports} published</p>
                 </div>
-              </div>
+              </button>
 
-              <div className="bg-card border rounded-xl p-4 flex items-start gap-3">
+              <button
+                className="bg-card border rounded-xl p-4 flex items-start gap-3 hover:bg-accent/50 transition-colors text-left w-full"
+                onClick={() => setActiveTab("invoices")}
+                data-testid="stat-card-invoices"
+              >
                 <div className="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center shrink-0">
                   <Receipt className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium">Unpaid Invoices</p>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">Invoices</p>
                   <p className="text-2xl font-bold leading-tight">{unpaidInvoices}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">of {invoices.length} total</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{invoices.length} total</p>
                 </div>
-              </div>
+              </button>
 
-              <div className="bg-card border rounded-xl p-4 flex items-start gap-3">
+              <button
+                className="bg-card border rounded-xl p-4 flex items-start gap-3 hover:bg-accent/50 transition-colors text-left w-full"
+                onClick={() => setActiveTab("scope-changes")}
+                data-testid="stat-card-scope-changes"
+              >
                 <div className="h-9 w-9 rounded-lg bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center shrink-0">
                   <GitPullRequest className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground font-medium">Scope Changes</p>
                   <p className="text-2xl font-bold leading-tight">{(scopeChanges || []).length}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{pendingScopes} pending</p>
                 </div>
-              </div>
+              </button>
+
+              <button
+                className="bg-card border rounded-xl p-4 flex items-start gap-3 hover:bg-accent/50 transition-colors text-left w-full"
+                onClick={() => { setActiveTab("messages"); markRead.mutate(id); }}
+                data-testid="stat-card-messages"
+              >
+                <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${unreadMessages > 0 ? "bg-violet-50 dark:bg-violet-950/40" : "bg-muted/50"}`}>
+                  <MessageSquare className={`h-4 w-4 ${unreadMessages > 0 ? "text-violet-600 dark:text-violet-400" : "text-muted-foreground"}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">Messages</p>
+                  <p className="text-2xl font-bold leading-tight">
+                    {unreadMessages > 0 ? unreadMessages : messages.length}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {unreadMessages > 0 ? "unread" : `${messages.length} total`}
+                  </p>
+                </div>
+              </button>
             </div>
 
-            {/* GitHub */}
+            {/* GitHub status */}
             <div className="bg-card border rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Github className="h-4 w-4 text-muted-foreground" />
                 <p className="text-sm font-medium">GitHub</p>
               </div>
-              {hasGitHub ? (
+              {githubStatusLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-48 rounded-md bg-muted animate-pulse" />
+                </div>
+              ) : hasGitHub ? (
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono text-sm bg-muted px-2.5 py-1 rounded-md">{project.githubRepoFullName}</span>
                   <Badge variant="success" className="gap-1 text-xs"><CheckCircle className="h-3 w-3" /> Connected</Badge>
@@ -373,8 +410,8 @@ export function ProjectDetailPage() {
               )}
             </div>
 
-            {/* Latest report */}
-            {reports.length > 0 && (
+            {/* Latest report — or first-report CTA when GitHub is connected */}
+            {reports.length > 0 ? (
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium">Latest Report</p>
@@ -382,7 +419,19 @@ export function ProjectDetailPage() {
                 </div>
                 <ReportCard report={reports[0]} onClick={() => setShowReportViewer(reports[0].id)} />
               </div>
-            )}
+            ) : hasGitHub ? (
+              <div className="bg-card border rounded-xl p-5 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0">
+                  <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Generate your first report</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Summarise this week's GitHub activity into a polished client update.</p>
+                </div>
+                <GenerateReportButton projectId={id} hasGitHub={true} size="sm" variant="outline" />
+              </div>
+            ) : null}
+
           </TabsContent>
 
           {/* Reports */}

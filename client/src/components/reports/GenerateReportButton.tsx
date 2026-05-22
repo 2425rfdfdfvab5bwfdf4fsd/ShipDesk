@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Zap, Check, Loader2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useGenerateReport } from "@/hooks/useReports";
 import { toast } from "@/hooks/use-toast";
 
@@ -73,6 +73,9 @@ export function GenerateReportButton({ projectId, hasGitHub = true, variant = "d
             <DialogTitle>
               {step === "idle" ? "Generate Report" : step === "done" ? "Report Generated!" : step === "error" ? "Generation Failed" : "Generating Report..."}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              {step === "idle" ? "AI-powered weekly status report from GitHub activity" : step === "done" ? "Your draft report is ready to review" : step === "error" ? "Report generation encountered an error" : "Fetching GitHub activity and generating report with AI"}
+            </DialogDescription>
           </DialogHeader>
 
           <AnimatePresence mode="wait">
