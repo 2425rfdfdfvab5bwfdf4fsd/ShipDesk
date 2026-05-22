@@ -25,7 +25,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node_modules/.bin/concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\""
+args = "npm run dev"
 waitForPort = 5000
 
 [[ports]]
