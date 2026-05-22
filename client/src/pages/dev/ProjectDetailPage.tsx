@@ -17,6 +17,7 @@ import { ScopeChangeCard } from "@/components/scope/ScopeChangeCard";
 import { QuoteForm } from "@/components/scope/QuoteForm";
 import { MessageThread } from "@/components/messages/MessageThread";
 import { FileList } from "@/components/files/FileList";
+import { BuildLogsViewer } from "@/components/deployments/BuildLogsViewer";
 import { useProject, useUpdateProject, useDeleteProject } from "@/hooks/useProjects";
 import { useGitHubRepos, useConnectRepo, useDisconnectRepo } from "@/hooks/useGitHub";
 import { useReport, useReports, useUpdateReport } from "@/hooks/useReports";
@@ -235,7 +236,7 @@ export function ProjectDetailPage() {
           }}
         >
           <TabsList className="bg-transparent border-none rounded-none h-auto p-0 gap-0">
-            {["overview", "reports", "files", "messages", "invoices", "scope-changes", "settings"].map((tab) => (
+            {["overview", "reports", "files", "messages", "invoices", "scope-changes", "deployments", "settings"].map((tab) => (
               <TabsTrigger
                 key={tab}
                 value={tab}
@@ -411,6 +412,21 @@ export function ProjectDetailPage() {
                   ))}
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          {/* Deployments */}
+          <TabsContent value="deployments" className="px-0 py-0 mt-0">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="font-semibold">Deployments</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Latest Railway build output for this project
+                  </p>
+                </div>
+              </div>
+              <BuildLogsViewer />
             </div>
           </TabsContent>
 
