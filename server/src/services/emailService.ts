@@ -1,6 +1,24 @@
 import { Resend } from "resend";
 
-const FROM = process.env.EMAIL_FROM || "noreply@shipdesk.io";
+// Resend requires the sender to be a verified custom domain.
+// Free email providers (Gmail, Yahoo, etc.) are rejected by Resend.
+// Fall back to onboarding@resend.dev which works on all Resend accounts.
+const FREE_PROVIDERS = new Set(["gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "live.com", "icloud.com"]);
+function getFrom(): string {
+  const configured = process.env.EMAIL_FROM;
+  if (!configured) return "onboarding@resend.dev";
+  const domain = configured.split("@")[1]?.toLowerCase() ?? "";
+  if (FREE_PROVIDERS.has(domain)) {
+    console.warn(
+      `[emailService] EMAIL_FROM (${configured}) is a free-provider address. ` +
+      `Resend requires a verified custom domain. Falling back to onboarding@resend.dev. ` +
+      `To use a custom from-address, verify your domain at resend.com/domains.`
+    );
+    return "onboarding@resend.dev";
+  }
+  return configured;
+}
+const FROM = getFrom();
 
 function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
@@ -9,6 +27,15 @@ function getResend(): Resend | null {
     return null;
   }
   return new Resend(key);
+}
+
+async function safeSend(resend: Resend, payload: Parameters<Resend["emails"]["send"]>[0]): Promise<void> {
+  const { data, error } = await resend.emails.send(payload);
+  if (error) {
+    console.error("[emailService] Resend send error:", JSON.stringify(error));
+    throw new Error(`Email delivery failed: ${error.message ?? JSON.stringify(error)}`);
+  }
+  console.log("[emailService] Email sent id=%s to=%s", data?.id, payload.to);
 }
 
 export async function sendMagicLink(opts: {
@@ -22,7 +49,7 @@ export async function sendMagicLink(opts: {
   if (!resend) return;
   const name = opts.clientName || "there";
   const sender = opts.agencyName || opts.workspaceName;
-  await resend.emails.send({
+  await safeSend(resend, {
     from: FROM,
     to: opts.to,
     subject: `Your portal access link from ${sender}`,
@@ -47,7 +74,7 @@ export async function sendReportPublished(opts: {
   if (!resend) return;
   const name = opts.clientName || "there";
   const sender = opts.agencyName || "Your developer";
-  await resend.emails.send({
+  await safeSend(resend, {
     from: FROM,
     to: opts.to,
     subject: `New project update: ${opts.reportTitle}`,
@@ -82,7 +109,7 @@ export async function sendScopeChangeNotification(opts: {
     approved: `The scope change request for ${opts.projectName} has been approved.`,
     declined: `The scope change request for ${opts.projectName} has been declined.`,
   };
-  await resend.emails.send({
+  await safeSend(resend, {
     from: FROM,
     to: opts.to,
     subject: subjectMap[opts.type],
@@ -103,7 +130,7 @@ export async function sendMessageNotification(opts: {
 }): Promise<void> {
   const resend = getResend();
   if (!resend) return;
-  await resend.emails.send({
+  await safeSend(resend, {
     from: FROM,
     to: opts.to,
     subject: `New message on ${opts.projectName}`,
@@ -128,7 +155,7 @@ export async function sendPaymentConfirmedNotification(opts: {
     style: "currency",
     currency: opts.currency,
   }).format(opts.amount);
-  await resend.emails.send({
+  await safeSend(resend, {
     from: FROM,
     to: opts.to,
     subject: `Payment received: ${opts.invoiceTitle}`,
@@ -156,7 +183,7 @@ export async function sendInvoiceNotification(opts: {
     style: "currency",
     currency: opts.currency,
   }).format(opts.amount);
-  await resend.emails.send({
+  await safeSend(resend, {
     from: FROM,
     to: opts.to,
     subject: `Invoice from ${sender}: ${opts.invoiceTitle}`,
