@@ -198,7 +198,7 @@ export function MessageThread({
         <div className="px-4 py-2.5 border-b bg-card/80 backdrop-blur-sm flex items-center gap-2.5 shrink-0">
           <div className="h-2 w-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
           <span className="text-sm font-semibold truncate">{projectName}</span>
-          <span className="text-xs text-muted-foreground shrink-0">· Client thread</span>
+
           {unreadCount > 0 && (
             <span className="ml-auto shrink-0 text-[10px] font-semibold bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 leading-none">
               {unreadCount} unread
