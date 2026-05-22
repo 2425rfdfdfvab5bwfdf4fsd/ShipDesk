@@ -20,7 +20,7 @@ import { MessageThread } from "@/components/messages/MessageThread";
 import { FileList } from "@/components/files/FileList";
 import { BuildLogsViewer } from "@/components/deployments/BuildLogsViewer";
 import { useProject, useUpdateProject, useDeleteProject } from "@/hooks/useProjects";
-import { useGitHubRepos, useConnectRepo, useDisconnectRepo } from "@/hooks/useGitHub";
+import { useGitHubRepos, useConnectRepo, useDisconnectRepo, useGitHubStatus } from "@/hooks/useGitHub";
 import { useReport, useReports, useUpdateReport } from "@/hooks/useReports";
 import { useInvoices, useMarkInvoicePaid, useDeleteInvoice } from "@/hooks/useInvoices";
 import { useScopeChanges, useSubmitQuote, useMarkScopeChangePaid } from "@/hooks/useScopeChanges";
@@ -121,6 +121,7 @@ export function ProjectDetailPage() {
   const [showRepoPicker, setShowRepoPicker] = useState(false);
   const [repoSearch, setRepoSearch] = useState("");
 
+  const { data: githubStatus } = useGitHubStatus();
   const { data: githubRepos, isLoading: reposLoading, error: reposError } = useGitHubRepos(
     repoSearch || undefined,
     showRepoPicker
@@ -313,13 +314,33 @@ export function ProjectDetailPage() {
                     <span className="font-mono">{project.githubRepoFullName}</span>
                     <Badge variant="success" className="text-xs">Connected</Badge>
                   </div>
+                ) : githubStatus?.connected ? (
+                  <div className="flex items-center gap-3">
+                    <Badge variant="warning" className="gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      No repository linked
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 h-7 text-xs"
+                      onClick={() => {
+                        setActiveTab("settings");
+                        setShowRepoPicker(true);
+                      }}
+                      data-testid="button-link-repo"
+                    >
+                      <Github className="h-3 w-3" />
+                      Link Repository
+                    </Button>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-3">
                     <Badge variant="warning" className="gap-1">
                       <AlertTriangle className="h-3 w-3" />
-                      No GitHub connected
+                      GitHub not connected
                     </Badge>
-                    <GitHubConnectButton className="gap-1.5 h-7 text-xs" />
+                    <GitHubConnectButton className="gap-1.5 h-7 text-xs" label="Connect GitHub" />
                   </div>
                 )}
               </div>

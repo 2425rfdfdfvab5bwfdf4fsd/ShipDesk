@@ -12,6 +12,23 @@ import * as githubService from "../services/githubService.js";
 
 const router = Router();
 
+// Returns whether the workspace has a GitHub OAuth connection.
+router.get("/status", requireAuth, async (req: AuthRequest, res, next) => {
+  try {
+    const workspace = await db.workspace.findUnique({
+      where: { ownerId: req.userId! },
+      include: { githubConn: true },
+    });
+    if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+    res.json({
+      connected: !!workspace.githubConn,
+      login: workspace.githubConn?.githubLogin ?? null,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Accepts auth via Bearer header (API calls) OR ?token= query param (browser redirects).
 // Browser navigations cannot set Authorization headers, so the frontend passes the
 // Clerk session token as a query param when navigating here for GitHub OAuth.
@@ -45,9 +62,14 @@ router.get("/connect", async (req: Request, res: Response) => {
     { expiresIn: "10m" }
   );
 
+  // Use secure:true whenever the request arrived over HTTPS (Replit always does).
+  const isHttps =
+    req.secure ||
+    (req.headers["x-forwarded-proto"] as string)?.split(",")[0].trim() === "https";
+
   res.cookie("gh_oauth_state", state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isHttps,
     maxAge: 10 * 60 * 1000,
     sameSite: "lax",
   });
@@ -163,7 +185,8 @@ router.post("/connect-repo", requireAuth, async (req: AuthRequest, res, next) =>
     });
     if (!ghConn) throw new AppError("GitHub not connected", 400, "GITHUB_NOT_CONNECTED");
 
-    const webhookUrl = `${process.env.BACKEND_URL}/api/webhooks/github`;
+    // FRONTEND_URL is the publicly reachable domain (same host proxies /api to backend).
+    const webhookUrl = `${process.env.FRONTEND_URL || process.env.BACKEND_URL}/api/webhooks/github`;
 
     let webhookId: number | null = null;
     try {

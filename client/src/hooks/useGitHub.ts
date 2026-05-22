@@ -8,6 +8,15 @@ interface GitHubRepo {
   pushed_at: string;
 }
 
+export function useGitHubStatus() {
+  return useQuery<{ connected: boolean; login: string | null }>({
+    queryKey: ["github-status"],
+    queryFn: () => api.get("/api/github/status").then((r) => r.data),
+    staleTime: 60_000,
+    retry: false,
+  });
+}
+
 export function useGitHubRepos(search?: string, enabled = false) {
   return useQuery<GitHubRepo[]>({
     queryKey: ["github-repos", search],
