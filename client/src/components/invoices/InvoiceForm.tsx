@@ -43,7 +43,7 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
         description: description.trim() || undefined,
         amount: parsedAmount,
         currency,
-        dueDate: dueDate || undefined,
+        dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
       });
       toast({ title: "Invoice created", description: "Payment link generated via Lemon Squeezy." });
       handleClose();
