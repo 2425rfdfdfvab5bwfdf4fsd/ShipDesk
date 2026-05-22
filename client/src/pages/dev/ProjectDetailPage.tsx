@@ -44,7 +44,7 @@ function GitHubConnectButton({
   const handleConnect = useCallback(async () => {
     const token = await getToken();
     if (token) {
-      window.location.href = `/api/github/connect?token=${token}`;
+      window.open(`/api/github/connect?token=${token}`, "_blank", "noopener,noreferrer");
     }
   }, [getToken]);
 
