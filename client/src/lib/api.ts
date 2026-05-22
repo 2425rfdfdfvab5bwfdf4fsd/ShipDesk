@@ -1,12 +1,15 @@
 import axios from "axios";
 
-// In development the Vite dev-server proxy forwards /api → localhost:3000
-// server-side, so we always use the relative path. VITE_API_BASE_URL is only
-// meaningful in production builds (e.g. Vercel frontend → Railway backend).
+// All hooks already include /api/ in their paths (e.g. "/api/projects").
+// In dev the Vite proxy intercepts /api/* and forwards to localhost:3000, so
+// baseURL must be "" — adding "/api" here doubles the prefix → /api/api/...
+// In production, VITE_API_BASE_URL is the backend host with NO trailing slash
+// and NO /api suffix (e.g. "https://backend.railway.app"). Axios then combines
+// it with the hook path: "https://backend.railway.app" + "/api/projects" ✓
 export const api = axios.create({
   baseURL: import.meta.env.PROD
-    ? import.meta.env.VITE_API_BASE_URL || "/api"
-    : "/api",
+    ? (import.meta.env.VITE_API_BASE_URL ?? "")
+    : "",
   withCredentials: true,
 });
 

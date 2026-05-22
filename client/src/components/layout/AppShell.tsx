@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import {
@@ -29,10 +29,17 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { signOut } = useClerk();
   const { user } = useUser();
-  const { data: workspace } = useWorkspace();
+  const { data: workspace, isError: workspaceError, isLoading: workspaceLoading } = useWorkspace();
+
+  // Redirect to onboarding if the user has no workspace yet
+  useEffect(() => {
+    if (!workspaceLoading && workspaceError) {
+      navigate("/onboarding");
+    }
+  }, [workspaceLoading, workspaceError, navigate]);
 
   const initials = user?.firstName?.[0] || user?.emailAddresses?.[0]?.emailAddress?.[0]?.toUpperCase() || "?";
   const displayName = user?.fullName || user?.emailAddresses?.[0]?.emailAddress || "";
