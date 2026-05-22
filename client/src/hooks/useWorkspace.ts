@@ -6,7 +6,12 @@ export function useWorkspace() {
   return useQuery<Workspace>({
     queryKey: ["workspace"],
     queryFn: () => api.get("/api/workspace").then((r) => r.data),
-    retry: false,
+    retry: (failureCount, error) => {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 404) return false;
+      return failureCount < 3;
+    },
+    retryDelay: (attempt) => Math.min(500 * 2 ** attempt, 5000),
   });
 }
 

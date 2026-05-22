@@ -32,14 +32,19 @@ export function AppShell({ children }: AppShellProps) {
   const [location, navigate] = useLocation();
   const { signOut } = useClerk();
   const { user } = useUser();
-  const { data: workspace, isError: workspaceError, isLoading: workspaceLoading } = useWorkspace();
+  const { data: workspace, error: workspaceError, isLoading: workspaceLoading } = useWorkspace();
 
-  // Redirect to onboarding if the user has no workspace yet
+  // Only redirect to onboarding when we know for certain there is no workspace (404).
+  // Any other error (e.g. 401 while auth token is still loading on refresh) should
+  // not redirect — the query will automatically retry and recover.
+  const workspaceNotFound =
+    (workspaceError as { response?: { status?: number } } | null)?.response?.status === 404;
+
   useEffect(() => {
-    if (!workspaceLoading && workspaceError) {
+    if (!workspaceLoading && workspaceNotFound) {
       navigate("/onboarding");
     }
-  }, [workspaceLoading, workspaceError, navigate]);
+  }, [workspaceLoading, workspaceNotFound, navigate]);
 
   const initials = user?.firstName?.[0] || user?.emailAddresses?.[0]?.emailAddress?.[0]?.toUpperCase() || "?";
   const displayName = user?.fullName || user?.emailAddresses?.[0]?.emailAddress || "";
