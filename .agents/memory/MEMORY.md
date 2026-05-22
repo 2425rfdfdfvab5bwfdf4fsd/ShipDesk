@@ -1,0 +1,3 @@
+- [Replit HTTPS cookie fix](replit-https-cookie.md) — Replit is always HTTPS but NODE_ENV≠production in dev; use x-forwarded-proto header instead of NODE_ENV check.
+- [Client portal path routing](client-portal-path-routing.md) — Portal uses subdomain detection in prod; Replit needs path-based fallback at /portal/:slug/* with wouter Router base.
+- [Portal magic link URLs](portal-magic-link-urls.md) — Magic link URL construction must use CLIENT_PORTAL_BASE_URL for subdomain (prod) or FRONTEND_URL/portal/:slug for path-based (dev).

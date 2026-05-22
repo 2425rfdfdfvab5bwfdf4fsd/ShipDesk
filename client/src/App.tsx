@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, Router, useLocation } from "wouter";
 import { useAuth } from "@clerk/clerk-react";
 import { setApiToken } from "./lib/api";
 
@@ -31,12 +31,20 @@ import { SignIn, SignUp } from "@clerk/clerk-react";
 import { Loader2, Settings2 } from "lucide-react";
 
 function getWorkspaceSlug(): string | null {
+  // Production: subdomain routing (e.g. acme.portal.shipdesk.io)
   const host = window.location.hostname;
   const parts = host.split(".");
   if (parts.length >= 3 && parts[1] === "portal") {
     return parts[0];
   }
-  return null;
+  // Dev / Replit fallback: path-based routing (/portal/:slug/...)
+  const match = window.location.pathname.match(/^\/portal\/([a-z0-9-]+)/);
+  return match ? match[1] : null;
+}
+
+function isSubdomainPortal(): boolean {
+  const parts = window.location.hostname.split(".");
+  return parts.length >= 3 && parts[1] === "portal";
 }
 
 function TokenSync() {
@@ -174,7 +182,15 @@ export default function App({ clerkEnabled = false }: { clerkEnabled?: boolean }
   const workspaceSlug = getWorkspaceSlug();
 
   if (workspaceSlug) {
-    return <ClientPortalApp workspaceSlug={workspaceSlug} />;
+    // Subdomain portals (production) don't need a base; path-based portals (dev) do.
+    if (isSubdomainPortal()) {
+      return <ClientPortalApp workspaceSlug={workspaceSlug} />;
+    }
+    return (
+      <Router base={`/portal/${workspaceSlug}`}>
+        <ClientPortalApp workspaceSlug={workspaceSlug} />
+      </Router>
+    );
   }
 
   if (!clerkEnabled) {

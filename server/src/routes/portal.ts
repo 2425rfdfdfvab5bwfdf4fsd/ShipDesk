@@ -80,9 +80,13 @@ router.post("/auth/magic", magicLinkLimiter, async (req, res, next) => {
       select: { projectId: true },
     });
 
+    const isHttps =
+      req.secure ||
+      (req.headers["x-forwarded-proto"] as string)?.split(",")[0].trim() === "https";
+
     res.cookie("shipdesk_client_session", session.id, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps,
       sameSite: "lax",
       expires: expiresAt,
     });

@@ -86,8 +86,11 @@ router.post(
         include: { client: true },
       });
 
-      const portalBase = process.env.CLIENT_PORTAL_BASE_URL || "https://portal.shipdesk.io";
-      const domain = portalBase.replace("https://", "").replace("http://", "");
+      // Build portal URL: subdomain in production, path-based in dev
+      const portalProjectUrl = (projectId: string, path: string) =>
+        process.env.CLIENT_PORTAL_BASE_URL
+          ? `https://${ws.slug}.${process.env.CLIENT_PORTAL_BASE_URL.replace(/^https?:\/\//, "")}/projects/${projectId}/${path}`
+          : `${process.env.FRONTEND_URL || "http://localhost:5000"}/portal/${ws.slug}/projects/${projectId}/${path}`;
 
       for (const access of clientAccesses) {
         const now = new Date();
@@ -107,7 +110,7 @@ router.post(
               recipientName: access.client.name,
               projectName: project.name,
               senderName: user?.name || "Developer",
-              portalUrl: `https://${ws.slug}.${domain}/projects/${project.id}/messages`,
+              portalUrl: portalProjectUrl(project.id, "messages"),
             });
             await db.messageNotificationLog.upsert({
               where: {

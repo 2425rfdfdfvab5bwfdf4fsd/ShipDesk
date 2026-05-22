@@ -113,7 +113,8 @@ router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
       }).catch(console.error);
     }
 
-    res.status(201).json(invoice);
+    // Return the invoice with the final paymentUrl (may be "" if LemonSqueezy isn't configured).
+    res.status(201).json({ ...invoice, paymentUrl });
   } catch (err) {
     next(err);
   }

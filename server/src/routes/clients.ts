@@ -102,9 +102,11 @@ router.post("/:projectId/invite", requireAuth, async (req: AuthRequest, res, nex
       create: { clientId: client.id, projectId: project.id, tokenHash, expiresAt },
     });
 
-    const portalBase = process.env.CLIENT_PORTAL_BASE_URL || "https://portal.shipdesk.io";
-    const domain = portalBase.replace("https://", "").replace("http://", "");
-    const magicLinkUrl = `https://${ws.slug}.${domain}/auth/magic?token=${token}`;
+    // Production: subdomain URL (acme.portal.shipdesk.io/auth/magic)
+    // Dev/Replit: path-based URL (FRONTEND_URL/portal/slug/auth/magic)
+    const magicLinkUrl = process.env.CLIENT_PORTAL_BASE_URL
+      ? `https://${ws.slug}.${process.env.CLIENT_PORTAL_BASE_URL.replace(/^https?:\/\//, "")}/auth/magic?token=${token}`
+      : `${process.env.FRONTEND_URL || "http://localhost:5000"}/portal/${ws.slug}/auth/magic?token=${token}`;
 
     await sendMagicLink({
       to: email,
