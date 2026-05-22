@@ -31,29 +31,33 @@ export function ScopeChangesPage() {
   const items = scopeChanges || [];
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold">Scope Changes</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Client-submitted change requests across all projects
-        </p>
+    <div className="max-w-4xl mx-auto">
+      {/* Sticky header + filters */}
+      <div className="sticky top-0 z-10 bg-background border-b px-6 py-3">
+        <div className="mb-3">
+          <h1 className="text-lg font-bold leading-tight">Scope Changes</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Client-submitted change requests across all projects
+          </p>
+        </div>
+        <div className="flex gap-1.5 flex-wrap">
+          {STATUSES.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setStatusFilter(s.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                statusFilter === s.key
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card text-muted-foreground border-border hover:bg-accent hover:text-foreground"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex gap-1.5 mb-6 flex-wrap">
-        {STATUSES.map((s) => (
-          <button
-            key={s.key}
-            onClick={() => setStatusFilter(s.key)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-              statusFilter === s.key
-                ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-card text-muted-foreground border-border hover:bg-accent hover:text-foreground"
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
+      <div className="p-6">
 
       {isLoading ? (
         <div className="space-y-3">
@@ -103,6 +107,7 @@ export function ScopeChangesPage() {
           toast({ title: "Quote sent to client" });
         }}
       />
+      </div>
     </div>
   );
 }

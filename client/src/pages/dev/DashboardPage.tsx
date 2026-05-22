@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, FolderOpen, DollarSign, GitMerge, TrendingUp } from "lucide-react";
+import { Plus, FolderOpen, DollarSign, GitMerge, TrendingUp, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +50,7 @@ function StatCard({
 export function DashboardPage() {
   const [showNewProject, setShowNewProject] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [search, setSearch] = useState("");
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
 
@@ -97,22 +98,41 @@ export function DashboardPage() {
     }
   };
 
+  const filteredProjects = (projects || []).filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">
-            {workspace ? `${workspace.agencyName || workspace.name}` : "Dashboard"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {activeCount} active project{activeCount !== 1 ? "s" : ""}
-          </p>
+    <div className="max-w-7xl mx-auto">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 bg-background border-b px-6 py-3">
+        <div className="flex items-center justify-between gap-3 mb-2.5">
+          <div>
+            <h1 className="text-lg font-bold leading-tight">
+              {workspace ? `${workspace.agencyName || workspace.name}` : "Dashboard"}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {activeCount} active project{activeCount !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setShowNewProject(true)} className="gap-1.5 shrink-0">
+            <Plus className="h-4 w-4" /> New Project
+          </Button>
         </div>
-        <Button size="sm" onClick={() => setShowNewProject(true)} className="gap-1.5">
-          <Plus className="h-4 w-4" /> New Project
-        </Button>
+        {/* Search bar */}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search projects…"
+            className="pl-8 h-8 text-sm"
+            data-testid="input-project-search"
+          />
+        </div>
       </div>
+
+      <div className="p-6 space-y-6">
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -163,7 +183,7 @@ export function DashboardPage() {
               <Skeleton key={i} className="h-36 rounded-xl" />
             ))}
           </div>
-        ) : projects?.length === 0 ? (
+        ) : filteredProjects.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -171,9 +191,13 @@ export function DashboardPage() {
           >
             <FolderOpen className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
             <p className="text-muted-foreground text-sm mb-4">
-              {showArchived ? "No archived projects." : "No projects yet. Create your first one!"}
+              {search
+                ? `No projects matching "${search}"`
+                : showArchived
+                ? "No archived projects."
+                : "No projects yet. Create your first one!"}
             </p>
-            {!showArchived && (
+            {!showArchived && !search && (
               <Button onClick={() => setShowNewProject(true)} size="sm" className="gap-1.5">
                 <Plus className="h-4 w-4" /> Create Project
               </Button>
@@ -181,7 +205,7 @@ export function DashboardPage() {
           </motion.div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects?.map((project, i) => (
+            {filteredProjects.map((project, i) => (
               <motion.div
                 key={project.id}
                 initial={{ opacity: 0, y: 8 }}
@@ -238,6 +262,7 @@ export function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

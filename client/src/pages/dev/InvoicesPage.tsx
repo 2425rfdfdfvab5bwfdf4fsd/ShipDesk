@@ -29,35 +29,39 @@ export function InvoicesPage() {
   const invoices = data?.invoices || [];
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold">Invoices</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {isLoading ? "Loading…" : `${invoices.length} invoice${invoices.length !== 1 ? "s" : ""}`}
-          </p>
+    <div className="max-w-4xl mx-auto">
+      {/* Sticky header + filters */}
+      <div className="sticky top-0 z-10 bg-background border-b px-6 py-3">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <h1 className="text-lg font-bold leading-tight">Invoices</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isLoading ? "Loading…" : `${invoices.length} invoice${invoices.length !== 1 ? "s" : ""}`}
+            </p>
+          </div>
+          <Button className="gap-1.5 shrink-0" size="sm" onClick={() => setShowCreate(true)}>
+            <Plus className="h-4 w-4" />
+            New Invoice
+          </Button>
         </div>
-        <Button className="gap-1.5" size="sm" onClick={() => setShowCreate(true)}>
-          <Plus className="h-4 w-4" />
-          New Invoice
-        </Button>
+        <div className="flex gap-1.5 flex-wrap">
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                statusFilter === tab.key
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-card text-muted-foreground border-border hover:bg-accent hover:text-foreground"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex gap-1.5 mb-6 flex-wrap">
-        {STATUS_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setStatusFilter(tab.key)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-              statusFilter === tab.key
-                ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-card text-muted-foreground border-border hover:bg-accent hover:text-foreground"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <div className="p-6">
 
       {isLoading ? (
         <div className="space-y-3">
@@ -107,6 +111,7 @@ export function InvoicesPage() {
       )}
 
       <InvoiceForm open={showCreate} onClose={() => setShowCreate(false)} />
+      </div>
     </div>
   );
 }
