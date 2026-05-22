@@ -130,10 +130,11 @@ router.post("/lemonsqueezy", (req: Request, res: Response) => {
 
   if (payload.meta.event_name === "order_created") {
     const processOrder = async () => {
-      const existingInvoice = await db.invoice.findFirst({
-        where: { lsOrderId: orderId },
-      });
-      if (existingInvoice) {
+      const [existingInvoice, existingScope] = await Promise.all([
+        db.invoice.findFirst({ where: { lsOrderId: orderId } }),
+        db.scopeChange.findFirst({ where: { lsOrderId: orderId } }),
+      ]);
+      if (existingInvoice || existingScope) {
         return { received: true, skipped: "duplicate" };
       }
 
@@ -142,17 +143,11 @@ router.post("/lemonsqueezy", (req: Request, res: Response) => {
           where: { id: customData.scopeChangeId },
           data: { status: "PAID", paidAt: new Date(), lsOrderId: orderId },
         });
-      } else if (customData.projectId) {
-        const unpaidInvoice = await db.invoice.findFirst({
-          where: { projectId: customData.projectId, status: { not: "PAID" } },
-          orderBy: { createdAt: "desc" },
+      } else if (customData.invoiceId) {
+        await db.invoice.update({
+          where: { id: customData.invoiceId },
+          data: { status: "PAID", paidAt: new Date(), lsOrderId: orderId },
         });
-        if (unpaidInvoice) {
-          await db.invoice.update({
-            where: { id: unpaidInvoice.id },
-            data: { status: "PAID", paidAt: new Date(), lsOrderId: orderId },
-          });
-        }
       }
       return { received: true };
     };

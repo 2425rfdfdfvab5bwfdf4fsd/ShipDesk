@@ -2,10 +2,11 @@ import { Router, Request, Response } from "express";
 import { z } from "zod";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import axios from "axios";
 import { db } from "../lib/prisma.js";
 import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
-import { encrypt } from "../lib/crypto.js";
+import { encrypt, decrypt } from "../lib/crypto.js";
 import * as githubService from "../services/githubService.js";
 
 const router = Router();
@@ -154,11 +155,14 @@ router.post("/connect-repo", requireAuth, async (req: AuthRequest, res, next) =>
     }
 
     const [owner, repoName] = body.repoFullName.split("/");
-    const repoData = await import("axios").then((m) =>
-      m.default.get(`https://api.github.com/repos/${owner}/${repoName}`, {
-        headers: { Authorization: `token ${require("../lib/crypto").decrypt(ghConn.accessTokenEncrypted)}`, Accept: "application/vnd.github.v3+json" },
-      }).catch(() => ({ data: { id: 0 } }))
-    );
+    const repoData = await axios
+      .get(`https://api.github.com/repos/${owner}/${repoName}`, {
+        headers: {
+          Authorization: `token ${decrypt(ghConn.accessTokenEncrypted)}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+      })
+      .catch(() => ({ data: { id: 0 } }));
 
     const updated = await db.project.update({
       where: { id: project.id },

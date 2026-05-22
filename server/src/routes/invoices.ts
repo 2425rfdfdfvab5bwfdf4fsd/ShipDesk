@@ -71,21 +71,6 @@ router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
 
     const firstClient = clientAccesses[0]?.client;
 
-    let paymentUrl = "";
-    try {
-      paymentUrl = await createPaymentLink({
-        title: body.title,
-        amount: body.amount,
-        currency: body.currency,
-        buyerEmail: firstClient?.email || "",
-        buyerName: firstClient?.name || null,
-        customData: { projectId: project.id, workspaceId: ws.id },
-      });
-    } catch (err) {
-      console.error("Lemon Squeezy checkout creation failed:", err);
-      paymentUrl = "";
-    }
-
     const invoice = await db.invoice.create({
       data: {
         projectId: project.id,
@@ -94,9 +79,27 @@ router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
         amount: body.amount,
         currency: body.currency,
         dueDate: body.dueDate ? new Date(body.dueDate) : null,
-        paymentUrl,
+        paymentUrl: "",
       },
     });
+
+    let paymentUrl = "";
+    try {
+      paymentUrl = await createPaymentLink({
+        title: body.title,
+        amount: body.amount,
+        currency: body.currency,
+        buyerEmail: firstClient?.email || "",
+        buyerName: firstClient?.name || null,
+        customData: { invoiceId: invoice.id, type: "invoice" },
+      });
+      await db.invoice.update({
+        where: { id: invoice.id },
+        data: { paymentUrl },
+      });
+    } catch (err) {
+      console.error("Lemon Squeezy checkout creation failed:", err);
+    }
 
     if (firstClient) {
       sendInvoiceNotification({

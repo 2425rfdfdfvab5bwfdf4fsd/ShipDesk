@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import sanitizeHtml from "sanitize-html";
 import { db } from "../lib/prisma.js";
 import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
@@ -9,7 +10,9 @@ import { sendMessageNotification } from "../services/emailService.js";
 const router = Router({ mergeParams: true });
 
 const sendMessageSchema = z.object({
-  body: z.string().min(1).max(5000).transform((s) => s.replace(/<[^>]*>/g, "")),
+  body: z.string().min(1).max(5000).transform((s) =>
+    sanitizeHtml(s, { allowedTags: [], allowedAttributes: {} })
+  ),
 });
 
 async function getWorkspace(userId: string) {

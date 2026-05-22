@@ -275,7 +275,7 @@ router.post("/projects/:id/messages", requireClientAuth, messageLimiter, async (
         senderId: req.clientId!,
         senderType: "CLIENT",
         senderName: client?.name || client?.email || "Client",
-        body: body.body.replace(/<[^>]*>/g, ""),
+        body: sanitizeHtml(body.body, { allowedTags: [], allowedAttributes: {} }),
       },
     });
 

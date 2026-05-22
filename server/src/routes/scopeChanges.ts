@@ -5,6 +5,7 @@ import { db } from "../lib/prisma.js";
 import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
 import { createPaymentLink } from "../services/lemonSqueezyService.js";
+import { sendScopeChangeNotification } from "../services/emailService.js";
 
 const router = Router();
 
@@ -81,6 +82,26 @@ router.patch("/:id/quote", requireAuth, async (req: AuthRequest, res, next) => {
         quoteCurrency: body.quoteCurrency,
       },
     });
+
+    const client = await db.client.findUnique({ where: { id: sc.clientId } });
+    if (client) {
+      const project = await db.project.findUnique({
+        where: { id: sc.projectId },
+        include: { workspace: true },
+      });
+      if (project) {
+        const portalBase = process.env.FRONTEND_URL || "https://app.shipdesk.io";
+        sendScopeChangeNotification({
+          to: client.email,
+          recipientName: client.name,
+          projectName: project.name,
+          scopeChangeTitle: sc.title,
+          portalUrl: `${portalBase}/projects/${project.id}/scope-changes`,
+          type: "quote_sent",
+        }).catch(console.error);
+      }
+    }
+
     res.json(updated);
   } catch (err) {
     next(err);

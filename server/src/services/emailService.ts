@@ -2,10 +2,11 @@ import { Resend } from "resend";
 
 const FROM = process.env.EMAIL_FROM || "noreply@shipdesk.io";
 
-function getResend(): Resend {
+function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
-    throw new Error("RESEND_API_KEY is not set — email sending is disabled");
+    console.warn("[emailService] RESEND_API_KEY is not set — email sending is disabled");
+    return null;
   }
   return new Resend(key);
 }
@@ -17,9 +18,11 @@ export async function sendMagicLink(opts: {
   workspaceName: string;
   agencyName: string | null;
 }): Promise<void> {
+  const resend = getResend();
+  if (!resend) return;
   const name = opts.clientName || "there";
   const sender = opts.agencyName || opts.workspaceName;
-  await getResend().emails.send({
+  await resend.emails.send({
     from: FROM,
     to: opts.to,
     subject: `Your portal access link from ${sender}`,
@@ -40,9 +43,11 @@ export async function sendReportPublished(opts: {
   portalUrl: string;
   agencyName: string | null;
 }): Promise<void> {
+  const resend = getResend();
+  if (!resend) return;
   const name = opts.clientName || "there";
   const sender = opts.agencyName || "Your developer";
-  await getResend().emails.send({
+  await resend.emails.send({
     from: FROM,
     to: opts.to,
     subject: `New project update: ${opts.reportTitle}`,
@@ -63,6 +68,8 @@ export async function sendScopeChangeNotification(opts: {
   portalUrl: string;
   type: "new_request" | "quote_sent" | "approved" | "declined";
 }): Promise<void> {
+  const resend = getResend();
+  if (!resend) return;
   const subjectMap = {
     new_request: `New scope change request: ${opts.scopeChangeTitle}`,
     quote_sent: `Quote ready for your review: ${opts.scopeChangeTitle}`,
@@ -75,7 +82,7 @@ export async function sendScopeChangeNotification(opts: {
     approved: `The scope change request for ${opts.projectName} has been approved.`,
     declined: `The scope change request for ${opts.projectName} has been declined.`,
   };
-  await getResend().emails.send({
+  await resend.emails.send({
     from: FROM,
     to: opts.to,
     subject: subjectMap[opts.type],
@@ -94,7 +101,9 @@ export async function sendMessageNotification(opts: {
   senderName: string;
   portalUrl: string;
 }): Promise<void> {
-  await getResend().emails.send({
+  const resend = getResend();
+  if (!resend) return;
+  await resend.emails.send({
     from: FROM,
     to: opts.to,
     subject: `New message on ${opts.projectName}`,
@@ -115,12 +124,14 @@ export async function sendInvoiceNotification(opts: {
   paymentUrl: string;
   agencyName: string | null;
 }): Promise<void> {
+  const resend = getResend();
+  if (!resend) return;
   const sender = opts.agencyName || "Your developer";
   const formatted = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: opts.currency,
   }).format(opts.amount);
-  await getResend().emails.send({
+  await resend.emails.send({
     from: FROM,
     to: opts.to,
     subject: `Invoice from ${sender}: ${opts.invoiceTitle}`,
