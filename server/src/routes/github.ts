@@ -198,12 +198,13 @@ router.post("/connect-repo", requireAuth, async (req: AuthRequest, res, next) =>
         webhookUrl
       );
     } catch (webhookErr: unknown) {
-      const axiosErr = webhookErr as { response?: { status: number } };
-      if (axiosErr.response?.status === 403) {
-        console.warn(`Webhook registration failed for ${body.repoFullName} — insufficient permissions`);
-      } else {
-        throw webhookErr;
-      }
+      // Webhook registration is best-effort — repo linking should always succeed.
+      // Common non-fatal codes: 403 (no admin perms), 422 (hook already exists).
+      const axiosErr = webhookErr as { response?: { status: number }; message?: string };
+      console.warn(
+        `Webhook registration skipped for ${body.repoFullName} — ` +
+        `status=${axiosErr.response?.status ?? "unknown"} msg=${axiosErr.message ?? ""}`
+      );
     }
 
     const [owner, repoName] = body.repoFullName.split("/");
