@@ -40,23 +40,55 @@ export function OnboardingPage() {
     }
     setUploadingLogo(true);
     try {
-      const sigResp = await api.get("/api/workspace/logo-upload-signature");
+      // Fetch a signed upload token from the backend
+      let sigResp;
+      try {
+        sigResp = await api.get("/api/workspace/logo-upload-signature");
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "Logo upload unavailable",
+          description: "The backend is not reachable. Set VITE_API_BASE_URL in your deployment environment to enable uploads.",
+        });
+        return;
+      }
+
       const sig = sigResp.data;
+
+      // Guard: if Cloudinary isn't configured server-side, cloudName will be empty
+      if (!sig.cloudName || !sig.apiKey) {
+        toast({
+          variant: "destructive",
+          title: "Cloudinary not configured",
+          description: "Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET to your server environment.",
+        });
+        return;
+      }
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("api_key", sig.apiKey);
-      formData.append("timestamp", sig.timestamp);
+      formData.append("timestamp", String(sig.timestamp));
       formData.append("signature", sig.signature);
       formData.append("folder", sig.folder);
-      formData.append("upload_preset", sig.uploadPreset);
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`, {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json() as { secure_url: string };
+      if (sig.uploadPreset) formData.append("upload_preset", sig.uploadPreset);
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,
+        { method: "POST", body: formData }
+      );
+
+      const data = await res.json() as { secure_url?: string; error?: { message: string } };
+
+      if (!res.ok || !data.secure_url) {
+        throw new Error(data.error?.message || "Cloudinary upload rejected");
+      }
+
       setLogoUrl(data.secure_url);
-    } catch {
-      toast({ variant: "destructive", title: "Upload failed", description: "Please try again" });
+      toast({ title: "Logo uploaded" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Please try again";
+      toast({ variant: "destructive", title: "Upload failed", description: msg });
     } finally {
       setUploadingLogo(false);
     }
