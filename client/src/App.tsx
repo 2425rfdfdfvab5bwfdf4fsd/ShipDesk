@@ -9,6 +9,7 @@ import { ClientPortalLayout } from "./components/layout/ClientPortalLayout";
 import { LandingPage } from "./pages/LandingPage";
 import { MagicLinkPage } from "./pages/MagicLinkPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { BuildLogsDemo } from "./pages/BuildLogsDemo";
 
 import { OnboardingPage } from "./pages/dev/OnboardingPage";
 import { DashboardPage } from "./pages/dev/DashboardPage";
@@ -56,7 +57,7 @@ function DevApp() {
   const { isLoaded, isSignedIn } = useAuth();
   const [location, navigate] = useLocation();
 
-  const publicRoutes = ["/", "/sign-in", "/sign-up"];
+  const publicRoutes = ["/", "/sign-in", "/sign-up", "/build-logs"];
   const isPublic = publicRoutes.includes(location);
 
   useEffect(() => {
@@ -78,6 +79,7 @@ function DevApp() {
       <TokenSync />
       <Switch>
         <Route path="/" component={LandingPage} />
+        <Route path="/build-logs" component={BuildLogsDemo} />
         <Route path="/sign-in">
           <div className="min-h-screen flex items-center justify-center bg-background">
             <SignIn routing="path" path="/sign-in" fallbackRedirectUrl="/dashboard" />
