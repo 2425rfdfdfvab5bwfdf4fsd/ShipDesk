@@ -1,7 +1,7 @@
-modules = ["nodejs-20", "web", "postgresql-16"]
+modules = ["nodejs-20", "web"]
 [agent]
 expertMode = true
-stack = "BEST_EFFORT_FALLBACK"
+stack = "FULLSTACK_JS"
 integrations = ["javascript_gemini_ai_integrations:2.0.0"]
 
 [workflows]
@@ -16,10 +16,6 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Backend Server"
-
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -29,20 +25,8 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev --workspace=client"
+args = "npm run dev"
 waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Backend Server"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "node_modules/.bin/tsx server/src/index.ts"
-waitForPort = 3000
 
 [[ports]]
 localPort = 3000
@@ -58,6 +42,9 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-NODE_ENV = "development"
 PORT = "3000"
-VITE_API_BASE_URL = "http://localhost:3000"
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["node", "./dist/index.cjs"]
+build = ["npm", "run", "build"]
