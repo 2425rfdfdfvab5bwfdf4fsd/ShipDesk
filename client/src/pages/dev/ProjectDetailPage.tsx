@@ -154,7 +154,7 @@ export function ProjectDetailPage() {
   const { data: invoicesData } = useInvoices(id);
   const { data: scopeChanges } = useScopeChanges(id);
   const { data: messagesData } = useMessages(id);
-  const { data: files } = useFiles(id);
+  const { data: files, isLoading: filesLoading } = useFiles(id);
   const { data: uploadSig } = useUploadSignature(id);
   const { data: githubStatus, isLoading: githubStatusLoading } = useGitHubStatus();
   const { data: githubRepos, isLoading: reposLoading, error: reposError } = useGitHubRepos(repoSearch || undefined, showRepoPicker);
@@ -521,11 +521,19 @@ export function ProjectDetailPage() {
 
           {/* Files */}
           <TabsContent value="files" className="mt-0 p-4 sm:p-6">
+            <SectionHeader
+              title="Files"
+              description="Upload and share documents, assets, and deliverables with your client."
+            />
             <FileList
               files={files || []}
               onUpload={handleUploadFile}
-              onDelete={(fileId) => deleteFile.mutate({ projectId: id, fileId })}
+              onDelete={(fileId) => {
+                deleteFile.mutate({ projectId: id, fileId });
+                toast({ title: "File deleted" });
+              }}
               uploading={createFile.isPending}
+              isLoading={filesLoading}
             />
           </TabsContent>
 
