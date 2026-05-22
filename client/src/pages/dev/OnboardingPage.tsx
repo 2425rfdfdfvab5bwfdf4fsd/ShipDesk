@@ -105,12 +105,14 @@ export function OnboardingPage() {
       });
       navigate("/dashboard");
     } catch (err: unknown) {
-      const errData = (err as { response?: { data?: { error?: string } } })?.response?.data;
-      toast({
-        variant: "destructive",
-        title: "Failed to create workspace",
-        description: errData?.error === "SLUG_TAKEN" ? "That subdomain is already taken" : "Please try again",
-      });
+      const errData = (err as { response?: { data?: { error?: string; message?: string } } })?.response?.data;
+      const code = errData?.error;
+      let description = "Please try again";
+      if (code === "SLUG_TAKEN") description = "That subdomain is already taken";
+      else if (code === "WORKSPACE_ALREADY_EXISTS") description = "You already have a workspace — refresh the page";
+      else if (code === "BACKEND_NOT_CONFIGURED") description = "Set BACKEND_URL in Vercel → Project Settings → Environment Variables";
+      else if (code === "BACKEND_UNREACHABLE") description = errData?.message ?? "Cannot reach the backend server";
+      toast({ variant: "destructive", title: "Failed to create workspace", description });
     }
   };
 
