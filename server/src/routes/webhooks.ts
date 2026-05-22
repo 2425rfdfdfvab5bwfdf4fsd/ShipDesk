@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { db } from "../lib/prisma.js";
 import { verifyWebhookSignature as verifyGitHub } from "../services/githubService.js";
 import { verifyWebhookSignature as verifyLS } from "../services/lemonSqueezyService.js";
+import { sendPaymentConfirmedNotification } from "../services/emailService.js";
 
 const router = Router();
 
@@ -144,10 +145,25 @@ router.post("/lemonsqueezy", (req: Request, res: Response) => {
           data: { status: "PAID", paidAt: new Date(), lsOrderId: orderId },
         });
       } else if (customData.invoiceId) {
-        await db.invoice.update({
+        const paidInvoice = await db.invoice.update({
           where: { id: customData.invoiceId },
           data: { status: "PAID", paidAt: new Date(), lsOrderId: orderId },
+          include: {
+            project: {
+              include: {
+                workspace: { include: { owner: true } },
+              },
+            },
+          },
         });
+
+        sendPaymentConfirmedNotification({
+          to: paidInvoice.project.workspace.owner.email,
+          developerName: paidInvoice.project.workspace.owner.name,
+          invoiceTitle: paidInvoice.title,
+          amount: Number(paidInvoice.amount),
+          currency: paidInvoice.currency,
+        }).catch(console.error);
       }
       return { received: true };
     };

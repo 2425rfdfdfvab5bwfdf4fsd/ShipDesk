@@ -385,7 +385,7 @@ router.post("/projects/:id/scope-changes", requireClientAuth, async (req: Client
         projectId: req.params.id,
         clientId: req.clientId!,
         title: body.title,
-        description: body.description.replace(/<[^>]*>/g, ""),
+        description: sanitizeHtml(body.description, { allowedTags: [], allowedAttributes: {} }),
         urgency: body.urgency,
       },
     });
@@ -417,6 +417,9 @@ router.patch("/scope-changes/:id/respond", requireClientAuth, async (req: Client
     const sc = await db.scopeChange.findUnique({ where: { id: req.params.id } });
     if (!sc) throw new AppError("Scope change not found", 404, "NOT_FOUND");
     if (sc.clientId !== req.clientId) throw new AppError("Forbidden", 403, "FORBIDDEN");
+    if (sc.status !== "QUOTED") {
+      throw new AppError("Can only respond to a QUOTED scope change", 422, "INVALID_STATUS_TRANSITION");
+    }
 
     const { decision } = z.object({ decision: z.enum(["APPROVED", "DECLINED"]) }).parse(req.body);
 

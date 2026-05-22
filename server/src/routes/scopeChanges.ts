@@ -69,6 +69,10 @@ router.patch("/:id/quote", requireAuth, async (req: AuthRequest, res, next) => {
     });
     if (!sc) throw new AppError("Scope change not found", 404, "NOT_FOUND");
 
+    if (sc.status !== "PENDING") {
+      throw new AppError("Can only quote a PENDING scope change", 422, "INVALID_STATUS_TRANSITION");
+    }
+
     const body = quoteSchema.parse(req.body);
     const sanitized = sanitizeHtml(body.quoteDescription, ALLOWED_HTML);
 

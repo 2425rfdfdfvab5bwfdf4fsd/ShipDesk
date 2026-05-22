@@ -115,6 +115,31 @@ export async function sendMessageNotification(opts: {
   });
 }
 
+export async function sendPaymentConfirmedNotification(opts: {
+  to: string;
+  developerName: string | null;
+  invoiceTitle: string;
+  amount: number;
+  currency: string;
+}): Promise<void> {
+  const resend = getResend();
+  if (!resend) return;
+  const formatted = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: opts.currency,
+  }).format(opts.amount);
+  await resend.emails.send({
+    from: FROM,
+    to: opts.to,
+    subject: `Payment received: ${opts.invoiceTitle}`,
+    html: `
+      <p>Hi ${opts.developerName || "there"},</p>
+      <p>Great news — payment of <strong>${formatted}</strong> has been confirmed for invoice: <strong>${opts.invoiceTitle}</strong>.</p>
+      <p>The invoice status has been automatically updated to Paid.</p>
+    `,
+  });
+}
+
 export async function sendInvoiceNotification(opts: {
   to: string;
   clientName: string | null;
@@ -138,7 +163,7 @@ export async function sendInvoiceNotification(opts: {
     html: `
       <p>Hi ${opts.clientName || "there"},</p>
       <p>${sender} has sent you an invoice: <strong>${opts.invoiceTitle}</strong> for ${formatted}.</p>
-      <p><a href="${opts.paymentUrl}" style="background:#6366F1;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Pay Now</a></p>
+      ${opts.paymentUrl ? `<p><a href="${opts.paymentUrl}" style="background:#6366F1;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Pay Now</a></p>` : ""}
     `,
   });
 }

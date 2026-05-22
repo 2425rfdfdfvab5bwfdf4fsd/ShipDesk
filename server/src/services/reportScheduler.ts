@@ -93,7 +93,7 @@ export function startScheduler(): void {
   );
 
   cron.schedule(
-    "0 0 * * *",
+    "5 0 * * *",
     () => {
       console.log("Running overdue invoice check...");
       markOverdueInvoices().catch(console.error);
@@ -101,7 +101,7 @@ export function startScheduler(): void {
     { timezone: "UTC" }
   );
 
-  console.log("Schedulers started — reports: Fridays 09:00 UTC, overdue check: daily 00:00 UTC");
+  console.log("Schedulers started — reports: Fridays 09:00 UTC, overdue check: daily 00:05 UTC");
 }
 
 export async function notifyClientsOfPublishedReport(
