@@ -339,12 +339,13 @@ export function ProjectDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 w-7 p-0"
+                  className="h-7 gap-1 px-2 text-xs"
                   onClick={() => setShowMobileTabs((v) => !v)}
-                  title={showMobileTabs ? "Hide tabs" : "Show tabs"}
                   data-testid="button-toggle-tabs"
                 >
-                  {showMobileTabs ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  {showMobileTabs
+                    ? <><ChevronUp className="h-3 w-3" /> Hide tabs</>
+                    : <><ChevronDown className="h-3 w-3" /> Show tabs</>}
                 </Button>
               </div>
             </div>
