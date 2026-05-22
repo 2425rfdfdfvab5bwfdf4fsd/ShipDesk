@@ -9,9 +9,13 @@ export interface AuthRequest extends Request {
   workspaceId?: string;
 }
 
-const clerkClient = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY,
-});
+let _clerkClient: ReturnType<typeof createClerkClient> | null = null;
+function getClerkClient() {
+  if (!_clerkClient) {
+    _clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+  }
+  return _clerkClient;
+}
 
 export async function requireAuth(
   req: AuthRequest,
@@ -36,7 +40,7 @@ export async function requireAuth(
     let user = await db.user.findUnique({ where: { clerkId: clerkUserId } });
 
     if (!user) {
-      const clerkUser = await clerkClient.users.getUser(clerkUserId);
+      const clerkUser = await getClerkClient().users.getUser(clerkUserId);
       const primaryEmail = clerkUser.emailAddresses.find(
         (e) => e.id === clerkUser.primaryEmailAddressId
       );
