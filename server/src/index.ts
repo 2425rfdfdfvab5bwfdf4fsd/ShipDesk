@@ -2,6 +2,16 @@ import app from "./app.js";
 import { startScheduler } from "./services/reportScheduler.js";
 import { db } from "./lib/prisma.js";
 
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("UNHANDLED REJECTION at:", promise, "reason:", reason);
+  process.exit(1);
+});
+
 const PORT = process.env.PORT || 3000;
 
 const server = app.listen(PORT, () => {
