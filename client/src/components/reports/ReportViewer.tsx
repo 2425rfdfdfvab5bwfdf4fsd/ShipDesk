@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, AlertTriangle, ChevronDown, ChevronUp, Edit2, Eye, Save, Loader2 } from "lucide-react";
+import { CheckCircle, AlertTriangle, Edit2, Eye, Save, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,11 +17,6 @@ interface ReportViewerProps {
 
 export function ReportViewer({ report, onPublish, onEdit, isPublishing, canEdit = false }: ReportViewerProps) {
   const [editMode, setEditMode] = useState(false);
-  const [editedMarkdown, setEditedMarkdown] = useState(
-    typeof report.content === "object" && report.content !== null
-      ? (report.content as { rawMarkdown?: string }).rawMarkdown || ""
-      : ""
-  );
 
   const content = typeof report.content === "object" && report.content !== null
     ? report.content as {
@@ -35,6 +30,8 @@ export function ReportViewer({ report, onPublish, onEdit, isPublishing, canEdit 
 
   const rawMarkdown = content?.rawMarkdown || (typeof report.content === "string" ? report.content : "");
 
+  const [editedMarkdown, setEditedMarkdown] = useState(rawMarkdown);
+
   const handleSaveEdit = () => {
     onEdit?.(report.id, editedMarkdown);
     setEditMode(false);
@@ -44,17 +41,18 @@ export function ReportViewer({ report, onPublish, onEdit, isPublishing, canEdit 
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-4"
+      className="space-y-4 min-w-0"
     >
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h3 className="font-semibold text-lg leading-tight">{report.title}</h3>
+      {/* Header — wraps on small screens */}
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-lg leading-tight break-words">{report.title}</h3>
           <p className="text-sm text-muted-foreground mt-0.5">
             {report.status === "PUBLISHED" ? "Published" : "Draft"} ·{" "}
             {report.generatedBy === "MANUAL" ? "Manual" : "Scheduled"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {canEdit && (
             <Button
               variant="outline"
@@ -70,7 +68,9 @@ export function ReportViewer({ report, onPublish, onEdit, isPublishing, canEdit 
                 }
               }}
             >
-              {editMode ? <><Eye className="h-3.5 w-3.5" /> Preview</> : <><Edit2 className="h-3.5 w-3.5" /> Edit</>}
+              {editMode
+                ? <><Eye className="h-3.5 w-3.5" /> Preview</>
+                : <><Edit2 className="h-3.5 w-3.5" /> Edit</>}
             </Button>
           )}
           {canEdit && editMode && (
@@ -86,7 +86,7 @@ export function ReportViewer({ report, onPublish, onEdit, isPublishing, canEdit 
               disabled={isPublishing}
             >
               {isPublishing ? (
-                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Publishing...</>
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Publishing…</>
               ) : (
                 <><CheckCircle className="h-3.5 w-3.5" /> Publish to Client</>
               )}
@@ -100,62 +100,69 @@ export function ReportViewer({ report, onPublish, onEdit, isPublishing, canEdit 
         </div>
       </div>
 
+      {/* Generation warning */}
       {content?.generationWarning && (
         <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-800 dark:text-amber-300">
           <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-          <div>
+          <div className="min-w-0">
             <p className="font-medium">Generation warning</p>
-            <p className="text-xs mt-0.5 opacity-80">{content.generationWarning}</p>
+            <p className="text-xs mt-0.5 opacity-80 break-words">{content.generationWarning}</p>
           </div>
         </div>
       )}
 
+      {/* Summary */}
       {content?.summary && !editMode && (
         <div className="bg-muted/40 rounded-lg p-4">
           <p className="text-sm text-muted-foreground font-medium mb-1">Summary</p>
-          <p className="text-sm">{content.summary}</p>
+          <p className="text-sm break-words">{content.summary}</p>
         </div>
       )}
 
+      {/* Highlights */}
       {content?.highlights && content.highlights.length > 0 && !editMode && (
         <div>
           <p className="text-sm text-muted-foreground font-medium mb-2">Highlights</p>
           <ul className="space-y-1.5">
             {content.highlights.map((h, i) => (
               <li key={i} className="flex gap-2 text-sm">
-                <span className="text-primary mt-0.5">•</span>
-                <span>{h}</span>
+                <span className="text-primary mt-0.5 shrink-0">•</span>
+                <span className="break-words min-w-0">{h}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
+      {/* Next Steps */}
       {content?.nextSteps && content.nextSteps.length > 0 && !editMode && (
         <div>
           <p className="text-sm text-muted-foreground font-medium mb-2">Next Steps</p>
           <ul className="space-y-1.5">
             {content.nextSteps.map((s, i) => (
               <li key={i} className="flex gap-2 text-sm">
-                <span className="text-muted-foreground mt-0.5">{i + 1}.</span>
-                <span>{s}</span>
+                <span className="text-muted-foreground shrink-0">{i + 1}.</span>
+                <span className="break-words min-w-0">{s}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
+      {/* Full report / edit area */}
       <div className="border rounded-lg p-4 bg-card">
         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">Full Report</p>
         {editMode ? (
           <Textarea
             value={editedMarkdown}
             onChange={(e) => setEditedMarkdown(e.target.value)}
-            className="font-mono text-sm resize-none min-h-[300px]"
+            className="font-mono text-sm resize-none min-h-[300px] w-full"
             rows={16}
           />
         ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none">
+          <div className="prose prose-sm dark:prose-invert max-w-none overflow-x-auto
+            [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words
+            [&_code]:break-words [&_p]:break-words [&_li]:break-words">
             <ReactMarkdown>{rawMarkdown || "*No content generated yet.*"}</ReactMarkdown>
           </div>
         )}

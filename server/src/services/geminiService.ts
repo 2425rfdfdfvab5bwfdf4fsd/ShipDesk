@@ -84,7 +84,9 @@ Rules:
       config: { temperature: 0.4, maxOutputTokens: 8192 },
     });
     clearTimeout(timeout);
-    const text = (result.text ?? "").trim();
+    const raw = (result.text ?? "").trim();
+    // Gemini sometimes wraps the JSON in ```json … ``` despite instructions — strip fences.
+    const text = raw.replace(/^```(?:json)?\s*\r?\n?/i, "").replace(/\r?\n?```\s*$/i, "").trim();
 
     try {
       const parsed = JSON.parse(text) as ReportContent;

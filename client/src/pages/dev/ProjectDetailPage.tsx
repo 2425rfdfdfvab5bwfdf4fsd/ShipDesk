@@ -669,7 +669,8 @@ export function ProjectDetailPage() {
 
       {/* Report Viewer Dialog */}
       <Dialog open={!!showReportViewer} onOpenChange={() => setShowReportViewer(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+          <DialogTitle className="sr-only">Report Viewer</DialogTitle>
           {showReportViewer && (
             <ReportViewerDialog
               reportId={showReportViewer}
