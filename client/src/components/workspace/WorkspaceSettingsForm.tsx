@@ -47,19 +47,34 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
         apiKey: string; timestamp: number; signature: string;
         folder: string; uploadPreset: string; cloudName: string;
       };
+
+      if (!sig.cloudName || !sig.apiKey) {
+        toast({ variant: "destructive", title: "Upload failed", description: "Cloudinary is not configured on the server." });
+        return;
+      }
+
       const formData = new FormData();
       formData.append("file", file);
       formData.append("api_key", sig.apiKey);
       formData.append("timestamp", String(sig.timestamp));
       formData.append("signature", sig.signature);
       formData.append("folder", sig.folder);
-      formData.append("upload_preset", sig.uploadPreset);
+      if (sig.uploadPreset) formData.append("upload_preset", sig.uploadPreset);
+
       const res = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`, { method: "POST", body: formData });
-      const data = await res.json() as { secure_url: string };
+      const data = await res.json() as { secure_url?: string; error?: { message: string } };
+
+      if (!res.ok || !data.secure_url) {
+        const reason = data.error?.message || `Cloudinary error (${res.status})`;
+        toast({ variant: "destructive", title: "Upload failed", description: reason });
+        return;
+      }
+
       setLogoUrl(data.secure_url);
       toast({ title: "Logo uploaded" });
-    } catch {
-      toast({ variant: "destructive", title: "Upload failed", description: "Check Cloudinary configuration" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Please try again";
+      toast({ variant: "destructive", title: "Upload failed", description: msg });
     } finally {
       setUploadingLogo(false);
     }
