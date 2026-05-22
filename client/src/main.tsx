@@ -29,7 +29,22 @@ function Root({ clerkEnabled }: { clerkEnabled: boolean }) {
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root")!);
+// Persist the root across Vite HMR re-executions so createRoot is only ever
+// called once. Without this, a failed Fast Refresh causes main.tsx to re-run,
+// which calls createRoot on the same container again → mounts a second React
+// tree → second ClerkProvider → Clerk throws → all auth hooks break → every
+// API call fires without a token → mutations fail with 401.
+declare global {
+  interface Window {
+    __reactRoot?: ReactDOM.Root;
+  }
+}
+
+const container = document.getElementById("root")!;
+if (!window.__reactRoot) {
+  window.__reactRoot = ReactDOM.createRoot(container);
+}
+const root = window.__reactRoot;
 
 if (clerkEnabled) {
   root.render(
