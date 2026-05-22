@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import path from "path";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { defaultLimiter } from "./middleware/rateLimiter.js";
 
@@ -97,6 +98,14 @@ app.use("/api/invoices", invoicesRouter);
 app.use("/api/scope-changes", scopeChangesRouter);
 app.use("/api/portal", portalRouter);
 app.use("/api/files", filesRouter);
+
+if (process.env.NODE_ENV === "production") {
+  const clientDistPath = path.join(__dirname, "../../client/dist");
+  app.use(express.static(clientDistPath));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(clientDistPath, "index.html"));
+  });
+}
 
 app.use(errorHandler);
 
