@@ -1,7 +1,12 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useParams, useLocation } from "wouter";
-import { ArrowLeft, AlertTriangle, Github, Users, Mail, Plus, Send, Trash2, CheckCircle, PauseCircle, XCircle, Loader2, Search, Unlink, Lock } from "lucide-react";
+import {
+  ArrowLeft, AlertTriangle, Github, Users, Mail, Plus, Trash2,
+  CheckCircle, PauseCircle, XCircle, Loader2, Search, Unlink, Lock,
+  FileText, Receipt, GitPullRequest, LayoutDashboard, BarChart2,
+  FolderOpen, MessageSquare, ScrollText, ArrowRightLeft, Server, Settings2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -32,58 +37,75 @@ import { api } from "@/lib/api";
 import { ScopeChange } from "@/types";
 
 function GitHubConnectButton({
-  className,
-  variant = "outline",
-  label,
+  className, variant = "outline", label,
 }: {
-  className?: string;
-  variant?: "outline" | "link";
-  label?: string;
+  className?: string; variant?: "outline" | "link"; label?: string;
 }) {
   const { getToken } = useAuth();
   const handleConnect = useCallback(async () => {
     const token = await getToken();
-    if (token) {
-      window.open(`/api/github/connect?token=${token}`, "_blank", "noopener,noreferrer");
-    }
+    if (token) window.open(`/api/github/connect?token=${token}`, "_blank", "noopener,noreferrer");
   }, [getToken]);
-
   return (
     <Button variant={variant} size="sm" className={className} onClick={handleConnect} data-testid="button-github-connect">
-      <Github className="h-3 w-3" />
+      <Github className="h-3.5 w-3.5" />
       {label ?? "Connect"}
     </Button>
   );
 }
 
-function ReportViewerDialog({
-  reportId,
-  onClose,
-}: {
-  reportId: string;
-  onClose: () => void;
-}) {
+function ReportViewerDialog({ reportId, onClose }: { reportId: string; onClose: () => void }) {
   const { data: report, isLoading } = useReport(reportId);
   const updateReport = useUpdateReport();
-
   if (isLoading) return <Skeleton className="h-64 w-full" />;
   if (!report) return null;
-
   return (
     <ReportViewer
       report={report}
       canEdit
-      onPublish={(id) => {
-        updateReport.mutate({ id, data: { status: "PUBLISHED" } });
-        onClose();
-        toast({ title: "Report published to client" });
-      }}
-      onEdit={(id, content) => {
-        updateReport.mutate({ id, data: { content: { rawMarkdown: content } } });
-        toast({ title: "Report saved" });
-      }}
+      onPublish={(id) => { updateReport.mutate({ id, data: { status: "PUBLISHED" } }); onClose(); toast({ title: "Report published to client" }); }}
+      onEdit={(id, content) => { updateReport.mutate({ id, data: { content: { rawMarkdown: content } } }); toast({ title: "Report saved" }); }}
       isPublishing={updateReport.isPending}
     />
+  );
+}
+
+const STATUS_ICON: Record<string, React.ElementType> = { ACTIVE: CheckCircle, PAUSED: PauseCircle, COMPLETED: XCircle };
+const STATUS_VARIANT: Record<string, "success" | "warning" | "secondary"> = { ACTIVE: "success", PAUSED: "warning", COMPLETED: "secondary" };
+const TAB_CONFIG = [
+  { value: "overview",      label: "Overview",      icon: LayoutDashboard },
+  { value: "reports",       label: "Reports",       icon: BarChart2 },
+  { value: "files",         label: "Files",         icon: FolderOpen },
+  { value: "messages",      label: "Messages",      icon: MessageSquare },
+  { value: "invoices",      label: "Invoices",      icon: ScrollText },
+  { value: "scope-changes", label: "Scope Changes", icon: ArrowRightLeft },
+  { value: "deployments",   label: "Deployments",   icon: Server },
+  { value: "settings",      label: "Settings",      icon: Settings2 },
+];
+
+function SectionHeader({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 mb-5">
+      <div>
+        <h2 className="font-semibold text-base leading-tight">{title}</h2>
+        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function EmptyState({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description?: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+        <Icon className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <div>
+        <p className="text-sm font-medium">{title}</p>
+        {description && <p className="text-xs text-muted-foreground mt-1 max-w-xs">{description}</p>}
+      </div>
+    </div>
   );
 }
 
@@ -96,6 +118,10 @@ export function ProjectDetailPage() {
   const [showReportViewer, setShowReportViewer] = useState<string | null>(null);
   const [quoteTarget, setQuoteTarget] = useState<ScopeChange | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [showRepoPicker, setShowRepoPicker] = useState(false);
+  const [repoSearch, setRepoSearch] = useState("");
 
   const { data: project, isLoading } = useProject(id);
   const { data: reportsData } = useReports(id);
@@ -104,6 +130,8 @@ export function ProjectDetailPage() {
   const { data: messagesData } = useMessages(id);
   const { data: files } = useFiles(id);
   const { data: uploadSig } = useUploadSignature(id);
+  const { data: githubStatus } = useGitHubStatus();
+  const { data: githubRepos, isLoading: reposLoading, error: reposError } = useGitHubRepos(repoSearch || undefined, showRepoPicker);
 
   const markRead = useMarkMessagesRead();
   const sendMessage = useSendMessage();
@@ -115,25 +143,11 @@ export function ProjectDetailPage() {
   const deleteFile = useDeleteFile();
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
-
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [statusUpdating, setStatusUpdating] = useState(false);
-  const [showRepoPicker, setShowRepoPicker] = useState(false);
-  const [repoSearch, setRepoSearch] = useState("");
-
-  const { data: githubStatus } = useGitHubStatus();
-  const { data: githubRepos, isLoading: reposLoading, error: reposError } = useGitHubRepos(
-    repoSearch || undefined,
-    showRepoPicker
-  );
   const connectRepo = useConnectRepo();
   const disconnectRepo = useDisconnectRepo();
+  const updateReport = useUpdateReport();
 
-  const STATUS_TRANSITIONS: Record<string, string[]> = {
-    ACTIVE: ["PAUSED", "COMPLETED"],
-    PAUSED: ["ACTIVE", "COMPLETED"],
-    COMPLETED: [],
-  };
+  const STATUS_TRANSITIONS: Record<string, string[]> = { ACTIVE: ["PAUSED", "COMPLETED"], PAUSED: ["ACTIVE", "COMPLETED"], COMPLETED: [] };
 
   const handleStatusChange = async (newStatus: "ACTIVE" | "PAUSED" | "COMPLETED") => {
     if (!project) return;
@@ -159,10 +173,6 @@ export function ProjectDetailPage() {
     }
   };
 
-  const reports = reportsData?.reports || [];
-  const invoices = invoicesData?.invoices || [];
-  const messages = messagesData?.messages || [];
-
   const handleUploadFile = async (file: File) => {
     if (!uploadSig) {
       toast({ variant: "destructive", title: "Upload signature unavailable", description: "Configure Cloudinary to enable file uploads." });
@@ -176,21 +186,9 @@ export function ProjectDetailPage() {
     formData.append("folder", uploadSig.folder);
     formData.append("upload_preset", uploadSig.uploadPreset);
     try {
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${uploadSig.cloudName}/raw/upload`,
-        { method: "POST", body: formData }
-      );
-      const data = await res.json() as {
-        secure_url: string; public_id: string; bytes: number; format: string;
-      };
-      await createFile.mutateAsync({
-        projectId: id,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type,
-        cloudinaryPublicId: data.public_id,
-        cloudinarySecureUrl: data.secure_url,
-      });
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${uploadSig.cloudName}/raw/upload`, { method: "POST", body: formData });
+      const data = await res.json() as { secure_url: string; public_id: string; bytes: number; format: string };
+      await createFile.mutateAsync({ projectId: id, fileName: file.name, fileSize: file.size, mimeType: file.type, cloudinaryPublicId: data.public_id, cloudinarySecureUrl: data.secure_url });
       toast({ title: "File uploaded" });
     } catch {
       toast({ variant: "destructive", title: "Upload failed" });
@@ -199,200 +197,214 @@ export function ProjectDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6">
-        <Skeleton className="h-8 w-64 mb-4" />
-        <Skeleton className="h-48 w-full" />
+      <div className="p-6 space-y-4">
+        <Skeleton className="h-5 w-28" />
+        <Skeleton className="h-9 w-56" />
+        <div className="flex gap-2 mt-1"><Skeleton className="h-7 w-28" /><Skeleton className="h-7 w-20" /></div>
+        <Skeleton className="h-10 w-full mt-2" />
+        <div className="grid grid-cols-3 gap-4 mt-4"><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /></div>
       </div>
     );
   }
 
   if (!project) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-muted-foreground">Project not found.</p>
+      <div className="p-8 text-center">
+        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+          <FolderOpen className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <p className="font-medium">Project not found</p>
+        <p className="text-sm text-muted-foreground mt-1">This project may have been deleted.</p>
         <Button variant="outline" className="mt-4" onClick={() => navigate("/dashboard")}>
-          Back to Dashboard
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
         </Button>
       </div>
     );
   }
 
   const hasGitHub = !!project.githubRepoFullName;
+  const StatusIcon = STATUS_ICON[project.status] ?? CheckCircle;
+  const unpaidInvoices = (invoicesData?.invoices || []).filter((i) => i.status !== "PAID").length;
+  const pendingScopes = (scopeChanges || []).filter((s) => s.status === "PENDING").length;
+  const publishedReports = (reportsData?.reports || []).filter((r) => r.status === "PUBLISHED").length;
+  const reports = reportsData?.reports || [];
+  const invoices = invoicesData?.invoices || [];
+  const messages = messagesData?.messages || [];
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="border-b bg-card px-6 py-4">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-2 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" /> Dashboard
-        </button>
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold">{project.name}</h1>
-            <Badge
-              variant={
-                project.status === "ACTIVE" ? "success" :
-                project.status === "PAUSED" ? "warning" : "secondary"
-              }
+    <div className="flex flex-col min-h-full">
+      {/*
+       * Tabs wraps both the sticky header (with TabsList) and all TabsContent.
+       * The sticky div only contains back-nav + title row + TabsList — never any TabsContent.
+       */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => { setActiveTab(v); if (v === "messages") markRead.mutate(id); }}
+        className="flex flex-col flex-1"
+      >
+        {/* ── Sticky header ── */}
+        <div className="border-b bg-card sticky top-0 z-10">
+          <div className="px-4 sm:px-6 pt-3">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-2.5 transition-colors"
             >
-              {project.status}
-            </Badge>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowInviteModal(true)}>
-              <Users className="h-4 w-4" /> Invite Client
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowInvoiceModal(true)}>
-              <Plus className="h-4 w-4" /> Invoice
-            </Button>
-            <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" />
-          </div>
-        </div>
-      </div>
+              <ArrowLeft className="h-3.5 w-3.5" /> Dashboard
+            </button>
 
-      {/* Tabs */}
-      <div className="border-b bg-card px-6 overflow-x-auto">
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => {
-            setActiveTab(v);
-            if (v === "messages") markRead.mutate(id);
-          }}
-        >
-          <TabsList className="bg-transparent border-none rounded-none h-auto p-0 gap-0">
-            {["overview", "reports", "files", "messages", "invoices", "scope-changes", "deployments", "settings"].map((tab) => (
-              <TabsTrigger
-                key={tab}
-                value={tab}
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none capitalize px-4 py-3 text-sm"
-              >
-                {tab === "scope-changes" ? "Scope Changes" : tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {/* Overview */}
-          <TabsContent value="overview" className="px-0 py-0 mt-0">
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-card border rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground">Reports</p>
-                  <p className="text-2xl font-bold">{reports.length}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {reports.filter((r) => r.status === "PUBLISHED").length} published
-                  </p>
+            <div className="flex flex-wrap items-start justify-between gap-3 pb-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight break-words">
+                    {project.name}
+                  </h1>
+                  <Badge variant={STATUS_VARIANT[project.status] ?? "secondary"} className="gap-1 shrink-0">
+                    <StatusIcon className="h-3 w-3" />
+                    {project.status.charAt(0) + project.status.slice(1).toLowerCase()}
+                  </Badge>
                 </div>
-                <div className="bg-card border rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground">Unpaid Invoices</p>
-                  <p className="text-2xl font-bold">{invoices.filter((i) => i.status !== "PAID").length}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">of {invoices.length} total</p>
-                </div>
-                <div className="bg-card border rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground">Scope Changes</p>
-                  <p className="text-2xl font-bold">{(scopeChanges || []).length}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {(scopeChanges || []).filter((s) => s.status === "PENDING").length} pending
-                  </p>
-                </div>
-              </div>
-
-              {project.description && (
-                <div>
-                  <p className="text-sm font-medium mb-1">Description</p>
-                  <p className="text-sm text-muted-foreground">{project.description}</p>
-                </div>
-              )}
-
-              <div>
-                <p className="text-sm font-medium mb-2">GitHub</p>
-                {hasGitHub ? (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Github className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-mono">{project.githubRepoFullName}</span>
-                    <Badge variant="success" className="text-xs">Connected</Badge>
-                  </div>
-                ) : githubStatus?.connected ? (
-                  <div className="flex items-center gap-3">
-                    <Badge variant="warning" className="gap-1">
-                      <AlertTriangle className="h-3 w-3" />
-                      No repository linked
-                    </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 h-7 text-xs"
-                      onClick={() => {
-                        setActiveTab("settings");
-                        setShowRepoPicker(true);
-                      }}
-                      data-testid="button-link-repo"
-                    >
-                      <Github className="h-3 w-3" />
-                      Link Repository
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <Badge variant="warning" className="gap-1">
-                      <AlertTriangle className="h-3 w-3" />
-                      GitHub not connected
-                    </Badge>
-                    <GitHubConnectButton className="gap-1.5 h-7 text-xs" label="Connect GitHub" />
-                  </div>
+                {project.description && (
+                  <p className="text-sm text-muted-foreground mt-1 max-w-lg leading-relaxed">{project.description}</p>
                 )}
               </div>
 
-              {reports.length > 0 && (
+              <div className="flex gap-2 flex-wrap shrink-0">
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowInviteModal(true)} data-testid="button-invite-client">
+                  <Users className="h-3.5 w-3.5" /> Invite Client
+                </Button>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowInvoiceModal(true)} data-testid="button-new-invoice">
+                  <Plus className="h-3.5 w-3.5" /> Invoice
+                </Button>
+                <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" />
+              </div>
+            </div>
+          </div>
+
+          {/* Tab bar — scrollable on mobile, no visible scrollbar */}
+          <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 sm:px-6">
+            <TabsList className="bg-transparent border-none rounded-none h-auto p-0 gap-0 w-max">
+              {TAB_CONFIG.map(({ value, label, icon: Icon }) => (
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 px-3 sm:px-4 py-3 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground whitespace-nowrap"
+                >
+                  <Icon className="h-3.5 w-3.5 hidden sm:block" />
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+        </div>
+
+        {/* ── Tab content (scrollable) ── */}
+        <div className="flex-1 overflow-auto">
+
+          {/* Overview */}
+          <TabsContent value="overview" className="mt-0 p-4 sm:p-6 space-y-5">
+            {/* Stat cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="bg-card border rounded-xl p-4 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0">
+                  <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
                 <div>
-                  <p className="text-sm font-medium mb-2">Latest Report</p>
-                  <ReportCard report={reports[0]} onClick={() => setShowReportViewer(reports[0].id)} />
+                  <p className="text-xs text-muted-foreground font-medium">Reports</p>
+                  <p className="text-2xl font-bold leading-tight">{reports.length}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{publishedReports} published</p>
+                </div>
+              </div>
+
+              <div className="bg-card border rounded-xl p-4 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center shrink-0">
+                  <Receipt className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium">Unpaid Invoices</p>
+                  <p className="text-2xl font-bold leading-tight">{unpaidInvoices}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">of {invoices.length} total</p>
+                </div>
+              </div>
+
+              <div className="bg-card border rounded-xl p-4 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-lg bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center shrink-0">
+                  <GitPullRequest className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium">Scope Changes</p>
+                  <p className="text-2xl font-bold leading-tight">{(scopeChanges || []).length}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{pendingScopes} pending</p>
+                </div>
+              </div>
+            </div>
+
+            {/* GitHub */}
+            <div className="bg-card border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Github className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-medium">GitHub</p>
+              </div>
+              {hasGitHub ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono text-sm bg-muted px-2.5 py-1 rounded-md">{project.githubRepoFullName}</span>
+                  <Badge variant="success" className="gap-1 text-xs"><CheckCircle className="h-3 w-3" /> Connected</Badge>
+                </div>
+              ) : githubStatus?.connected ? (
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Badge variant="warning" className="gap-1"><AlertTriangle className="h-3 w-3" /> No repository linked</Badge>
+                  <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs" onClick={() => { setActiveTab("settings"); setShowRepoPicker(true); }} data-testid="button-link-repo">
+                    <Github className="h-3 w-3" /> Link Repository
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Badge variant="warning" className="gap-1"><AlertTriangle className="h-3 w-3" /> GitHub not connected</Badge>
+                  <GitHubConnectButton className="gap-1.5 h-7 text-xs" label="Connect GitHub" />
                 </div>
               )}
             </div>
+
+            {/* Latest report */}
+            {reports.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-medium">Latest Report</p>
+                  <button className="text-xs text-primary hover:underline" onClick={() => setActiveTab("reports")}>View all →</button>
+                </div>
+                <ReportCard report={reports[0]} onClick={() => setShowReportViewer(reports[0].id)} />
+              </div>
+            )}
           </TabsContent>
 
           {/* Reports */}
-          <TabsContent value="reports" className="px-0 py-0 mt-0">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="font-semibold">Reports</h2>
-                <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" variant="outline" />
+          <TabsContent value="reports" className="mt-0 p-4 sm:p-6">
+            <SectionHeader
+              title="Reports"
+              description="AI-generated weekly status updates for your client."
+              action={<GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" variant="outline" />}
+            />
+            {reports.length === 0 ? (
+              <EmptyState icon={BarChart2} title="No reports yet" description={hasGitHub ? "Generate your first report to share progress with your client." : "Connect a GitHub repository to start generating AI reports."} />
+            ) : (
+              <div className="space-y-3">
+                {reports.map((r) => <ReportCard key={r.id} report={r} onClick={() => setShowReportViewer(r.id)} />)}
               </div>
-              {reports.length === 0 ? (
-                <div className="text-center py-16 text-muted-foreground text-sm">
-                  <p>No reports yet.</p>
-                  {!hasGitHub && (
-                    <p className="mt-2 text-xs">Connect a GitHub repository to start generating reports.</p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {reports.map((r) => (
-                    <ReportCard key={r.id} report={r} onClick={() => setShowReportViewer(r.id)} />
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </TabsContent>
 
           {/* Files */}
-          <TabsContent value="files" className="px-0 py-0 mt-0">
-            <div className="p-6">
-              <FileList
-                files={files || []}
-                onUpload={handleUploadFile}
-                onDelete={(fileId) => deleteFile.mutate({ projectId: id, fileId })}
-                uploading={createFile.isPending}
-              />
-            </div>
+          <TabsContent value="files" className="mt-0 p-4 sm:p-6">
+            <FileList
+              files={files || []}
+              onUpload={handleUploadFile}
+              onDelete={(fileId) => deleteFile.mutate({ projectId: id, fileId })}
+              uploading={createFile.isPending}
+            />
           </TabsContent>
 
           {/* Messages */}
-          <TabsContent value="messages" className="px-0 py-0 mt-0">
-            <div className="h-[600px] flex flex-col">
+          <TabsContent value="messages" className="mt-0">
+            <div className="h-[calc(100vh-220px)] min-h-[400px] flex flex-col">
               <MessageThread
                 messages={messages}
                 currentSenderType="DEVELOPER"
@@ -403,242 +415,148 @@ export function ProjectDetailPage() {
           </TabsContent>
 
           {/* Invoices */}
-          <TabsContent value="invoices" className="px-0 py-0 mt-0">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="font-semibold">Invoices</h2>
-                <Button size="sm" className="gap-1.5" onClick={() => setShowInvoiceModal(true)}>
-                  <Plus className="h-4 w-4" /> New Invoice
-                </Button>
+          <TabsContent value="invoices" className="mt-0 p-4 sm:p-6">
+            <SectionHeader
+              title="Invoices"
+              description="Track payments and outstanding balances."
+              action={<Button size="sm" className="gap-1.5" onClick={() => setShowInvoiceModal(true)}><Plus className="h-4 w-4" /> New Invoice</Button>}
+            />
+            {invoices.length === 0 ? (
+              <EmptyState icon={ScrollText} title="No invoices yet" description="Create your first invoice to send to your client." />
+            ) : (
+              <div className="space-y-3">
+                {invoices.map((inv) => (
+                  <InvoiceCard
+                    key={inv.id}
+                    invoice={inv}
+                    onMarkPaid={(id) => { markInvoicePaid.mutate(id); toast({ title: "Marked as paid" }); }}
+                    onDelete={(id) => { deleteInvoice.mutate(id); toast({ title: "Invoice deleted" }); }}
+                  />
+                ))}
               </div>
-              {invoices.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground text-sm">No invoices yet.</div>
-              ) : (
-                <div className="space-y-3">
-                  {invoices.map((inv) => (
-                    <InvoiceCard
-                      key={inv.id}
-                      invoice={inv}
-                      onMarkPaid={(id) => {
-                        markInvoicePaid.mutate(id);
-                        toast({ title: "Marked as paid" });
-                      }}
-                      onDelete={(id) => {
-                        deleteInvoice.mutate(id);
-                        toast({ title: "Invoice deleted" });
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </TabsContent>
 
           {/* Scope Changes */}
-          <TabsContent value="scope-changes" className="px-0 py-0 mt-0">
-            <div className="p-6">
-              <h2 className="font-semibold mb-4">Scope Changes</h2>
-              {(scopeChanges || []).length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground text-sm">
-                  No scope change requests from clients yet.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {(scopeChanges || []).map((sc) => (
-                    <ScopeChangeCard
-                      key={sc.id}
-                      sc={sc}
-                      onWriteQuote={setQuoteTarget}
-                      onMarkPaid={(id) => {
-                        markScopePaid.mutate(id);
-                        toast({ title: "Marked as paid" });
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+          <TabsContent value="scope-changes" className="mt-0 p-4 sm:p-6">
+            <SectionHeader title="Scope Changes" description="Client-submitted requests for additional work." />
+            {(scopeChanges || []).length === 0 ? (
+              <EmptyState icon={ArrowRightLeft} title="No scope change requests" description="When clients request additional work through their portal, it will appear here." />
+            ) : (
+              <div className="space-y-3">
+                {(scopeChanges || []).map((sc) => (
+                  <ScopeChangeCard
+                    key={sc.id}
+                    sc={sc}
+                    onWriteQuote={setQuoteTarget}
+                    onMarkPaid={(id) => { markScopePaid.mutate(id); toast({ title: "Marked as paid" }); }}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Deployments */}
-          <TabsContent value="deployments" className="px-0 py-0 mt-0">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="font-semibold">Deployments</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Latest Railway build output for this project
-                  </p>
-                </div>
-              </div>
-              <BuildLogsViewer />
-            </div>
+          <TabsContent value="deployments" className="mt-0 p-4 sm:p-6">
+            <SectionHeader title="Deployments" description="Latest Railway build output for this project." />
+            <BuildLogsViewer />
           </TabsContent>
 
           {/* Settings */}
-          <TabsContent value="settings" className="px-0 py-0 mt-0">
-            <div className="p-6 max-w-xl space-y-6">
+          <TabsContent value="settings" className="mt-0 p-4 sm:p-6">
+            <div className="max-w-xl space-y-5">
               <h2 className="font-semibold text-base">Project Settings</h2>
 
               {/* Status */}
-              <div className="bg-card border rounded-xl p-5 space-y-3">
+              <div className="bg-card border rounded-xl p-5 space-y-4">
                 <div>
-                  <p className="text-sm font-semibold mb-0.5">Project Status</p>
-                  <p className="text-xs text-muted-foreground">
-                    Manage the lifecycle state of this project.
-                  </p>
+                  <p className="text-sm font-semibold">Project Status</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Manage the lifecycle state of this project.</p>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge
-                    variant={project.status === "ACTIVE" ? "success" : project.status === "PAUSED" ? "warning" : "secondary"}
-                    className="text-xs px-2.5 py-1"
-                  >
-                    Current: {project.status}
-                  </Badge>
-                </div>
+                <Badge variant={STATUS_VARIANT[project.status] ?? "secondary"} className="gap-1 text-xs px-2.5 py-1">
+                  <StatusIcon className="h-3 w-3" />
+                  {project.status.charAt(0) + project.status.slice(1).toLowerCase()}
+                </Badge>
                 {project.status !== "COMPLETED" && (
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex flex-wrap gap-2">
                     {(STATUS_TRANSITIONS[project.status] || []).map((s) => (
-                      <Button
-                        key={s}
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 h-8 text-xs"
-                        disabled={statusUpdating}
-                        onClick={() => handleStatusChange(s as "ACTIVE" | "PAUSED" | "COMPLETED")}
-                      >
-                        {statusUpdating ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : s === "ACTIVE" ? (
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                        ) : s === "PAUSED" ? (
-                          <PauseCircle className="h-3 w-3 text-amber-500" />
-                        ) : (
-                          <XCircle className="h-3 w-3 text-muted-foreground" />
-                        )}
+                      <Button key={s} variant="outline" size="sm" className="gap-1.5 h-8 text-xs" disabled={statusUpdating} onClick={() => handleStatusChange(s as "ACTIVE" | "PAUSED" | "COMPLETED")}>
+                        {statusUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : s === "ACTIVE" ? <CheckCircle className="h-3 w-3 text-green-500" /> : s === "PAUSED" ? <PauseCircle className="h-3 w-3 text-amber-500" /> : <XCircle className="h-3 w-3 text-muted-foreground" />}
                         Mark as {s.charAt(0) + s.slice(1).toLowerCase()}
                       </Button>
                     ))}
                   </div>
                 )}
-                {project.status === "COMPLETED" && (
-                  <p className="text-xs text-muted-foreground">Completed projects cannot change status.</p>
-                )}
+                {project.status === "COMPLETED" && <p className="text-xs text-muted-foreground">Completed projects cannot change status.</p>}
               </div>
 
               {/* GitHub */}
-              <div className="bg-card border rounded-xl p-5 space-y-3">
+              <div className="bg-card border rounded-xl p-5 space-y-4">
                 <div>
-                  <p className="text-sm font-semibold mb-0.5">GitHub Repository</p>
-                  <p className="text-xs text-muted-foreground">
-                    Connect a repository to enable AI report generation.
-                  </p>
+                  <p className="text-sm font-semibold">GitHub Repository</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Connect a repository to enable AI report generation.</p>
                 </div>
                 {hasGitHub ? (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2.5 bg-muted/60 rounded-lg px-3 py-2.5">
-                      <Github className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <Github className="h-4 w-4 text-muted-foreground shrink-0" />
                       <span className="font-mono text-sm flex-1 truncate">{project.githubRepoFullName}</span>
-                      <Badge variant="success" className="text-xs">Connected</Badge>
+                      <Badge variant="success" className="text-xs shrink-0">Connected</Badge>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5 text-muted-foreground hover:text-destructive text-xs h-7"
+                    <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-destructive text-xs h-7"
                       onClick={async () => {
-                        try {
-                          await disconnectRepo.mutateAsync(project.id);
-                          toast({ title: "Repository disconnected" });
-                        } catch {
-                          toast({ variant: "destructive", title: "Failed to disconnect" });
-                        }
+                        try { await disconnectRepo.mutateAsync(project.id); toast({ title: "Repository disconnected" }); }
+                        catch { toast({ variant: "destructive", title: "Failed to disconnect" }); }
                       }}
                       disabled={disconnectRepo.isPending}
                     >
-                      {disconnectRepo.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Unlink className="h-3 w-3" />}
-                      Disconnect
+                      {disconnectRepo.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Unlink className="h-3 w-3" />} Disconnect
                     </Button>
                   </div>
                 ) : showRepoPicker ? (
                   <div className="space-y-2">
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                      <Input
-                        className="pl-8 h-8 text-sm"
-                        placeholder="Search repositories…"
-                        value={repoSearch}
-                        onChange={(e) => setRepoSearch(e.target.value)}
-                      />
+                      <Input className="pl-8 h-8 text-sm" placeholder="Search repositories…" value={repoSearch} onChange={(e) => setRepoSearch(e.target.value)} />
                     </div>
-                    {reposLoading && (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading repositories…
-                      </div>
-                    )}
-                    {reposError && (
-                      <p className="text-xs text-destructive">
-                        GitHub not connected.{" "}
-                        <GitHubConnectButton variant="link" className="h-auto p-0 text-xs underline" label="Connect GitHub first →" />
-                      </p>
-                    )}
+                    {reposLoading && <div className="flex items-center gap-2 text-xs text-muted-foreground py-1"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading repositories…</div>}
+                    {reposError && <p className="text-xs text-destructive">GitHub not connected. <GitHubConnectButton variant="link" className="h-auto p-0 text-xs underline" label="Connect GitHub first →" /></p>}
                     {!reposLoading && !reposError && githubRepos && (
-                      <div className="max-h-48 overflow-y-auto rounded-lg border divide-y">
-                        {githubRepos.length === 0 && (
-                          <p className="text-xs text-muted-foreground px-3 py-4 text-center">No repositories found</p>
-                        )}
+                      <div className="max-h-52 overflow-y-auto rounded-lg border divide-y">
+                        {githubRepos.length === 0 && <p className="text-xs text-muted-foreground px-3 py-4 text-center">No repositories found</p>}
                         {githubRepos.map((repo) => (
-                          <button
-                            key={repo.id}
-                            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors text-left"
+                          <button key={repo.id} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors text-left"
                             onClick={async () => {
-                              try {
-                                await connectRepo.mutateAsync({ projectId: project.id, repoFullName: repo.full_name });
-                                setShowRepoPicker(false);
-                                setRepoSearch("");
-                                toast({ title: "Repository connected" });
-                              } catch {
-                                toast({ variant: "destructive", title: "Failed to connect repository" });
-                              }
+                              try { await connectRepo.mutateAsync({ projectId: project.id, repoFullName: repo.full_name }); setShowRepoPicker(false); setRepoSearch(""); toast({ title: "Repository connected" }); }
+                              catch { toast({ variant: "destructive", title: "Failed to connect repository" }); }
                             }}
                             disabled={connectRepo.isPending}
                           >
-                            <Github className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <Github className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                             <span className="font-mono flex-1 truncate">{repo.full_name}</span>
-                            {repo.private && <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+                            {repo.private && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
                           </button>
                         ))}
                       </div>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-7 text-muted-foreground"
-                      onClick={() => { setShowRepoPicker(false); setRepoSearch(""); }}
-                    >
-                      Cancel
-                    </Button>
+                    <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground" onClick={() => { setShowRepoPicker(false); setRepoSearch(""); }}>Cancel</Button>
                   </div>
                 ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() => setShowRepoPicker(true)}
-                  >
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowRepoPicker(true)}>
                     <Github className="h-4 w-4" /> Select Repository
                   </Button>
                 )}
               </div>
 
-              {/* Meta */}
+              {/* Project Info */}
               <div className="bg-card border rounded-xl p-5 space-y-3">
                 <p className="text-sm font-semibold">Project Info</p>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex items-center justify-between gap-4">
                     <span className="text-muted-foreground">Project ID</span>
                     <span className="font-mono text-xs bg-muted px-2 py-1 rounded text-muted-foreground">{project.id.slice(0, 8)}…</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between gap-4">
                     <span className="text-muted-foreground">Created</span>
                     <span className="text-xs">{formatDate(project.createdAt)}</span>
                   </div>
@@ -649,45 +567,29 @@ export function ProjectDetailPage() {
               <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-5 space-y-3">
                 <div>
                   <p className="text-sm font-semibold text-destructive">Danger Zone</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Deleting a project is permanent and cannot be undone.
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Deleting a project is permanent and cannot be undone.</p>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => setShowDeleteConfirm(true)}
-                >
+                <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setShowDeleteConfirm(true)}>
                   <Trash2 className="h-3.5 w-3.5" /> Delete Project
                 </Button>
               </div>
             </div>
           </TabsContent>
-        </Tabs>
-      </div>
 
-      {/* Report Viewer Dialog */}
+        </div>{/* end scrollable content */}
+      </Tabs>
+
+      {/* ── Dialogs ── */}
+
       <Dialog open={!!showReportViewer} onOpenChange={() => setShowReportViewer(null)}>
         <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogTitle className="sr-only">Report Viewer</DialogTitle>
-          {showReportViewer && (
-            <ReportViewerDialog
-              reportId={showReportViewer}
-              onClose={() => setShowReportViewer(null)}
-            />
-          )}
+          {showReportViewer && <ReportViewerDialog reportId={showReportViewer} onClose={() => setShowReportViewer(null)} />}
         </DialogContent>
       </Dialog>
 
-      {/* Invoice Form */}
-      <InvoiceForm
-        open={showInvoiceModal}
-        onClose={() => setShowInvoiceModal(false)}
-        defaultProjectId={id}
-      />
+      <InvoiceForm open={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} defaultProjectId={id} />
 
-      {/* Quote Form */}
       <QuoteForm
         scopeChange={quoteTarget}
         onClose={() => setQuoteTarget(null)}
@@ -698,48 +600,28 @@ export function ProjectDetailPage() {
         }}
       />
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-destructive">Delete Project?</DialogTitle>
-          </DialogHeader>
-          <div className="py-2 space-y-3">
-            <p className="text-sm text-muted-foreground">
-              This will permanently delete <strong>{project?.name}</strong> and all associated data including reports, invoices, and messages. This cannot be undone.
-            </p>
-          </div>
+          <DialogHeader><DialogTitle className="text-destructive">Delete Project?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            This will permanently delete <strong>{project?.name}</strong> and all associated data including reports, invoices, and messages. This cannot be undone.
+          </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              disabled={deleteProject.isPending}
-              onClick={handleDeleteProject}
-            >
-              {deleteProject.isPending ? (
-                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Deleting…</>
-              ) : (
-                <><Trash2 className="h-4 w-4 mr-2" />Delete Project</>
-              )}
+            <Button variant="destructive" disabled={deleteProject.isPending} onClick={handleDeleteProject}>
+              {deleteProject.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Deleting…</> : <><Trash2 className="h-4 w-4 mr-2" />Delete Project</>}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Invite Client Dialog */}
       <Dialog open={showInviteModal} onOpenChange={() => setShowInviteModal(false)}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Invite Client</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Invite Client</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Client Email *</Label>
-              <Input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="client@example.com"
+              <Input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="client@example.com" data-testid="input-invite-email"
                 onKeyDown={(e) => e.key === "Enter" && inviteEmail && (
                   api.post(`/api/projects/${id}/invite`, { email: inviteEmail })
                     .then(() => { setInviteEmail(""); setShowInviteModal(false); toast({ title: "Invitation sent" }); })
@@ -747,19 +629,15 @@ export function ProjectDetailPage() {
                 )}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              A magic link will be emailed to this address granting access to the client portal for this project.
-            </p>
+            <p className="text-xs text-muted-foreground">A magic link will be emailed to this address granting access to the client portal for this project.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInviteModal(false)}>Cancel</Button>
-            <Button
-              disabled={!inviteEmail}
+            <Button disabled={!inviteEmail} data-testid="button-send-invite"
               onClick={async () => {
                 try {
                   await api.post(`/api/projects/${id}/invite`, { email: inviteEmail });
-                  setInviteEmail("");
-                  setShowInviteModal(false);
+                  setInviteEmail(""); setShowInviteModal(false);
                   toast({ title: "Invitation sent", description: `Magic link sent to ${inviteEmail}` });
                 } catch {
                   toast({ variant: "destructive", title: "Failed to send invitation" });
