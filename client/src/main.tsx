@@ -29,15 +29,24 @@ function Root({ clerkEnabled }: { clerkEnabled: boolean }) {
   );
 }
 
-// Persist the root across Vite HMR re-executions so createRoot is only ever
-// called once. Without this, a failed Fast Refresh causes main.tsx to re-run,
-// which calls createRoot on the same container again → mounts a second React
-// tree → second ClerkProvider → Clerk throws → all auth hooks break → every
-// API call fires without a token → mutations fail with 401.
 declare global {
   interface Window {
     __reactRoot?: ReactDOM.Root;
   }
+}
+
+// Before Vite re-executes this module during HMR, properly unmount the
+// existing React tree. This clears Clerk's internal singleton state so the
+// next render sees a clean slate and doesn't throw "multiple ClerkProvider".
+// Without dispose, Clerk throws → all useAuth() hooks break → every API call
+// fires without a token → mutations fail → "Failed to create project".
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    if (window.__reactRoot) {
+      window.__reactRoot.unmount();
+      window.__reactRoot = undefined;
+    }
+  });
 }
 
 const container = document.getElementById("root")!;
