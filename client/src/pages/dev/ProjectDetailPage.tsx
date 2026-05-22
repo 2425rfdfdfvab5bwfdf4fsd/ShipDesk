@@ -153,7 +153,7 @@ export function ProjectDetailPage() {
   const { data: reportsData, isLoading: reportsLoading } = useReports(id);
   const { data: invoicesData } = useInvoices(id);
   const { data: scopeChanges } = useScopeChanges(id);
-  const { data: messagesData } = useMessages(id);
+  const { data: messagesData, isLoading: messagesLoading } = useMessages(id);
   const { data: files, isLoading: filesLoading } = useFiles(id);
   const { data: uploadSig } = useUploadSignature(id);
   const { data: githubStatus, isLoading: githubStatusLoading } = useGitHubStatus();
@@ -270,7 +270,7 @@ export function ProjectDetailPage() {
        */}
       <Tabs
         value={activeTab}
-        onValueChange={(v) => { setActiveTab(v); if (v === "messages") markRead.mutate(id); }}
+        onValueChange={(v) => { setActiveTab(v); if (v === "messages" && unreadMessages > 0) markRead.mutate(id); }}
         className="flex flex-col flex-1"
       >
         {/* ── Sticky header ── */}
@@ -543,8 +543,11 @@ export function ProjectDetailPage() {
               <MessageThread
                 messages={messages}
                 currentSenderType="DEVELOPER"
-                onSend={(body) => sendMessage.mutate({ projectId: id, body })}
+                onSend={async (body) => {
+                  await sendMessage.mutateAsync({ projectId: id, body });
+                }}
                 isSending={sendMessage.isPending}
+                isLoading={messagesLoading}
               />
             </div>
           </TabsContent>
