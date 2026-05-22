@@ -133,6 +133,7 @@ router.post(
         weekStartDate: start,
         weekEndDate: end,
         githubEvents: events,
+        developerName: ws.agencyName || ws.name,
       });
 
       const report = await db.report.create({

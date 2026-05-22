@@ -27,6 +27,7 @@ export async function generateWeeklyReport(opts: {
   weekStartDate: Date;
   weekEndDate: Date;
   githubEvents: GitHubEvent[];
+  developerName?: string;
 }): Promise<ReportContent> {
   const ai = getClient();
 
@@ -51,10 +52,13 @@ export async function generateWeeklyReport(opts: {
   const weekStart = opts.weekStartDate.toISOString().split("T")[0];
   const weekEnd = opts.weekEndDate.toISOString().split("T")[0];
 
+  const sender = opts.developerName || "Your Project Manager";
+
   const prompt = `You are a professional technical project manager writing a weekly status update for a non-technical business client.
 
 Project: ${opts.projectName}
 Week: ${weekStart} to ${weekEnd}
+Sender (project manager / agency name): ${sender}
 GitHub Activity:
 ${eventSummaries.length > 0 ? eventSummaries.join("\n") : "No GitHub activity recorded this week."}
 
@@ -71,7 +75,7 @@ Rules:
 - summary: 2-3 sentences
 - highlights: 3-6 bullet points
 - nextSteps: 1-3 items (only if inferable from context)
-- rawMarkdown: full formatted report in Markdown
+- rawMarkdown: full formatted report in Markdown. Use "Hi Client," as the greeting (do NOT write [Client Name] or any placeholder). Sign off with "${sender}" — do NOT write [Your Name] or any placeholder.
 - Return ONLY valid JSON, no markdown fences`;
 
   const controller = new AbortController();

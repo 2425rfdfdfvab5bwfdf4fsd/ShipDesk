@@ -49,6 +49,7 @@ export async function generateReportsForAllProjects(): Promise<void> {
         weekStartDate: start,
         weekEndDate: end,
         githubEvents: events,
+        developerName: project.workspace.agencyName || project.workspace.name,
       });
 
       await db.report.create({
