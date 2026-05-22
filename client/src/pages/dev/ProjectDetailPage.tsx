@@ -340,8 +340,8 @@ export function ProjectDetailPage() {
           </div>
 
           {/* Tab bar — horizontally scrollable */}
-          <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-3 sm:px-5">
-            <TabsList className="bg-transparent border-none rounded-none h-auto p-0 gap-0 w-max">
+          <div className="overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <TabsList className="bg-transparent border-none rounded-none h-auto p-0 gap-0 w-max pl-3 sm:pl-5 pr-3 sm:pr-5">
               {TAB_CONFIG.map(({ value, label, icon: Icon }) => (
                 <TabsTrigger
                   key={value}
