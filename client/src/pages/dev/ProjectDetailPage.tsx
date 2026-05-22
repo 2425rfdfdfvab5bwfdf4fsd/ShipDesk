@@ -6,7 +6,7 @@ import {
   CheckCircle, PauseCircle, XCircle, Loader2, Search, Unlink, Lock,
   FileText, Receipt, GitPullRequest, LayoutDashboard, BarChart2,
   FolderOpen, MessageSquare, ScrollText, ArrowRightLeft, Server, Settings2,
-  Edit2, UserMinus, Zap, MoreHorizontal,
+  Edit2, UserMinus, Zap, MoreHorizontal, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -150,6 +150,7 @@ export function ProjectDetailPage() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [showMobileTabs, setShowMobileTabs] = useState(true);
   const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -317,7 +318,7 @@ export function ProjectDetailPage() {
                 <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" />
               </div>
 
-              {/* Mobile actions — compact dropdown */}
+              {/* Mobile actions — compact dropdown + tabs toggle */}
               <div className="flex sm:hidden items-center gap-1 shrink-0">
                 <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" iconOnly />
                 <DropdownMenu>
@@ -335,12 +336,22 @@ export function ProjectDetailPage() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => setShowMobileTabs((v) => !v)}
+                  title={showMobileTabs ? "Hide tabs" : "Show tabs"}
+                  data-testid="button-toggle-tabs"
+                >
+                  {showMobileTabs ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                </Button>
               </div>
             </div>
           </div>
 
-          {/* Mobile tab bar — 2 rows × 4 columns */}
-          <TabsList className="sm:hidden bg-transparent border-none rounded-none h-auto p-0 grid grid-cols-4 w-full">
+          {/* Mobile tab bar — 2 rows × 4 columns, collapsible */}
+          <TabsList className={`sm:hidden bg-transparent border-none rounded-none h-auto p-0 grid grid-cols-4 w-full transition-all duration-200 ${showMobileTabs ? "" : "hidden"}`}>
             {TAB_CONFIG.map(({ value, label, icon: Icon }) => (
               <TabsTrigger
                 key={value}
