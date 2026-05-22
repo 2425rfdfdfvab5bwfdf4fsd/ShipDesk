@@ -108,15 +108,23 @@ router.post("/:projectId/invite", requireAuth, async (req: AuthRequest, res, nex
       ? `https://${ws.slug}.${process.env.CLIENT_PORTAL_BASE_URL.replace(/^https?:\/\//, "")}/auth/magic?token=${token}`
       : `${process.env.FRONTEND_URL || "http://localhost:5000"}/portal/${ws.slug}/auth/magic?token=${token}`;
 
-    await sendMagicLink({
-      to: email,
-      clientName: client.name,
-      magicLinkUrl,
-      workspaceName: ws.name,
-      agencyName: ws.agencyName,
-    });
+    let emailSent = false;
+    try {
+      await sendMagicLink({
+        to: email,
+        clientName: client.name,
+        magicLinkUrl,
+        workspaceName: ws.name,
+        agencyName: ws.agencyName,
+      });
+      emailSent = true;
+    } catch (emailErr) {
+      // Email delivery failed (e.g. unverified Resend domain) — still succeed so the
+      // developer can copy and share the magic link manually.
+      console.warn("[invite] Email delivery failed, returning magic link for manual sharing:", (emailErr as Error).message);
+    }
 
-    res.json({ success: true, invitationId: invitation.id });
+    res.json({ success: true, invitationId: invitation.id, magicLinkUrl, emailSent });
   } catch (err) {
     next(err);
   }

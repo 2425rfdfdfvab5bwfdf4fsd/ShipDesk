@@ -6,7 +6,7 @@ import {
   CheckCircle, PauseCircle, XCircle, Loader2, Search, Unlink, Lock,
   FileText, Receipt, GitPullRequest, LayoutDashboard, BarChart2,
   FolderOpen, MessageSquare, ScrollText, ArrowRightLeft, Server, Settings2,
-  Edit2, UserMinus, Zap, MoreHorizontal,
+  Edit2, UserMinus, Zap, MoreHorizontal, Copy, ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -142,6 +142,7 @@ export function ProjectDetailPage() {
   const [showReportViewer, setShowReportViewer] = useState<string | null>(null);
   const [quoteTarget, setQuoteTarget] = useState<ScopeChange | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteMagicLink, setInviteMagicLink] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [showRepoPicker, setShowRepoPicker] = useState(false);
@@ -915,56 +916,125 @@ export function ProjectDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showInviteModal} onOpenChange={(open) => { if (!open) { setShowInviteModal(false); setInviteEmail(""); } }}>
+      <Dialog open={showInviteModal} onOpenChange={(open) => { if (!open) { setShowInviteModal(false); setInviteEmail(""); setInviteMagicLink(null); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-sm">Invite Client</DialogTitle>
-            <DialogDescription className="text-xs">Send a magic link to give someone access to this project's portal.</DialogDescription>
+            <DialogDescription className="text-xs">
+              {inviteMagicLink
+                ? "Email delivery requires a verified domain. Copy this link and share it directly with your client."
+                : "Send a magic link to give someone access to this project's portal."}
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-1">
-            <div className="space-y-1.5">
-              <Label className="text-xs" htmlFor="invite-email">Client Email</Label>
-              <Input
-                id="invite-email"
-                type="email"
-                className="h-8 text-sm"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="client@example.com"
-                data-testid="input-invite-email"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && inviteEmail && !inviteClient.isPending) {
-                    inviteClient.mutate(
-                      { projectId: id, email: inviteEmail },
-                      {
-                        onSuccess: () => { setInviteEmail(""); setShowInviteModal(false); toast({ title: "Invitation sent", description: `Magic link sent to ${inviteEmail}` }); },
-                        onError: () => toast({ variant: "destructive", title: "Failed to send invitation" }),
-                      }
-                    );
-                  }
-                }}
-              />
+
+          {inviteMagicLink ? (
+            <div className="space-y-3 py-1">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Magic Link</Label>
+                <div className="flex gap-1.5">
+                  <Input
+                    readOnly
+                    value={inviteMagicLink}
+                    className="h-8 text-xs font-mono bg-muted"
+                    data-testid="input-magic-link"
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 w-8 p-0 shrink-0"
+                    data-testid="button-copy-magic-link"
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteMagicLink);
+                      toast({ title: "Copied!", description: "Magic link copied to clipboard" });
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 w-8 p-0 shrink-0"
+                    data-testid="button-open-magic-link"
+                    onClick={() => window.open(inviteMagicLink, "_blank", "noopener,noreferrer")}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                  To send emails automatically, verify a domain at{" "}
+                  <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="underline">resend.com/domains</a>
+                  {" "}and update your EMAIL_FROM secret.
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-3 py-1">
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="invite-email">Client Email</Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  className="h-8 text-sm"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="client@example.com"
+                  data-testid="input-invite-email"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && inviteEmail && !inviteClient.isPending) {
+                      const emailToSend = inviteEmail;
+                      inviteClient.mutate(
+                        { projectId: id, email: emailToSend },
+                        {
+                          onSuccess: (data) => {
+                            if (data.emailSent) {
+                              setInviteEmail(""); setShowInviteModal(false);
+                              toast({ title: "Invitation sent", description: `Magic link emailed to ${emailToSend}` });
+                            } else {
+                              setInviteMagicLink(data.magicLinkUrl ?? null);
+                            }
+                          },
+                          onError: () => toast({ variant: "destructive", title: "Failed to create invitation" }),
+                        }
+                      );
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => { setShowInviteModal(false); setInviteEmail(""); }}>Cancel</Button>
-            <Button
-              size="sm"
-              disabled={!inviteEmail || inviteClient.isPending}
-              data-testid="button-send-invite"
-              onClick={() => {
-                inviteClient.mutate(
-                  { projectId: id, email: inviteEmail },
-                  {
-                    onSuccess: () => { setInviteEmail(""); setShowInviteModal(false); toast({ title: "Invitation sent", description: `Magic link sent to ${inviteEmail}` }); },
-                    onError: () => toast({ variant: "destructive", title: "Failed to send invitation" }),
-                  }
-                );
-              }}
-            >
-              {inviteClient.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
-              Send Invite
+            <Button variant="outline" size="sm" onClick={() => { setShowInviteModal(false); setInviteEmail(""); setInviteMagicLink(null); }}>
+              {inviteMagicLink ? "Done" : "Cancel"}
             </Button>
+            {!inviteMagicLink && (
+              <Button
+                size="sm"
+                disabled={!inviteEmail || inviteClient.isPending}
+                data-testid="button-send-invite"
+                onClick={() => {
+                  const emailToSend = inviteEmail;
+                  inviteClient.mutate(
+                    { projectId: id, email: emailToSend },
+                    {
+                      onSuccess: (data) => {
+                        if (data.emailSent) {
+                          setInviteEmail(""); setShowInviteModal(false);
+                          toast({ title: "Invitation sent", description: `Magic link emailed to ${emailToSend}` });
+                        } else {
+                          setInviteMagicLink(data.magicLinkUrl ?? null);
+                        }
+                      },
+                      onError: () => toast({ variant: "destructive", title: "Failed to create invitation" }),
+                    }
+                  );
+                }}
+              >
+                {inviteClient.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+                Send Invite
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
