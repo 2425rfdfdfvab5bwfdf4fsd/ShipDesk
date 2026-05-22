@@ -102,11 +102,20 @@ router.post("/:projectId/invite", requireAuth, async (req: AuthRequest, res, nex
       create: { clientId: client.id, projectId: project.id, tokenHash, expiresAt },
     });
 
-    // Production: subdomain URL (acme.portal.shipdesk.io/auth/magic)
-    // Dev/Replit: path-based URL (FRONTEND_URL/portal/slug/auth/magic)
-    const magicLinkUrl = process.env.CLIENT_PORTAL_BASE_URL
-      ? `https://${ws.slug}.${process.env.CLIENT_PORTAL_BASE_URL.replace(/^https?:\/\//, "")}/auth/magic?token=${token}`
-      : `${process.env.FRONTEND_URL || "http://localhost:5000"}/portal/${ws.slug}/auth/magic?token=${token}`;
+    // Magic link URL strategy:
+    //  1. Replit dev → always path-based on the live Replit dev domain
+    //  2. Production with CLIENT_PORTAL_BASE_URL → subdomain routing (e.g. acme.portal.shipdesk.io)
+    //  3. Fallback → path-based on FRONTEND_URL
+    let magicLinkUrl: string;
+    if (process.env.REPLIT_DEV_DOMAIN) {
+      magicLinkUrl = `https://${process.env.REPLIT_DEV_DOMAIN}/portal/${ws.slug}/auth/magic?token=${token}`;
+    } else if (process.env.CLIENT_PORTAL_BASE_URL) {
+      const base = process.env.CLIENT_PORTAL_BASE_URL.replace(/^https?:\/\//, "").replace(/\/$/, "");
+      magicLinkUrl = `https://${ws.slug}.${base}/auth/magic?token=${token}`;
+    } else {
+      const base = (process.env.FRONTEND_URL || "http://localhost:5000").replace(/\/$/, "");
+      magicLinkUrl = `${base}/portal/${ws.slug}/auth/magic?token=${token}`;
+    }
 
     let emailSent = false;
     try {
