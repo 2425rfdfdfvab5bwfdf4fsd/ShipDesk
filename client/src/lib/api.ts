@@ -6,9 +6,16 @@ import axios from "axios";
 // In production, VITE_API_BASE_URL is the backend host with NO trailing slash
 // and NO /api suffix (e.g. "https://backend.railway.app"). Axios then combines
 // it with the hook path: "https://backend.railway.app" + "/api/projects" ✓
+function normalizeBaseUrl(url: string): string {
+  if (!url) return "";
+  const trimmed = url.replace(/\/$/, "");
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  return `https://${trimmed}`;
+}
+
 export const api = axios.create({
   baseURL: import.meta.env.PROD
-    ? (import.meta.env.VITE_API_BASE_URL ?? "")
+    ? normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL ?? "")
     : "",
   withCredentials: true,
 });

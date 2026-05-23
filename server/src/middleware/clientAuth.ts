@@ -24,14 +24,14 @@ export async function requireClientAuth(
     });
 
     if (!session) {
-      res.clearCookie("shipdesk_client_session");
+      res.clearCookie("shipdesk_client_session", { sameSite: "none", secure: true });
       res.status(401).json({ error: "UNAUTHORIZED" });
       return;
     }
 
     if (new Date() > session.expiresAt) {
       await db.clientSession.delete({ where: { id: sessionId } });
-      res.clearCookie("shipdesk_client_session");
+      res.clearCookie("shipdesk_client_session", { sameSite: "none", secure: true });
       res.status(401).json({ error: "SESSION_EXPIRED" });
       return;
     }

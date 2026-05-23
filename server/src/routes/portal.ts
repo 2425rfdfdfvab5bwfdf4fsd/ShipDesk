@@ -128,7 +128,7 @@ router.get("/auth/me", requireClientAuth, async (req: ClientAuthRequest, res) =>
 router.post("/auth/logout", requireClientAuth, async (req: ClientAuthRequest, res, next) => {
   try {
     await db.clientSession.delete({ where: { id: req.sessionId! } });
-    res.clearCookie("shipdesk_client_session");
+    res.clearCookie("shipdesk_client_session", { sameSite: "none", secure: true });
     res.json({ success: true });
   } catch (err) {
     next(err);
