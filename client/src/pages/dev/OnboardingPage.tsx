@@ -122,9 +122,7 @@ export function OnboardingPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-[480px]">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-primary mx-auto mb-4 flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl">S</span>
-          </div>
+          <img src="/favicon.svg" alt="ShipDesk" className="w-12 h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold">Set up ShipDesk</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Step {step} of 2

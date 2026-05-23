@@ -248,9 +248,7 @@ export function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#06080f]/90 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-              <span className="text-white font-bold text-sm">S</span>
-            </div>
+            <img src="/favicon.svg" alt="ShipDesk" className="w-8 h-8" />
             <span className="font-bold text-lg tracking-tight">ShipDesk</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm text-white/60">
@@ -673,9 +671,7 @@ export function LandingPage() {
           <div className="flex flex-col lg:flex-row justify-between gap-10 mb-10">
             <div className="max-w-xs">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                  <span className="text-white font-bold text-xs">S</span>
-                </div>
+                <img src="/favicon.svg" alt="ShipDesk" className="w-7 h-7" />
                 <span className="font-bold text-white">ShipDesk</span>
               </div>
               <p className="text-sm text-white/40 leading-relaxed">

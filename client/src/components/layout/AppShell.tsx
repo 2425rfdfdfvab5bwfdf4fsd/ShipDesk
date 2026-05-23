@@ -75,9 +75,7 @@ export function AppShell({ children }: AppShellProps) {
             onClick={() => setSidebarOpen(false)}
             className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
           >
-            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shadow-sm shadow-primary/30">
-              <span className="text-primary-foreground font-bold text-xs">S</span>
-            </div>
+            <img src="/favicon.svg" alt="ShipDesk" className="w-7 h-7" />
             <span className="font-bold text-sm tracking-tight">ShipDesk</span>
           </Link>
           <Button
@@ -190,9 +188,7 @@ export function AppShell({ children }: AppShellProps) {
             <Menu className="h-5 w-5" />
           </Button>
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-[10px]">S</span>
-            </div>
+            <img src="/favicon.svg" alt="ShipDesk" className="w-6 h-6" />
             <span className="font-bold text-sm">ShipDesk</span>
           </Link>
           <div className="w-8" />
