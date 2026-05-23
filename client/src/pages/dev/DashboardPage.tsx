@@ -87,14 +87,27 @@ export function DashboardPage() {
       setShowNewProject(false);
       toast({ title: "Project created" });
     } catch (err: unknown) {
-      const errData = (err as { response?: { data?: { error?: string } } })?.response?.data;
+      const axiosErr = err as { response?: { status?: number; data?: { error?: string; message?: string } }; message?: string };
+      const status = axiosErr?.response?.status;
+      const errCode = axiosErr?.response?.data?.error;
+      const errMsg = axiosErr?.response?.data?.message;
+      console.error("[createProject] failed", { status, errCode, errMsg, err });
+      const description =
+        errCode === "ACTIVE_PROJECT_LIMIT_REACHED"
+          ? "You've reached the 50 active project limit."
+          : errCode === "NOT_FOUND"
+          ? "Workspace not found. Please complete onboarding first."
+          : errCode === "UNAUTHORIZED" || status === 401
+          ? "Session expired. Please sign out and sign back in."
+          : errCode
+          ? `Server error: ${errCode}${errMsg ? ` — ${errMsg}` : ""}`
+          : axiosErr?.message
+          ? `Request failed: ${axiosErr.message}`
+          : "Please try again.";
       toast({
         variant: "destructive",
         title: "Failed to create project",
-        description:
-          errData?.error === "ACTIVE_PROJECT_LIMIT_REACHED"
-            ? "You've reached the 50 active project limit."
-            : "Please try again.",
+        description,
       });
     }
   };
