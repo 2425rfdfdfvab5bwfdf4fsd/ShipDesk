@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useCreateInvoice } from "@/hooks/useInvoices";
 import { useProjects } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
@@ -64,18 +64,34 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
-        <SheetHeader className="mb-4 pr-6">
-          <SheetTitle>Create Invoice</SheetTitle>
-          <SheetDescription>Add a new invoice and generate a payment link for your client.</SheetDescription>
-        </SheetHeader>
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-md flex flex-col p-0 gap-0 [&>button]:hidden"
+      >
+        {/* Header */}
+        <div className="px-6 pt-6 pb-5 border-b relative">
+          <button
+            onClick={handleClose}
+            className="absolute top-5 right-5 rounded-sm opacity-70 hover:opacity-100 transition-opacity"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <h2 className="text-lg font-bold pr-6">Create Invoice</h2>
+          <p className="text-sm text-muted-foreground mt-0.5 pr-6">
+            Add a new invoice and generate a payment link for your client.
+          </p>
+        </div>
 
-        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+        {/* Form body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {!defaultProjectId && (
-            <div className="space-y-1.5">
-              <Label className="text-xs">Project *</Label>
+            <div className="space-y-2">
+              <Label htmlFor="inv-project">
+                Project <span className="text-destructive">*</span>
+              </Label>
               <Select value={projectId} onValueChange={setProjectId}>
-                <SelectTrigger data-testid="select-invoice-project">
+                <SelectTrigger id="inv-project" data-testid="select-invoice-project">
                   <SelectValue placeholder="Select a project" />
                 </SelectTrigger>
                 <SelectContent>
@@ -87,8 +103,10 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="inv-title" className="text-xs">Title *</Label>
+          <div className="space-y-2">
+            <Label htmlFor="inv-title">
+              Title <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="inv-title"
               value={title}
@@ -99,9 +117,10 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="inv-desc" className="text-xs">
-              Description <span className="text-muted-foreground">(optional)</span>
+          <div className="space-y-2">
+            <Label htmlFor="inv-desc">
+              Description{" "}
+              <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
             <Textarea
               id="inv-desc"
@@ -109,15 +128,17 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of what this invoice covers..."
               maxLength={1000}
-              rows={3}
+              rows={4}
               className="resize-none"
               data-testid="input-invoice-description"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="inv-amount" className="text-xs">Amount *</Label>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="inv-amount">
+                Amount <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="inv-amount"
                 type="number"
@@ -129,8 +150,8 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
                 data-testid="input-invoice-amount"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Currency</Label>
+            <div className="space-y-2">
+              <Label>Currency</Label>
               <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
                 <SelectTrigger data-testid="select-invoice-currency">
                   <SelectValue />
@@ -145,13 +166,16 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
           </div>
 
           {amount && !isNaN(parsedAmount) && parsedAmount > 0 && (
-            <p className="text-sm font-semibold text-primary">
+            <p className="text-sm font-semibold text-primary -mt-1">
               Total: {formatCurrency(parsedAmount, currency)}
             </p>
           )}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="inv-due" className="text-xs">Due Date <span className="text-muted-foreground">(optional)</span></Label>
+          <div className="space-y-2">
+            <Label htmlFor="inv-due">
+              Due Date{" "}
+              <span className="text-muted-foreground font-normal">(optional)</span>
+            </Label>
             <Input
               id="inv-due"
               type="date"
@@ -163,8 +187,15 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
           </div>
         </div>
 
-        <div className="flex gap-2 pt-4 border-t mt-4 shrink-0">
-          <Button variant="outline" onClick={handleClose} className="flex-1">Cancel</Button>
+        {/* Footer */}
+        <div className="flex gap-3 px-6 py-4 border-t shrink-0">
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
           <Button
             onClick={handleSubmit}
             disabled={!isValid || createInvoice.isPending}
