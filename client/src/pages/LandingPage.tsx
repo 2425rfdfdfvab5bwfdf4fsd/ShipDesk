@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { useSEO } from "@/lib/seo";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, Github, FileText, DollarSign, MessageSquare, Shield,
@@ -232,6 +233,14 @@ function MockDashboard() {
 
 export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useSEO({
+    title: "ShipDesk — AI Client Portal for Freelance Developers",
+    description:
+      "ShipDesk connects to GitHub and uses AI to write your weekly client status reports. Give every client a branded portal with files, invoices, and messaging. Free trial, no card required.",
+    canonical: "https://shipdesk-delta.vercel.app/",
+    noindex: false,
+  });
 
   return (
     <div className="min-h-screen bg-[#06080f] text-white overflow-x-hidden">

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSEO } from "@/lib/seo";
 import { motion } from "framer-motion";
 import { GitMerge } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +19,7 @@ const STATUSES = [
 ] as const;
 
 export function ScopeChangesPage() {
+  useSEO({ title: "Scope Changes", noindex: true });
   const [statusFilter, setStatusFilter] = useState("all");
   const [quoteTarget, setQuoteTarget] = useState<ScopeChange | null>(null);
 

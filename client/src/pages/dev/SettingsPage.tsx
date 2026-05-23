@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSEO } from "@/lib/seo";
 import { Github, Palette, Globe, Bell, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WorkspaceSettingsForm } from "@/components/workspace/WorkspaceSettingsForm";
@@ -77,6 +78,7 @@ function IntegrationsTab() {
 }
 
 export function SettingsPage() {
+  useSEO({ title: "Settings", noindex: true });
   const [activeTab, setActiveTab] = useState<Tab>("workspace");
 
   return (

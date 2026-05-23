@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /projects/
+Disallow: /invoices
+Disallow: /scope-changes
+Disallow: /settings
+Disallow: /settings/
+Disallow: /onboarding
+Disallow: /portal/
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /build-logs
+
+Sitemap: https://shipdesk-delta.vercel.app/sitemap.xml

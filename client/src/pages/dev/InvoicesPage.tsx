@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSEO } from "@/lib/seo";
 import { Plus, Receipt, CheckCircle, Clock, AlertTriangle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ const STATUS_CONFIG = {
 };
 
 export function InvoicesPage() {
+  useSEO({ title: "Invoices", noindex: true });
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [showCreate, setShowCreate] = useState(false);

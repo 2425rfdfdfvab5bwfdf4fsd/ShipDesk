@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSEO } from "@/lib/seo";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
@@ -16,6 +17,7 @@ const PRESET_COLORS = [
 ];
 
 export function OnboardingPage() {
+  useSEO({ title: "Set Up Your Workspace", noindex: true });
   const [, navigate] = useLocation();
   const [step, setStep] = useState(1);
 

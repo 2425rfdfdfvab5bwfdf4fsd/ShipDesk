@@ -3,13 +3,151 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ShipDesk — AI Client Portal</title>
+    <title>ShipDesk — AI Client Portal for Freelance Developers</title>
+    <meta name="description" content="ShipDesk connects to GitHub and uses AI to write your weekly client status reports. Give every client a branded portal with files, invoices, and messaging. Free trial, no card required." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://shipdesk-delta.vercel.app/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ShipDesk" />
+    <meta property="og:url" content="https://shipdesk-delta.vercel.app/" />
+    <meta property="og:title" content="ShipDesk — AI Client Portal for Freelance Developers" />
+    <meta property="og:description" content="Connect GitHub, auto-generate polished weekly status reports with AI, and give every client a branded portal for files, invoices, and messaging. Save 7+ hours a week." />
+    <meta property="og:image" content="https://shipdesk-delta.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ShipDesk dashboard — AI-generated client status reports" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ShipDesk — AI Client Portal for Freelance Developers" />
+    <meta name="twitter:description" content="Connect GitHub, auto-generate weekly status reports with AI, and give clients a branded portal for files, invoices, and messaging." />
+    <meta name="twitter:image" content="https://shipdesk-delta.vercel.app/og-image.png" />
+
+    <!-- Performance hints -->
+    <link rel="preconnect" href="https://clerk.shipdesk-delta.vercel.app" crossorigin />
+    <link rel="dns-prefetch" href="https://api.github.com" />
+
+    <!-- Theme script (must run before first paint to prevent flash) -->
     <script>
       (function () {
         const theme = localStorage.getItem("shipdesk-theme") || "light";
         if (theme === "dark") document.documentElement.classList.add("dark");
       })();
+    </script>
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://shipdesk-delta.vercel.app/#organization",
+          "name": "ShipDesk",
+          "url": "https://shipdesk-delta.vercel.app/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://shipdesk-delta.vercel.app/favicon.svg",
+            "width": 32,
+            "height": 32
+          },
+          "description": "AI-native client portal for freelance developers and small dev agencies."
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://shipdesk-delta.vercel.app/#website",
+          "url": "https://shipdesk-delta.vercel.app/",
+          "name": "ShipDesk",
+          "publisher": { "@id": "https://shipdesk-delta.vercel.app/#organization" }
+        },
+        {
+          "@type": "WebPage",
+          "@id": "https://shipdesk-delta.vercel.app/#webpage",
+          "url": "https://shipdesk-delta.vercel.app/",
+          "name": "ShipDesk — AI Client Portal for Freelance Developers",
+          "description": "ShipDesk connects to GitHub and uses AI to write your weekly client status reports.",
+          "isPartOf": { "@id": "https://shipdesk-delta.vercel.app/#website" },
+          "about": { "@id": "https://shipdesk-delta.vercel.app/#organization" }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://shipdesk-delta.vercel.app/#app",
+          "name": "ShipDesk",
+          "url": "https://shipdesk-delta.vercel.app/",
+          "description": "ShipDesk connects to GitHub and uses Google Gemini AI to generate polished weekly client status reports. Includes branded client portals, invoicing, file sharing, and async messaging.",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "creator": { "@id": "https://shipdesk-delta.vercel.app/#organization" },
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Solo",
+              "price": "29",
+              "priceCurrency": "USD",
+              "description": "Perfect for freelancers managing a handful of clients.",
+              "priceSpecification": {
+                "@type": "UnitPriceSpecification",
+                "price": "29",
+                "priceCurrency": "USD",
+                "unitText": "MONTH"
+              }
+            },
+            {
+              "@type": "Offer",
+              "name": "Agency",
+              "price": "79",
+              "priceCurrency": "USD",
+              "description": "For growing agencies with more projects and clients.",
+              "priceSpecification": {
+                "@type": "UnitPriceSpecification",
+                "price": "79",
+                "priceCurrency": "USD",
+                "unitText": "MONTH"
+              }
+            }
+          ],
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "5",
+            "bestRating": "5",
+            "reviewCount": "3"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How does ShipDesk generate client reports?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "ShipDesk connects to your GitHub repositories via OAuth and reads your commits, pull requests, and releases. Every week, Google Gemini AI transforms that raw activity into a polished, plain-English status report your clients can actually understand."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Do clients need to create an account?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Clients access their portal through a magic link sent to their email — no passwords, no accounts, no friction. Sessions last 30 days."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How much does ShipDesk cost?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "ShipDesk offers a Solo plan at $29/month (up to 10 projects) and an Agency plan at $79/month (unlimited projects). Both include a 14-day free trial with no credit card required."
+              }
+            }
+          ]
+        }
+      ]
+    }
     </script>
   </head>
   <body>
