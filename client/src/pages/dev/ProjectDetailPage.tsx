@@ -26,7 +26,6 @@ import { ScopeChangeCard } from "@/components/scope/ScopeChangeCard";
 import { QuoteForm } from "@/components/scope/QuoteForm";
 import { MessageThread } from "@/components/messages/MessageThread";
 import { FileList } from "@/components/files/FileList";
-import { BuildLogsViewer } from "@/components/deployments/BuildLogsViewer";
 import { useProject, useUpdateProject, useDeleteProject } from "@/hooks/useProjects";
 import { useGitHubRepos, useConnectRepo, useDisconnectRepo, useGitHubStatus, useReregisterWebhook } from "@/hooks/useGitHub";
 import { useReport, useReports, useUpdateReport, useDeleteReport } from "@/hooks/useReports";
@@ -103,7 +102,6 @@ const TAB_CONFIG = [
   { value: "messages",      label: "Messages",   icon: MessageSquare },
   { value: "invoices",      label: "Invoices",   icon: ScrollText },
   { value: "scope-changes", label: "Scope",      icon: ArrowRightLeft },
-  { value: "deployments",   label: "Deploy",     icon: Server },
   { value: "settings",      label: "Settings",   icon: Settings2 },
 ];
 
@@ -643,12 +641,6 @@ export function ProjectDetailPage() {
                 ))}
               </div>
             )}
-          </TabsContent>
-
-          {/* ── Deployments ── */}
-          <TabsContent value="deployments" className="mt-0 p-3 sm:p-5">
-            <SectionHeader title="Deployments" description="Build log output — connect a deployment integration to stream live logs." />
-            <BuildLogsViewer />
           </TabsContent>
 
           {/* ── Settings ── */}
