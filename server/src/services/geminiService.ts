@@ -138,6 +138,7 @@ export async function generateWeeklyReport(opts: {
   weekEndDate: Date;
   githubEvents: GitHubEvent[];
   developerName?: string;
+  truncationNote?: string;
 }): Promise<ReportContent> {
   const weekStart = opts.weekStartDate.toISOString().split("T")[0];
   const weekEnd = opts.weekEndDate.toISOString().split("T")[0];
@@ -177,7 +178,7 @@ ${sender}`;
   const activityBlock =
     opts.githubEvents.length === 0
       ? "No GitHub activity was recorded this week."
-      : `Activity statistics:
+      : `${opts.truncationNote ? `Note: ${opts.truncationNote}\n\n` : ""}Activity statistics:
 - Total pushes: ${stats.pushEvents}
 - Total commits: ${stats.totalCommits}
 - Pull requests opened: ${stats.prsOpened}
@@ -243,7 +244,7 @@ Rules for rawMarkdown:
 </instructions>`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90000);
+  const timeout = setTimeout(() => controller.abort(), 60000);
 
   try {
     const result = await ai.models.generateContent({

@@ -12,6 +12,7 @@ interface GenerateReportButtonProps {
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
   iconOnly?: boolean;
+  existingDraftThisWeek?: boolean;
 }
 
 type Step = "idle" | "fetching" | "analyzing" | "writing" | "done" | "error";
@@ -22,7 +23,7 @@ const STEPS: { key: Step; label: string }[] = [
   { key: "writing",   label: "Writing summary with AI" },
 ];
 
-export function GenerateReportButton({ projectId, hasGitHub = true, variant = "default", size = "default", iconOnly = false }: GenerateReportButtonProps) {
+export function GenerateReportButton({ projectId, hasGitHub = true, variant = "default", size = "default", iconOnly = false, existingDraftThisWeek = false }: GenerateReportButtonProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("idle");
   const generate = useGenerateReport();
@@ -30,6 +31,12 @@ export function GenerateReportButton({ projectId, hasGitHub = true, variant = "d
   const activeStepIndex = STEPS.findIndex((s) => s.key === step);
 
   const handleGenerate = async () => {
+    if (existingDraftThisWeek) {
+      toast({
+        title: "Draft already exists for this week",
+        description: "A draft report already exists for this week. Generating a new one anyway.",
+      });
+    }
     for (const s of STEPS) {
       setStep(s.key);
       await new Promise((r) => setTimeout(r, 1000));

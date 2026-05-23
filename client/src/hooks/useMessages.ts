@@ -10,6 +10,7 @@ export function useMessages(projectId: string) {
         .get(`/api/projects/${projectId}/messages`, { params: { limit: 50 } })
         .then((r) => r.data),
     refetchInterval: 10000,
+    refetchIntervalInBackground: false,
     enabled: !!projectId,
   });
 }

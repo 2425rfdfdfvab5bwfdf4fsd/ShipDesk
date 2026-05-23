@@ -207,7 +207,7 @@ export function MessageThread({
     }
   };
 
-  const charLimit = 4000;
+  const charLimit = 5000;
   const nearLimit = body.length > charLimit * 0.85;
 
   return (

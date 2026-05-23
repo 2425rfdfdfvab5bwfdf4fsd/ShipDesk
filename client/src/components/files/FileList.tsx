@@ -1,21 +1,60 @@
 import { useState, useRef } from "react";
-import { Upload, Trash2, FileIcon, ExternalLink, Loader2, FolderOpen } from "lucide-react";
+import {
+  Upload, Trash2, ExternalLink, Loader2, FolderOpen,
+  File, FileText, FileImage, FileVideo, FileAudio, FileArchive, FileCode, FileSpreadsheet,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { ProjectFile } from "@/types";
 import { formatBytes, formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+
+function getFileTypeIcon(mimeType?: string): React.ElementType {
+  if (!mimeType) return File;
+  if (mimeType === "application/pdf") return FileText;
+  if (mimeType.startsWith("image/")) return FileImage;
+  if (mimeType.startsWith("video/")) return FileVideo;
+  if (mimeType.startsWith("audio/")) return FileAudio;
+  if (
+    mimeType === "application/zip" ||
+    mimeType === "application/x-zip-compressed" ||
+    mimeType === "application/gzip" ||
+    mimeType === "application/x-tar" ||
+    mimeType === "application/x-7z-compressed" ||
+    mimeType === "application/x-rar-compressed" ||
+    mimeType === "application/vnd.rar"
+  ) return FileArchive;
+  if (
+    mimeType === "application/vnd.ms-excel" ||
+    mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+    mimeType === "text/csv"
+  ) return FileSpreadsheet;
+  if (
+    mimeType.startsWith("text/") ||
+    mimeType === "application/msword" ||
+    mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    mimeType === "application/rtf"
+  ) return FileText;
+  if (
+    mimeType === "application/json" ||
+    mimeType === "application/javascript" ||
+    mimeType === "application/typescript"
+  ) return FileCode;
+  return File;
+}
 
 interface FileListProps {
   files: ProjectFile[];
   onUpload?: (file: File) => void;
   onDelete?: (fileId: string) => void;
   uploading?: boolean;
+  uploadProgress?: number;
   isLoading?: boolean;
   canUpload?: boolean;
 }
 
-export function FileList({ files, onUpload, onDelete, uploading, isLoading, canUpload = true }: FileListProps) {
+export function FileList({ files, onUpload, onDelete, uploading, uploadProgress, isLoading, canUpload = true }: FileListProps) {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,6 +91,12 @@ export function FileList({ files, onUpload, onDelete, uploading, isLoading, canU
           <p className="text-xs text-muted-foreground mb-2">
             {uploading ? "Uploading…" : "Drag & drop, or"}
           </p>
+          {uploading && uploadProgress !== undefined && uploadProgress !== null && (
+            <div className="w-full max-w-[160px] mx-auto mt-1 mb-1.5 space-y-1">
+              <Progress value={uploadProgress} className="h-1.5" />
+              <p className="text-[10px] text-muted-foreground text-center">{uploadProgress}%</p>
+            </div>
+          )}
           {!uploading && (
             <Button
               variant="outline"
@@ -101,7 +146,7 @@ export function FileList({ files, onUpload, onDelete, uploading, isLoading, canU
               className="border rounded-lg px-3 py-2.5 flex items-center gap-2.5 bg-card"
               data-testid={`file-row-${file.id}`}
             >
-              <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+              {(() => { const Icon = getFileTypeIcon(file.mimeType); return <Icon className="h-4 w-4 text-muted-foreground shrink-0" />; })()}
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium truncate" data-testid={`text-filename-${file.id}`}>
                   {file.fileName}

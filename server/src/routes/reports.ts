@@ -120,10 +120,18 @@ router.post(
       }
 
       const { start, end } = getWeekBounds();
-      const events = await db.gitHubEvent.findMany({
+      const totalEventCount = await db.gitHubEvent.count({
         where: { projectId: project.id, receivedAt: { gte: start, lte: end } },
-        orderBy: { receivedAt: "asc" },
       });
+      const rawEvents = await db.gitHubEvent.findMany({
+        where: { projectId: project.id, receivedAt: { gte: start, lte: end } },
+        orderBy: { receivedAt: "desc" },
+        take: 200,
+      });
+      const events = rawEvents.reverse();
+      const truncationNote = totalEventCount > 200
+        ? `summarizing from the 200 most recent of ${totalEventCount} events this week`
+        : undefined;
 
       const weekStart = start.toISOString().split("T")[0];
       const weekEndShort = end.toISOString().split("T")[0];
@@ -137,6 +145,7 @@ router.post(
         weekEndDate: end,
         githubEvents: events,
         developerName: ws.agencyName || ws.name,
+        truncationNote,
       });
 
       const report = await db.report.create({

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useParams, useLocation } from "wouter";
 import {
@@ -60,6 +60,7 @@ function ReportViewerDialog({ reportId, clientName, onClose }: { reportId: strin
   const { data: report, isLoading } = useReport(reportId);
   const publishReport = useUpdateReport();
   const editReport = useUpdateReport();
+  const deleteReport = useDeleteReport();
 
   if (isLoading) return (
     <div className="space-y-4 py-2">
@@ -88,6 +89,11 @@ function ReportViewerDialog({ reportId, clientName, onClose }: { reportId: strin
       onEdit={(id, content) => {
         editReport.mutate({ id, data: { content: { rawMarkdown: content } } });
         toast({ title: "Report saved" });
+      }}
+      onDelete={(id) => {
+        deleteReport.mutate(id);
+        onClose();
+        toast({ title: "Draft deleted" });
       }}
       isPublishing={publishReport.isPending}
     />
@@ -144,6 +150,7 @@ export function ProjectDetailPage() {
   const [inviteMagicLink, setInviteMagicLink] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [showRepoPicker, setShowRepoPicker] = useState(false);
   const [repoSearch, setRepoSearch] = useState("");
   const [editingInfo, setEditingInfo] = useState(false);
@@ -206,6 +213,16 @@ export function ProjectDetailPage() {
     }
   };
 
+  const existingDraftThisWeek = useMemo(() => {
+    const reports = reportsData?.reports;
+    if (!reports?.length) return false;
+    const now = new Date();
+    const day = now.getUTCDay();
+    const daysFromMonday = day === 0 ? 6 : day - 1;
+    const weekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysFromMonday));
+    return reports.some(r => r.status === "DRAFT" && new Date(r.weekStartDate) >= weekStart);
+  }, [reportsData]);
+
   const handleUploadFile = async (file: File) => {
     if (!uploadSig) {
       toast({ variant: "destructive", title: "Upload signature unavailable", description: "Configure Cloudinary to enable file uploads." });
@@ -218,13 +235,30 @@ export function ProjectDetailPage() {
     formData.append("signature", uploadSig.signature);
     formData.append("folder", uploadSig.folder);
     formData.append("upload_preset", uploadSig.uploadPreset);
+    setUploadProgress(0);
     try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${uploadSig.cloudName}/raw/upload`, { method: "POST", body: formData });
-      const data = await res.json() as { secure_url: string; public_id: string; bytes: number; format: string };
+      const data = await new Promise<{ secure_url: string; public_id: string; bytes: number; format: string }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+        });
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(JSON.parse(xhr.responseText));
+          } else {
+            reject(new Error(`Upload failed: ${xhr.status}`));
+          }
+        });
+        xhr.addEventListener("error", () => reject(new Error("Network error")));
+        xhr.open("POST", `https://api.cloudinary.com/v1_1/${uploadSig.cloudName}/raw/upload`);
+        xhr.send(formData);
+      });
       await createFile.mutateAsync({ projectId: id, fileName: file.name, fileSize: file.size, mimeType: file.type, cloudinaryPublicId: data.public_id, cloudinarySecureUrl: data.secure_url });
       toast({ title: "File uploaded" });
     } catch {
       toast({ variant: "destructive", title: "Upload failed" });
+    } finally {
+      setUploadProgress(null);
     }
   };
 
@@ -305,12 +339,12 @@ export function ProjectDetailPage() {
                 <Button variant="outline" size="sm" className="h-7 gap-1 text-xs px-2.5" onClick={() => setShowInvoiceModal(true)} data-testid="button-new-invoice">
                   <Plus className="h-3 w-3" /> Invoice
                 </Button>
-                <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" />
+                <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" existingDraftThisWeek={existingDraftThisWeek} />
               </div>
 
               {/* Mobile actions — compact dropdown */}
               <div className="flex sm:hidden items-center gap-1 shrink-0">
-                <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" iconOnly />
+                <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" iconOnly existingDraftThisWeek={existingDraftThisWeek} />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="h-7 w-7 p-0" data-testid="button-mobile-actions">
@@ -469,7 +503,7 @@ export function ProjectDetailPage() {
                   <p className="text-xs font-semibold">Generate your first report</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">Summarise GitHub activity into a client update.</p>
                 </div>
-                <GenerateReportButton projectId={id} hasGitHub={true} size="sm" variant="outline" />
+                <GenerateReportButton projectId={id} hasGitHub={true} size="sm" variant="outline" existingDraftThisWeek={existingDraftThisWeek} />
               </div>
             ) : null}
 
@@ -480,7 +514,7 @@ export function ProjectDetailPage() {
             <SectionHeader
               title="Reports"
               description="AI-generated weekly status updates for your client."
-              action={<GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" variant="outline" />}
+              action={<GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" variant="outline" existingDraftThisWeek={existingDraftThisWeek} />}
             />
             {reportsLoading ? (
               <div className="space-y-2.5">
@@ -497,7 +531,7 @@ export function ProjectDetailPage() {
                     {hasGitHub ? "Generate your first report to share progress." : "Connect a GitHub repository to start generating reports."}
                   </p>
                 </div>
-                {hasGitHub && <GenerateReportButton projectId={id} hasGitHub={true} size="sm" />}
+                {hasGitHub && <GenerateReportButton projectId={id} hasGitHub={true} size="sm" existingDraftThisWeek={existingDraftThisWeek} />}
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -550,7 +584,8 @@ export function ProjectDetailPage() {
                 deleteFile.mutate({ projectId: id, fileId });
                 toast({ title: "File deleted" });
               }}
-              uploading={createFile.isPending}
+              uploading={createFile.isPending || uploadProgress !== null}
+              uploadProgress={uploadProgress ?? undefined}
               isLoading={filesLoading}
             />
           </TabsContent>

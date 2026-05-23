@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, AlertTriangle, Edit2, Eye, Save, Loader2 } from "lucide-react";
+import { CheckCircle, AlertTriangle, Edit2, Eye, Save, Loader2, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +12,12 @@ interface ReportViewerProps {
   clientName?: string | null;
   onPublish?: (id: string) => void;
   onEdit?: (id: string, content: string) => void;
+  onDelete?: (id: string) => void;
   isPublishing?: boolean;
   canEdit?: boolean;
 }
 
-export function ReportViewer({ report, clientName, onPublish, onEdit, isPublishing, canEdit = false }: ReportViewerProps) {
+export function ReportViewer({ report, clientName, onPublish, onEdit, onDelete, isPublishing, canEdit = false }: ReportViewerProps) {
   const [editMode, setEditMode] = useState(false);
 
   const content = typeof report.content === "object" && report.content !== null
@@ -97,6 +98,21 @@ export function ReportViewer({ report, clientName, onPublish, onEdit, isPublishi
               ) : (
                 <><CheckCircle className="h-3.5 w-3.5" /> Publish to Client</>
               )}
+            </Button>
+          )}
+          {canEdit && report.status === "DRAFT" && onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 h-8 text-xs sm:text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              onClick={() => {
+                if (window.confirm("Delete this draft report? This cannot be undone.")) {
+                  onDelete(report.id);
+                }
+              }}
+              data-testid="button-delete-draft-report"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Delete Draft
             </Button>
           )}
           {report.status === "PUBLISHED" && (

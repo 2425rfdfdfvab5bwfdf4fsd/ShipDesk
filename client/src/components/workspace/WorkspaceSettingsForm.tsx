@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, Copy, Check } from "lucide-react";
+import { Loader2, Copy, Check, Globe, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,8 +23,10 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
   const [agencyName, setAgencyName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#6366F1");
   const [logoUrl, setLogoUrl] = useState("");
+  const [customDomain, setCustomDomain] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [savingDomain, setSavingDomain] = useState(false);
 
   useEffect(() => {
     if (workspace) {
@@ -32,6 +34,7 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
       setAgencyName(workspace.agencyName || "");
       setPrimaryColor(workspace.primaryColor || "#6366F1");
       setLogoUrl(workspace.logoUrl || "");
+      setCustomDomain(workspace.customDomain || "");
     }
   }, [workspace]);
 
@@ -91,6 +94,20 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
       toast({ title: "Settings saved" });
     } catch {
       toast({ variant: "destructive", title: "Failed to save settings" });
+    }
+  };
+
+  const handleSaveDomain = async () => {
+    setSavingDomain(true);
+    try {
+      await updateWorkspace.mutateAsync({
+        customDomain: customDomain.trim() || null,
+      });
+      toast({ title: "Custom domain saved" });
+    } catch {
+      toast({ variant: "destructive", title: "Failed to save domain" });
+    } finally {
+      setSavingDomain(false);
     }
   };
 
@@ -174,6 +191,60 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
               onColorChange={setPrimaryColor}
               uploadingLogo={uploadingLogo}
             />
+          </CardContent>
+        </Card>
+      )}
+
+      {!showBrandingOnly && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              Custom Domain
+            </CardTitle>
+            <CardDescription>
+              Point your own domain to your client portal. DNS routing setup is required separately.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="custom-domain">Domain</Label>
+              <Input
+                id="custom-domain"
+                value={customDomain}
+                onChange={(e) => setCustomDomain(e.target.value)}
+                placeholder="portal.youragency.com"
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="rounded-lg bg-muted/50 border p-3 text-xs text-muted-foreground space-y-1.5">
+              <p className="font-medium text-foreground">DNS Setup Instructions</p>
+              <p>Add a <span className="font-mono bg-background border rounded px-1">CNAME</span> record pointing your domain to:</p>
+              <p className="font-mono bg-background border rounded px-2 py-1 select-all">
+                {workspace?.slug ? `${workspace.slug}.portal.shipdesk.io` : "your-slug.portal.shipdesk.io"}
+              </p>
+              <p className="flex items-center gap-1 mt-1">
+                DNS changes may take up to 48 hours to propagate.
+                <a
+                  href="https://docs.shipdesk.io/custom-domain"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-0.5 text-primary hover:underline"
+                >
+                  Learn more <ExternalLink className="h-3 w-3" />
+                </a>
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveDomain}
+              disabled={savingDomain}
+              className="gap-1.5"
+              data-testid="button-save-custom-domain"
+            >
+              {savingDomain ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Saving…</> : "Save Domain"}
+            </Button>
           </CardContent>
         </Card>
       )}
