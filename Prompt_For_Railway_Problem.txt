@@ -1,0 +1,34 @@
+I'm deploying a Node.js + TypeScript monorepo to Railway using nixpacks. The build is failing. Here is the full build log: [paste log]
+
+Please diagnose the root cause using this checklist:
+
+1. tsc: not found or any devDependency binary missing
+
+Root cause: NODE_ENV=production is set in railway.toml's [environment] block, which applies at build time. npm skips devDependencies when NODE_ENV=production, so compilers (tsc, tsx, etc.) are never installed.
+Fix A: Remove NODE_ENV from railway.toml entirely. Set it as a Railway Variable in the dashboard instead (runtime-only).
+Fix B: In the build command, use npm install --include=dev instead of plain npm install or npm ci.
+Fix C: In package.json build script, use npx tsc instead of bare tsc so it resolves from node_modules rather than PATH.
+Fix D (most permanent): Move typescript, prisma, and all @types/* packages from devDependencies to dependencies in server/package.json. This makes them always installed regardless of NODE_ENV or any Railway dashboard setting. Note: nixpacks.toml is ignored when a custom build command is set in the Railway dashboard — so --include=dev in nixpacks.toml alone is not reliable. Fix D is the only solution that works in all cases. Only keep tsx in devDependencies (it is a dev hot-reload runner and is never needed in production).
+2. Prisma P3005 — "database schema is not empty, no migration history"
+
+Root cause: Prisma requires a _prisma_migrations table before migrate deploy can run. An existing database with tables but no migration history causes this.
+Fix: Create server/prisma/migrations/migration_lock.toml and a baseline migration folder server/prisma/migrations/20240101000000_init/migration.sql. In the build command, run npx prisma migrate resolve --applied 20240101000000_init 2>/dev/null || true before npx prisma migrate deploy.
+3. Prisma binary targets validation error (count: 9)
+
+Root cause: Too many or incorrect binaryTargets in schema.prisma.
+Fix: Use only ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"] and remove any postinstall script that runs prisma generate (Railway already runs it in the build command).
+4. TS7006: Parameter implicitly has an 'any' type (TypeScript compile error)
+
+Root cause: @types/express and other @types/* packages are in devDependencies. Railway skips devDependencies at build time, so TypeScript cannot find the type definitions for Express parameters (req, res, next). With strict: true in tsconfig.json, TypeScript rejects any parameter that cannot be inferred, causing TS7006 errors across every route file.
+Symptom in build log:
+  src/routes/workspace.ts(255,33): error TS7006: Parameter 'next' implicitly has an 'any' type.
+  src/routes/workspace.ts(283,28): error TS7006: Parameter 'res' implicitly has an 'any' type.
+Fix: Move all @types/* packages from devDependencies to dependencies in server/package.json (same as Fix D above). This is the same root cause as item 1 — Railway not installing devDependencies — just a different symptom.
+
+5. General Railway settings to verify
+
+Root Directory: leave blank (Railway reads railway.toml from repo root)
+Builder: Nixpacks (auto-detected)
+Branch: main, auto-deploy on push enabled
+NODE_ENV=production must be a Variable, not in railway.toml
+Health check path: /health with 60s timeout
