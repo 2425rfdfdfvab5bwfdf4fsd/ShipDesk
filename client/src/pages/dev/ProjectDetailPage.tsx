@@ -1023,7 +1023,10 @@ export function ProjectDetailPage() {
                               setInviteMagicLink(data.magicLinkUrl ?? null);
                             }
                           },
-                          onError: () => toast({ variant: "destructive", title: "Failed to create invitation" }),
+                          onError: (err: unknown) => {
+                            const msg = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ?? (err as { message?: string })?.message ?? "Please try again.";
+                            toast({ variant: "destructive", title: "Failed to create invitation", description: msg });
+                          },
                         }
                       );
                     }
@@ -1055,7 +1058,10 @@ export function ProjectDetailPage() {
                           setInviteMagicLink(data.magicLinkUrl ?? null);
                         }
                       },
-                      onError: () => toast({ variant: "destructive", title: "Failed to create invitation" }),
+                      onError: (err: unknown) => {
+                        const msg = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message ?? (err as { message?: string })?.message ?? "Please try again.";
+                        toast({ variant: "destructive", title: "Failed to create invitation", description: msg });
+                      },
                     }
                   );
                 }}
