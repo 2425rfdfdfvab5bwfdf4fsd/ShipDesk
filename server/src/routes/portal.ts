@@ -107,8 +107,8 @@ router.post("/auth/magic", magicLinkLimiter, async (req, res, next) => {
 
     res.cookie("shipdesk_client_session", session.id, {
       httpOnly: true,
-      secure: isHttps,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       expires: expiresAt,
     });
 
