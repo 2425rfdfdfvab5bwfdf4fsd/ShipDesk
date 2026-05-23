@@ -5,10 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { useClientProjects } from "@/hooks/useClientPortal";
 import { formatRelative } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { PortalErrorBanner } from "@/components/layout/PortalErrorBanner";
 
 export function ClientPortalHomePage() {
   const [, navigate] = useLocation();
-  const { data: projects, isLoading } = useClientProjects();
+  const { data: projects, isLoading, isError } = useClientProjects();
 
   if (isLoading) {
     return (
@@ -16,6 +17,10 @@ export function ClientPortalHomePage() {
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  if (isError) {
+    return <div className="py-4"><PortalErrorBanner /></div>;
   }
 
   if (!projects || projects.length === 0) {

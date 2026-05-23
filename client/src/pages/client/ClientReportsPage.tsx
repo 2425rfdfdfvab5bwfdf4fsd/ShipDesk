@@ -4,10 +4,11 @@ import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReportCard } from "@/components/reports/ReportCard";
 import { useClientReports } from "@/hooks/useClientPortal";
+import { PortalErrorBanner } from "@/components/layout/PortalErrorBanner";
 
 export function ClientReportsPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: reports, isLoading } = useClientReports(id);
+  const { data: reports, isLoading, isError } = useClientReports(id);
 
   return (
     <div>
@@ -21,6 +22,8 @@ export function ClientReportsPage() {
 
       {isLoading ? (
         <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
+      ) : isError ? (
+        <PortalErrorBanner />
       ) : (reports || []).length === 0 ? (
         <div className="text-center py-16 text-muted-foreground text-sm">No reports published yet.</div>
       ) : (

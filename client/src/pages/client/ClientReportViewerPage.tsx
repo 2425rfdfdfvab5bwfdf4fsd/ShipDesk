@@ -5,10 +5,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useClientReport } from "@/hooks/useClientPortal";
 import { formatDate } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import { PortalErrorBanner } from "@/components/layout/PortalErrorBanner";
 
 export function ClientReportViewerPage() {
   const { id, reportId } = useParams<{ id: string; reportId: string }>();
-  const { data: report, isLoading } = useClientReport(id, reportId);
+  const { data: report, isLoading, isError } = useClientReport(id, reportId);
 
   if (isLoading) {
     return (
@@ -18,6 +19,20 @@ export function ClientReportViewerPage() {
         <Skeleton className="h-4 w-1/3" />
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-48 w-full" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="px-1 space-y-4">
+        <Link
+          href={`/projects/${id}/reports`}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Reports
+        </Link>
+        <PortalErrorBanner />
       </div>
     );
   }

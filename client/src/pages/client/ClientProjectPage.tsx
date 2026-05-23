@@ -6,10 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useClientProject, useClientReports, useClientInvoices, useClientMessages } from "@/hooks/useClientPortal";
 import { formatRelative } from "@/lib/utils";
+import { PortalErrorBanner } from "@/components/layout/PortalErrorBanner";
 
 export function ClientProjectPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: project, isLoading } = useClientProject(id);
+  const { data: project, isLoading, isError } = useClientProject(id);
   const { data: reports } = useClientReports(id);
   const { data: invoices } = useClientInvoices(id);
   const { data: messagesData } = useClientMessages(id);
@@ -27,6 +28,10 @@ export function ClientProjectPage() {
         <Skeleton className="h-32 w-full" />
       </div>
     );
+  }
+
+  if (isError) {
+    return <div className="py-4"><PortalErrorBanner /></div>;
   }
 
   if (!project) {

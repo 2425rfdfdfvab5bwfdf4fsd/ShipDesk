@@ -4,10 +4,11 @@ import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { MessageThread } from "@/components/messages/MessageThread";
 import { useClientMessages, useSendClientMessage, useMarkClientMessagesRead } from "@/hooks/useClientPortal";
+import { PortalErrorBanner } from "@/components/layout/PortalErrorBanner";
 
 export function ClientMessagesPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: messagesData } = useClientMessages(id);
+  const { data: messagesData, isError } = useClientMessages(id);
   const sendMessage = useSendClientMessage();
   const markRead = useMarkClientMessagesRead();
 
@@ -24,14 +25,18 @@ export function ClientMessagesPage() {
         <ArrowLeft className="h-4 w-4" /> Back
       </Link>
       <h1 className="text-xl font-bold mb-4">Messages</h1>
-      <div className="flex-1 min-h-0 border rounded-lg overflow-hidden">
-        <MessageThread
-          messages={messagesData?.messages || []}
-          currentSenderType="CLIENT"
-          onSend={(body) => sendMessage.mutate({ projectId: id, body })}
-          isSending={sendMessage.isPending}
-        />
-      </div>
+      {isError ? (
+        <PortalErrorBanner />
+      ) : (
+        <div className="flex-1 min-h-0 border rounded-lg overflow-hidden">
+          <MessageThread
+            messages={messagesData?.messages || []}
+            currentSenderType="CLIENT"
+            onSend={(body) => sendMessage.mutate({ projectId: id, body })}
+            isSending={sendMessage.isPending}
+          />
+        </div>
+      )}
     </div>
   );
 }
