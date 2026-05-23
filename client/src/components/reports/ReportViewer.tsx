@@ -9,13 +9,14 @@ import { Report } from "@/types";
 
 interface ReportViewerProps {
   report: Report;
+  clientName?: string | null;
   onPublish?: (id: string) => void;
   onEdit?: (id: string, content: string) => void;
   isPublishing?: boolean;
   canEdit?: boolean;
 }
 
-export function ReportViewer({ report, onPublish, onEdit, isPublishing, canEdit = false }: ReportViewerProps) {
+export function ReportViewer({ report, clientName, onPublish, onEdit, isPublishing, canEdit = false }: ReportViewerProps) {
   const [editMode, setEditMode] = useState(false);
 
   const content = typeof report.content === "object" && report.content !== null
@@ -29,6 +30,11 @@ export function ReportViewer({ report, onPublish, onEdit, isPublishing, canEdit 
     : null;
 
   const rawMarkdown = content?.rawMarkdown || (typeof report.content === "string" ? report.content : "");
+
+  const displayMarkdown = clientName
+    ? rawMarkdown.replace(/^Hi,(\r?\n)/m, `Hi ${clientName},\$1`)
+    : rawMarkdown;
+
   const [editedMarkdown, setEditedMarkdown] = useState(rawMarkdown);
 
   const handleSaveEdit = () => {
@@ -168,7 +174,7 @@ export function ReportViewer({ report, onPublish, onEdit, isPublishing, canEdit 
             [&_p]:break-words [&_li]:break-words
             [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm
             [&_table]:w-full [&_table]:text-xs [&_td]:p-1 [&_th]:p-1">
-            <ReactMarkdown>{rawMarkdown || "*No content generated yet.*"}</ReactMarkdown>
+            <ReactMarkdown>{displayMarkdown || "*No content generated yet.*"}</ReactMarkdown>
           </div>
         )}
       </div>

@@ -56,7 +56,7 @@ function GitHubConnectButton({
   );
 }
 
-function ReportViewerDialog({ reportId, onClose }: { reportId: string; onClose: () => void }) {
+function ReportViewerDialog({ reportId, clientName, onClose }: { reportId: string; clientName?: string | null; onClose: () => void }) {
   const { data: report, isLoading } = useReport(reportId);
   const publishReport = useUpdateReport();
   const editReport = useUpdateReport();
@@ -74,6 +74,7 @@ function ReportViewerDialog({ reportId, onClose }: { reportId: string; onClose: 
   return (
     <ReportViewer
       report={report}
+      clientName={clientName}
       canEdit
       onPublish={async (id) => {
         try {
@@ -877,7 +878,7 @@ export function ProjectDetailPage() {
         <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogTitle className="sr-only">Report Viewer</DialogTitle>
           <DialogDescription className="sr-only">View and publish the AI-generated status report.</DialogDescription>
-          {showReportViewer && <ReportViewerDialog reportId={showReportViewer} onClose={() => setShowReportViewer(null)} />}
+          {showReportViewer && <ReportViewerDialog reportId={showReportViewer} clientName={project?.clientName} onClose={() => setShowReportViewer(null)} />}
         </DialogContent>
       </Dialog>
 
