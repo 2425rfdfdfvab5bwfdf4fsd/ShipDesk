@@ -147,6 +147,7 @@ export function ProjectDetailPage() {
   const [repoSearch, setRepoSearch] = useState("");
   const [editingInfo, setEditingInfo] = useState(false);
   const [editName, setEditName] = useState("");
+  const [editClientName, setEditClientName] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
   const { data: project, isLoading } = useProject(id);
@@ -628,7 +629,7 @@ export function ProjectDetailPage() {
                   <p className="text-xs font-semibold">Project Info</p>
                   {!editingInfo && (
                     <Button variant="ghost" size="sm" className="gap-1 h-6 text-[10px] text-muted-foreground px-2"
-                      onClick={() => { setEditName(project.name); setEditDescription(project.description || ""); setEditingInfo(true); }}
+                      onClick={() => { setEditName(project.name); setEditClientName(project.clientName || ""); setEditDescription(project.description || ""); setEditingInfo(true); }}
                       data-testid="button-edit-project-info"
                     >
                       <Edit2 className="h-2.5 w-2.5" /> Edit
@@ -642,6 +643,13 @@ export function ProjectDetailPage() {
                       <Input id="edit-name" className="h-8 text-sm" value={editName} onChange={(e) => setEditName(e.target.value)} maxLength={100} data-testid="input-project-name" />
                     </div>
                     <div className="space-y-1.5">
+                      <Label className="text-xs" htmlFor="edit-client-name">
+                        Client Name <span className="text-muted-foreground">(optional)</span>
+                      </Label>
+                      <Input id="edit-client-name" className="h-8 text-sm" value={editClientName} onChange={(e) => setEditClientName(e.target.value)} maxLength={100} placeholder="e.g. Acme Corp or John Smith" data-testid="input-project-client-name" />
+                      <p className="text-[11px] text-muted-foreground">Used to personalise reports — e.g. "Hi Acme Corp,"</p>
+                    </div>
+                    <div className="space-y-1.5">
                       <Label className="text-xs" htmlFor="edit-desc">Description</Label>
                       <Textarea id="edit-desc" className="text-sm resize-none" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} maxLength={500} rows={2} placeholder="Optional…" data-testid="input-project-description" />
                     </div>
@@ -650,7 +658,7 @@ export function ProjectDetailPage() {
                         data-testid="button-save-project-info"
                         onClick={async () => {
                           try {
-                            await updateProject.mutateAsync({ id: project.id, data: { name: editName.trim(), description: editDescription.trim() || null } });
+                            await updateProject.mutateAsync({ id: project.id, data: { name: editName.trim(), clientName: editClientName.trim() || null, description: editDescription.trim() || null } });
                             setEditingInfo(false);
                             toast({ title: "Project updated" });
                           } catch {
@@ -668,6 +676,10 @@ export function ProjectDetailPage() {
                     <div className="flex items-start justify-between gap-4">
                       <span className="text-muted-foreground shrink-0">Name</span>
                       <span className="font-medium text-right">{project.name}</span>
+                    </div>
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="text-muted-foreground shrink-0">Client Name</span>
+                      <span className="text-right">{project.clientName || <span className="text-muted-foreground italic">Not set</span>}</span>
                     </div>
                     {project.description && (
                       <div className="flex items-start justify-between gap-4">

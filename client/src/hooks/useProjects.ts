@@ -42,7 +42,7 @@ export function useUpdateProject() {
       data,
     }: {
       id: string;
-      data: Partial<Pick<Project, "name" | "description" | "status">>;
+      data: Partial<Pick<Project, "name" | "clientName" | "description" | "status">>;
     }) => api.patch(`/api/projects/${id}`, data).then((r) => r.data),
     onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: ["projects"] });
