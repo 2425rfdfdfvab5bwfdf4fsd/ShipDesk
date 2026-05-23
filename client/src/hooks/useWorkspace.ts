@@ -56,6 +56,14 @@ export function useCompleteOnboarding() {
   });
 }
 
+export function useUnreadMessageCount() {
+  return useQuery<{ count: number }>({
+    queryKey: ["unread-count"],
+    queryFn: () => api.get("/api/workspace/unread-count").then((r) => r.data),
+    refetchInterval: 15000,
+  });
+}
+
 export function useCheckSubdomain(slug: string) {
   return useQuery<{ available: boolean }>({
     queryKey: ["check-subdomain", slug],

@@ -47,6 +47,7 @@ export async function generateReportsForAllProjects(): Promise<void> {
 
       const content = await generateWeeklyReport({
         projectName: project.name,
+        clientName: project.clientName || undefined,
         weekStartDate: start,
         weekEndDate: end,
         githubEvents: events,

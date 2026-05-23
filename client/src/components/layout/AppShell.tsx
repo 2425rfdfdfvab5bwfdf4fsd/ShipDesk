@@ -3,11 +3,11 @@ import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import {
   LayoutDashboard, DollarSign, GitMerge, Settings,
-  Menu, X, Sun, Moon, LogOut, ChevronRight
+  Menu, X, Sun, Moon, LogOut, MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useWorkspace } from "@/hooks/useWorkspace";
+import { useWorkspace, useUnreadMessageCount } from "@/hooks/useWorkspace";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,6 +33,8 @@ export function AppShell({ children }: AppShellProps) {
   const { signOut } = useClerk();
   const { user } = useUser();
   const { data: workspace, error: workspaceError, isLoading: workspaceLoading } = useWorkspace();
+  const { data: unreadData } = useUnreadMessageCount();
+  const unreadCount = unreadData?.count ?? 0;
 
   // Only redirect to onboarding when we know for certain there is no workspace (404).
   // Any other error (e.g. 401 while auth token is still loading on refresh) should
@@ -106,6 +108,7 @@ export function AppShell({ children }: AppShellProps) {
             const active = location === item.href ||
               (item.href === "/settings" && location.startsWith("/settings")) ||
               (item.href !== "/dashboard" && item.href !== "/settings" && location.startsWith(item.href));
+            const showBadge = item.href === "/dashboard" && unreadCount > 0;
             return (
               <Link
                 key={item.href}
@@ -119,7 +122,18 @@ export function AppShell({ children }: AppShellProps) {
                 )}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {showBadge && (
+                  <span className={cn(
+                    "flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] justify-center",
+                    active
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-primary text-primary-foreground"
+                  )}>
+                    <MessageSquare className="h-2.5 w-2.5" />
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}

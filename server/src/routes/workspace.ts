@@ -182,6 +182,34 @@ router.patch(
 );
 
 router.get(
+  "/unread-count",
+  requireAuth,
+  async (req: AuthRequest, res, next) => {
+    try {
+      const workspace = await db.workspace.findUnique({
+        where: { ownerId: req.userId! },
+      });
+      if (!workspace) {
+        res.json({ count: 0 });
+        return;
+      }
+
+      const count = await db.message.count({
+        where: {
+          senderType: "CLIENT",
+          readByDeveloperAt: null,
+          project: { workspaceId: workspace.id },
+        },
+      });
+
+      res.json({ count });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
   "/logo-upload-signature",
   requireAuth,
   async (req: AuthRequest, res, next) => {
