@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Plus, FolderOpen, DollarSign, GitMerge, TrendingUp, Search, Archive, LayoutGrid } from "lucide-react";
+import { Plus, FolderOpen, DollarSign, GitMerge, TrendingUp, Search, Archive, LayoutGrid, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
@@ -105,7 +105,7 @@ export function DashboardPage() {
 
       {/* ── Sticky header ── */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b px-4 sm:px-6 py-2.5">
-        {/* Row 1: title + button (always) */}
+        {/* Row 1: title + button */}
         <div className="flex items-center gap-2 mb-2">
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-bold leading-tight truncate">
@@ -124,7 +124,7 @@ export function DashboardPage() {
             <Plus className="h-3.5 w-3.5" /> New Project
           </Button>
         </div>
-        {/* Row 2: search (full-width) */}
+        {/* Row 2: search */}
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
           <Input
@@ -165,12 +165,11 @@ export function DashboardPage() {
           />
         </div>
 
-        {/* Onboarding checklist — hidden once all complete */}
+        {/* Onboarding checklist */}
         <OnboardingChecklist />
 
         {/* Project grid */}
         <div>
-          {/* Section header */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5">
               {showArchived
@@ -198,7 +197,6 @@ export function DashboardPage() {
             </button>
           </div>
 
-          {/* Grid */}
           {isLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {[...Array(3)].map((_, i) => (
@@ -235,14 +233,15 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* ── New project modal ── */}
-      <Dialog open={showNewProject} onOpenChange={setShowNewProject}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base">New Project</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-1">
-            <div className="space-y-1">
+      {/* ── New project slide-over ── */}
+      <Sheet open={showNewProject} onOpenChange={setShowNewProject}>
+        <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
+          <SheetHeader className="mb-5 pr-6">
+            <SheetTitle>New Project</SheetTitle>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+            <div className="space-y-1.5">
               <Label htmlFor="proj-name" className="text-xs">Project Name *</Label>
               <Input
                 id="proj-name"
@@ -250,12 +249,11 @@ export function DashboardPage() {
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Client Website Redesign"
                 maxLength={100}
-                className="h-8 text-sm"
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
                 data-testid="input-project-name"
               />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <Label htmlFor="proj-client-name" className="text-xs">
                 Client Name <span className="text-muted-foreground">(optional)</span>
               </Label>
@@ -265,12 +263,11 @@ export function DashboardPage() {
                 onChange={(e) => setNewClientName(e.target.value)}
                 placeholder="e.g. Acme Corp or John Smith"
                 maxLength={100}
-                className="h-8 text-sm"
                 data-testid="input-project-client-name"
               />
               <p className="text-[11px] text-muted-foreground">Used to personalise reports — e.g. "Hi Acme Corp,"</p>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <Label htmlFor="proj-desc" className="text-xs">
                 Description <span className="text-muted-foreground">(optional)</span>
               </Label>
@@ -286,16 +283,26 @@ export function DashboardPage() {
               />
             </div>
           </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowNewProject(false)}>
+
+          <div className="flex gap-2 pt-4 border-t mt-4 shrink-0">
+            <Button variant="outline" onClick={() => setShowNewProject(false)} className="flex-1">
               Cancel
             </Button>
-            <Button size="sm" onClick={handleCreate} disabled={!newName.trim() || createProject.isPending}>
-              {createProject.isPending ? "Creating…" : "Create Project"}
+            <Button
+              onClick={handleCreate}
+              disabled={!newName.trim() || createProject.isPending}
+              className="flex-1"
+              data-testid="button-create-project"
+            >
+              {createProject.isPending ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />Creating…</>
+              ) : (
+                "Create Project"
+              )}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

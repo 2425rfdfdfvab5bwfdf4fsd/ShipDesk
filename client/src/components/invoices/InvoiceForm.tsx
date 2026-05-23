@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useCreateInvoice } from "@/hooks/useInvoices";
 import { useProjects } from "@/hooks/useProjects";
 import { toast } from "@/hooks/use-toast";
@@ -63,19 +63,19 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Create Invoice</DialogTitle>
-          <DialogDescription>Add a new invoice and generate a payment link for your client.</DialogDescription>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={(v) => !v && handleClose()}>
+      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
+        <SheetHeader className="mb-4 pr-6">
+          <SheetTitle>Create Invoice</SheetTitle>
+          <SheetDescription>Add a new invoice and generate a payment link for your client.</SheetDescription>
+        </SheetHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1">
           {!defaultProjectId && (
-            <div className="space-y-2">
-              <Label>Project *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Project *</Label>
               <Select value={projectId} onValueChange={setProjectId}>
-                <SelectTrigger>
+                <SelectTrigger data-testid="select-invoice-project">
                   <SelectValue placeholder="Select a project" />
                 </SelectTrigger>
                 <SelectContent>
@@ -87,19 +87,22 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="inv-title">Title *</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="inv-title" className="text-xs">Title *</Label>
             <Input
               id="inv-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Milestone 1 — Design & Architecture"
               maxLength={150}
+              data-testid="input-invoice-title"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="inv-desc">Description</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="inv-desc" className="text-xs">
+              Description <span className="text-muted-foreground">(optional)</span>
+            </Label>
             <Textarea
               id="inv-desc"
               value={description}
@@ -108,12 +111,13 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
               maxLength={1000}
               rows={3}
               className="resize-none"
+              data-testid="input-invoice-description"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="inv-amount">Amount *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="inv-amount" className="text-xs">Amount *</Label>
               <Input
                 id="inv-amount"
                 type="number"
@@ -122,12 +126,13 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="2500.00"
+                data-testid="input-invoice-amount"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Currency</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Currency</Label>
               <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
-                <SelectTrigger>
+                <SelectTrigger data-testid="select-invoice-currency">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -140,34 +145,40 @@ export function InvoiceForm({ open, onClose, defaultProjectId }: InvoiceFormProp
           </div>
 
           {amount && !isNaN(parsedAmount) && parsedAmount > 0 && (
-            <p className="text-sm font-medium text-primary">
+            <p className="text-sm font-semibold text-primary">
               Total: {formatCurrency(parsedAmount, currency)}
             </p>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="inv-due">Due Date (optional)</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="inv-due" className="text-xs">Due Date <span className="text-muted-foreground">(optional)</span></Label>
             <Input
               id="inv-due"
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               min={new Date().toISOString().split("T")[0]}
+              data-testid="input-invoice-due-date"
             />
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!isValid || createInvoice.isPending}>
+        <div className="flex gap-2 pt-4 border-t mt-4 shrink-0">
+          <Button variant="outline" onClick={handleClose} className="flex-1">Cancel</Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={!isValid || createInvoice.isPending}
+            className="flex-1"
+            data-testid="button-submit-invoice"
+          >
             {createInvoice.isPending ? (
-              <><Loader2 className="h-4 w-4 animate-spin mr-2" />Creating...</>
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" />Creating…</>
             ) : (
               "Create Invoice"
             )}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

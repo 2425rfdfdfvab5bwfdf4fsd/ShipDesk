@@ -83,6 +83,7 @@ export interface Report extends ReportMeta {
 export interface Invoice {
   id: string;
   projectId: string;
+  projectName?: string | null;
   title: string;
   description: string | null;
   amount: number;

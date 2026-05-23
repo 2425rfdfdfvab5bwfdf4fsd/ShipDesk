@@ -38,15 +38,21 @@ router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
     if (projectId) where.projectId = projectId;
     if (status) where.status = status;
 
-    const [invoices, total] = await Promise.all([
+    const [invoicesRaw, total] = await Promise.all([
       db.invoice.findMany({
         where,
+        include: { project: { select: { name: true } } },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
       db.invoice.count({ where }),
     ]);
+
+    const invoices = invoicesRaw.map(({ project: p, ...inv }) => ({
+      ...inv,
+      projectName: p?.name ?? null,
+    }));
 
     res.json({ invoices, total });
   } catch (err) {
