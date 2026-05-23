@@ -64,6 +64,17 @@ function isLikelyCustomDomain(): boolean {
     host.endsWith(".sisko.replit.dev") ||
     host.endsWith(".kirk.replit.dev")
   ) return false;
+  // Exclude deployment platform domains (not user-owned)
+  if (
+    host.endsWith(".vercel.app") ||
+    host.endsWith(".railway.app") ||
+    host.endsWith(".up.railway.app") ||
+    host.endsWith(".onrender.com") ||
+    host.endsWith(".netlify.app") ||
+    host.endsWith(".fly.dev") ||
+    host.endsWith(".herokuapp.com") ||
+    host.endsWith(".pages.dev")
+  ) return false;
   // Exclude shipdesk's own domains
   if (host === "shipdesk.io" || host.endsWith(".shipdesk.io")) return false;
   // Must contain at least one dot (rules out bare hostnames)
