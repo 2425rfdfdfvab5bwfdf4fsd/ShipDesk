@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
@@ -238,6 +238,7 @@ export function DashboardPage() {
         <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
           <SheetHeader className="mb-5 pr-6">
             <SheetTitle>New Project</SheetTitle>
+            <SheetDescription>Fill in the details below to create a new client project.</SheetDescription>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto space-y-4 pr-1">
