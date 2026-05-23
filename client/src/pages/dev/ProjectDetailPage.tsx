@@ -953,7 +953,7 @@ export function ProjectDetailPage() {
             <DialogTitle className="text-sm">Invite Client</DialogTitle>
             <DialogDescription className="text-xs">
               {inviteMagicLink
-                ? "Email delivery requires a verified domain. Copy this link and share it directly with your client."
+                ? "Invitation created — copy this link and send it to your client."
                 : "Send a magic link to give someone access to this project's portal."}
             </DialogDescription>
           </DialogHeader>
@@ -992,10 +992,8 @@ export function ProjectDetailPage() {
                     <ExternalLink className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-                <p className="text-[10px] text-amber-600 dark:text-amber-400">
-                  To send emails automatically, verify a domain at{" "}
-                  <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="underline">resend.com/domains</a>
-                  {" "}and update your EMAIL_FROM secret.
+                <p className="text-[10px] text-muted-foreground">
+                  Share this link via email, WhatsApp, or any messaging app. It expires in 7 days.
                 </p>
               </div>
             </div>
