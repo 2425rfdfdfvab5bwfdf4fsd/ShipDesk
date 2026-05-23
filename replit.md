@@ -31,7 +31,7 @@ Or from the root: `npm run dev` (uses `concurrently` to start both).
 | AI | Google Gemini 1.5 Pro (`GEMINI_API_KEY`) |
 | File storage | Cloudinary (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`) |
 | Payments | Lemon Squeezy (`LEMONSQUEEZY_API_KEY`, `LEMONSQUEEZY_STORE_ID`, `LEMONSQUEEZY_VARIANT_ID`) |
-| Email | Resend (`RESEND_API_KEY`) |
+| Email | Brevo (`BREVO_API_KEY`) |
 
 ## Environment Variables
 

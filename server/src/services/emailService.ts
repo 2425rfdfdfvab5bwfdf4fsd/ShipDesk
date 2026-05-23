@@ -1,41 +1,27 @@
-import { Resend } from "resend";
+import { BrevoClient } from "@getbrevo/brevo";
 
-// Resend requires the sender to be a verified custom domain.
-// Free email providers (Gmail, Yahoo, etc.) are rejected by Resend.
-// Fall back to onboarding@resend.dev which works on all Resend accounts.
-const FREE_PROVIDERS = new Set(["gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "live.com", "icloud.com"]);
-function getFrom(): string {
-  const configured = process.env.EMAIL_FROM;
-  if (!configured) return "onboarding@resend.dev";
-  const domain = configured.split("@")[1]?.toLowerCase() ?? "";
-  if (FREE_PROVIDERS.has(domain)) {
-    console.warn(
-      `[emailService] EMAIL_FROM (${configured}) is a free-provider address. ` +
-      `Resend requires a verified custom domain. Falling back to onboarding@resend.dev. ` +
-      `To use a custom from-address, verify your domain at resend.com/domains.`
-    );
-    return "onboarding@resend.dev";
-  }
-  return configured;
-}
-const FROM = getFrom();
-
-function getResend(): Resend | null {
-  const key = process.env.RESEND_API_KEY;
+function getClient(): BrevoClient | null {
+  const key = process.env.BREVO_API_KEY;
   if (!key) {
-    console.warn("[emailService] RESEND_API_KEY is not set — email sending is disabled");
+    console.warn("[emailService] BREVO_API_KEY is not set — email sending is disabled");
     return null;
   }
-  return new Resend(key);
+  return new BrevoClient({ apiKey: key });
 }
 
-async function safeSend(resend: Resend, payload: Parameters<Resend["emails"]["send"]>[0]): Promise<void> {
-  const { data, error } = await resend.emails.send(payload);
-  if (error) {
-    console.error("[emailService] Resend send error:", JSON.stringify(error));
-    throw new Error(`Email delivery failed: ${error.message ?? JSON.stringify(error)}`);
-  }
-  console.log("[emailService] Email sent id=%s to=%s", data?.id, payload.to);
+function getFrom(): { name: string; email: string } {
+  const raw = process.env.EMAIL_FROM ?? "ShipDesk <noreply@shipdesk.io>";
+  const match = raw.match(/^(.+?)\s*<(.+?)>$/);
+  if (match) return { name: match[1].trim(), email: match[2].trim() };
+  return { name: "ShipDesk", email: raw.trim() };
+}
+
+async function safeSend(
+  client: BrevoClient,
+  payload: Parameters<BrevoClient["transactionalEmails"]["sendTransacEmail"]>[0]
+): Promise<void> {
+  const result = await client.transactionalEmails.sendTransacEmail(payload);
+  console.log("[emailService] Email sent messageId=%s", (result as any)?.messageId);
 }
 
 export async function sendMagicLink(opts: {
@@ -45,15 +31,16 @@ export async function sendMagicLink(opts: {
   workspaceName: string;
   agencyName: string | null;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
+  const client = getClient();
+  if (!client) return;
+  const from = getFrom();
   const name = opts.clientName || "there";
   const sender = opts.agencyName || opts.workspaceName;
-  await safeSend(resend, {
-    from: FROM,
-    to: opts.to,
+  await safeSend(client, {
+    sender: from,
+    to: [{ email: opts.to, name: opts.clientName ?? undefined }],
     subject: `Your portal access link from ${sender}`,
-    html: `
+    htmlContent: `
       <p>Hi ${name},</p>
       <p>${sender} has invited you to access your project portal on ShipDesk.</p>
       <p><a href="${opts.magicLinkUrl}" style="background:#6366F1;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Access Your Portal</a></p>
@@ -70,15 +57,16 @@ export async function sendReportPublished(opts: {
   portalUrl: string;
   agencyName: string | null;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
+  const client = getClient();
+  if (!client) return;
+  const from = getFrom();
   const name = opts.clientName || "there";
   const sender = opts.agencyName || "Your developer";
-  await safeSend(resend, {
-    from: FROM,
-    to: opts.to,
+  await safeSend(client, {
+    sender: from,
+    to: [{ email: opts.to, name: opts.clientName ?? undefined }],
     subject: `New project update: ${opts.reportTitle}`,
-    html: `
+    htmlContent: `
       <p>Hi ${name},</p>
       <p>${sender} has published a new project status update.</p>
       ${opts.reportSummary ? `<p><strong>Summary:</strong> ${opts.reportSummary}</p>` : ""}
@@ -95,8 +83,9 @@ export async function sendScopeChangeNotification(opts: {
   portalUrl: string;
   type: "new_request" | "quote_sent" | "approved" | "declined";
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
+  const client = getClient();
+  if (!client) return;
+  const from = getFrom();
   const subjectMap = {
     new_request: `New scope change request: ${opts.scopeChangeTitle}`,
     quote_sent: `Quote ready for your review: ${opts.scopeChangeTitle}`,
@@ -109,11 +98,11 @@ export async function sendScopeChangeNotification(opts: {
     approved: `The scope change request for ${opts.projectName} has been approved.`,
     declined: `The scope change request for ${opts.projectName} has been declined.`,
   };
-  await safeSend(resend, {
-    from: FROM,
-    to: opts.to,
+  await safeSend(client, {
+    sender: from,
+    to: [{ email: opts.to, name: opts.recipientName ?? undefined }],
     subject: subjectMap[opts.type],
-    html: `
+    htmlContent: `
       <p>Hi ${opts.recipientName || "there"},</p>
       <p>${bodyMap[opts.type]}</p>
       <p><a href="${opts.portalUrl}" style="background:#6366F1;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">View Details</a></p>
@@ -128,13 +117,14 @@ export async function sendMessageNotification(opts: {
   senderName: string;
   portalUrl: string;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
-  await safeSend(resend, {
-    from: FROM,
-    to: opts.to,
+  const client = getClient();
+  if (!client) return;
+  const from = getFrom();
+  await safeSend(client, {
+    sender: from,
+    to: [{ email: opts.to, name: opts.recipientName ?? undefined }],
     subject: `New message on ${opts.projectName}`,
-    html: `
+    htmlContent: `
       <p>Hi ${opts.recipientName || "there"},</p>
       <p>${opts.senderName} sent you a message on the ${opts.projectName} project.</p>
       <p><a href="${opts.portalUrl}" style="background:#6366F1;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">View Message</a></p>
@@ -149,17 +139,18 @@ export async function sendPaymentConfirmedNotification(opts: {
   amount: number;
   currency: string;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
+  const client = getClient();
+  if (!client) return;
+  const from = getFrom();
   const formatted = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: opts.currency,
   }).format(opts.amount);
-  await safeSend(resend, {
-    from: FROM,
-    to: opts.to,
+  await safeSend(client, {
+    sender: from,
+    to: [{ email: opts.to, name: opts.developerName ?? undefined }],
     subject: `Payment received: ${opts.invoiceTitle}`,
-    html: `
+    htmlContent: `
       <p>Hi ${opts.developerName || "there"},</p>
       <p>Great news — payment of <strong>${formatted}</strong> has been confirmed for invoice: <strong>${opts.invoiceTitle}</strong>.</p>
       <p>The invoice status has been automatically updated to Paid.</p>
@@ -176,18 +167,19 @@ export async function sendInvoiceNotification(opts: {
   paymentUrl: string;
   agencyName: string | null;
 }): Promise<void> {
-  const resend = getResend();
-  if (!resend) return;
+  const client = getClient();
+  if (!client) return;
+  const from = getFrom();
   const sender = opts.agencyName || "Your developer";
   const formatted = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: opts.currency,
   }).format(opts.amount);
-  await safeSend(resend, {
-    from: FROM,
-    to: opts.to,
+  await safeSend(client, {
+    sender: from,
+    to: [{ email: opts.to, name: opts.clientName ?? undefined }],
     subject: `Invoice from ${sender}: ${opts.invoiceTitle}`,
-    html: `
+    htmlContent: `
       <p>Hi ${opts.clientName || "there"},</p>
       <p>${sender} has sent you an invoice: <strong>${opts.invoiceTitle}</strong> for ${formatted}.</p>
       ${opts.paymentUrl ? `<p><a href="${opts.paymentUrl}" style="background:#6366F1;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Pay Now</a></p>` : ""}
