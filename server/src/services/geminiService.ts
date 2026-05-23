@@ -138,11 +138,37 @@ export async function generateWeeklyReport(opts: {
   githubEvents: GitHubEvent[];
   developerName?: string;
 }): Promise<ReportContent> {
-  const ai = getClient();
-
   const weekStart = opts.weekStartDate.toISOString().split("T")[0];
   const weekEnd = opts.weekEndDate.toISOString().split("T")[0];
   const sender = opts.developerName || "Your Project Manager";
+
+  // Skip the AI entirely when there is no activity — returning a factual
+  // no-activity report avoids hallucinated filler text.
+  if (opts.githubEvents.length === 0) {
+    const rawMarkdown = `Hi,
+
+Here is your weekly status update for the **${opts.projectName}** project, covering the week of ${weekStart} to ${weekEnd}.
+
+## Summary
+
+No development activity was recorded in the GitHub repository this week.
+
+## What We Did
+
+No commits, pull requests, or releases were pushed to the repository during this period. If work was done outside of GitHub (planning, design, calls, etc.), your developer may follow up separately.
+
+${sender}`;
+
+    return {
+      summary: `No development activity was recorded in the GitHub repository for ${opts.projectName} this week (${weekStart} to ${weekEnd}).`,
+      highlights: [],
+      nextSteps: [],
+      rawMarkdown,
+      generationWarning: null,
+    };
+  }
+
+  const ai = getClient();
 
   const { lines: eventLines, stats } = buildEventSummaries(opts.githubEvents);
 
