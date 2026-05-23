@@ -1,0 +1,24 @@
+I'm deploying a React + Vite SPA to Vercel. The frontend is a static site and the backend API runs separately (e.g. on Railway, Render, or Replit). Please fix all of the following common Vercel deployment problems at once:
+
+SPA routing 404s — navigating directly to any route like /dashboard returns a 404. Fix by creating vercel.json inside the Vite client/ folder (the folder set as Root Directory in Vercel) with a catch-all SPA rewrite that excludes API paths:
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+
+Use two ordered rewrites — first match wins. The /api/:path* entry prevents API calls from being served the HTML file. Do NOT use regex lookaheads like (?!api/) — Vercel does not support them.
+
+Blank white screen after login — the app flashes briefly then goes completely white. Root cause: the catch-all rewrite is returning index.html (HTML, status 200) for API calls. Axios doesn't throw on 200 so the HTML string reaches components that call .filter() or .map() on it, crashing React with no error boundary. Fix two ways:
+
+Apply the rewrite fix above so API calls get a proper 404 instead
+Add an axios response interceptor that rejects any text/html content-type response before it reaches components
+Add a top-level React error boundary in main.tsx so any future crash shows a recoverable error screen instead of blank white
+API calls going to the wrong place — the frontend uses a relative /api base URL which only works when frontend and backend run on the same origin. On Vercel the backend is elsewhere. Fix by reading VITE_API_BASE_URL from the environment at build time (e.g. import.meta.env.VITE_API_BASE_URL || "/api"). The user must add VITE_API_BASE_URL=https://your-backend.example.com to Vercel → Settings → Environment Variables, then redeploy.
+
+Build command / Root Directory mismatch — if Root Directory is set to client/ in Vercel's dashboard, the buildCommand in vercel.json must be just "npm run build" (not --workspace=client or --prefix client). Vercel already runs commands from inside the Root Directory.
+
+Auth spinner / redirect loop on page load — if using Clerk or any JWT auth, never return null while auth is loading. Return a loading spinner instead so React doesn't unmount and remount the tree mid-load.
+
+Please implement all of these fixes now.
