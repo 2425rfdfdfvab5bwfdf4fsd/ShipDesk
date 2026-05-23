@@ -403,11 +403,47 @@ VITE_API_BASE_URL=https://your-backend.up.railway.app
 
 ## Troubleshooting
 
-### Railway build fails with `tsc: not found`
+### Railway build fails with `tsc: not found` or any devDependency binary missing
 
-**Cause:** `NODE_ENV=production` is being applied at build time, telling npm to skip `devDependencies` (which includes TypeScript).
+**Cause:** Railway runs a plain `npm install` at build time. When `NODE_ENV=production` is set (which Railway does by default, or when a custom build command is configured in the dashboard), npm skips all `devDependencies` — including TypeScript, Prisma CLI, and any `@types/*` packages. Any binary or type that lives only in `devDependencies` will be missing.
 
-**Fix:** Make sure `NODE_ENV` is set as a Railway **Variable** (runtime-only), not in `railway.toml`.
+This also bypasses `nixpacks.toml` — even if `nixpacks.toml` specifies `npm install --include=dev`, a custom build command set in the Railway dashboard takes precedence and ignores the file entirely.
+
+**Fix (permanent — already applied to this repo):** Move every package that is needed at **build time** out of `devDependencies` and into `dependencies` in `server/package.json`. This makes them always installed regardless of `NODE_ENV` or Railway dashboard settings:
+
+```json
+"dependencies": {
+  "typescript": "^5.4.5",
+  "prisma": "^5.22.0",
+  "@types/express": "^4.17.21",
+  "@types/node": "^20.14.2",
+  "@types/cookie-parser": "^1.4.7",
+  "@types/cors": "^2.8.17",
+  "@types/jsonwebtoken": "^9.0.6",
+  "@types/node-cron": "^3.0.11",
+  "@types/sanitize-html": "^2.11.0"
+}
+```
+
+Only `tsx` (the dev hot-reload runner) stays in `devDependencies` — Railway never needs it.
+
+**Alternative fixes (if you don't want to touch `package.json`):**
+- **Fix A:** Remove `NODE_ENV` from `railway.toml` entirely. Set it as a Railway **Variable** in the dashboard instead (runtime-only, not applied during the build phase).
+- **Fix B:** Set a custom build command in the Railway dashboard: `npm install --include=dev && npm run build --workspace=server`
+
+---
+
+### Railway build fails with `TS7006: Parameter implicitly has an 'any' type`
+
+**Cause:** Same root cause as above — `@types/express` (and other `@types/*` packages) are missing at compile time because Railway skipped `devDependencies`. Without these type definitions, TypeScript cannot infer Express parameter types (`req`, `res`, `next`) and reports them as implicit `any`, which fails under `strict: true`.
+
+**Symptom in build log:**
+```
+src/routes/workspace.ts(255,33): error TS7006: Parameter 'next' implicitly has an 'any' type.
+src/routes/workspace.ts(283,28): error TS7006: Parameter 'res' implicitly has an 'any' type.
+```
+
+**Fix (permanent — already applied to this repo):** All `@types/*` packages have been moved from `devDependencies` to `dependencies` in `server/package.json` (see fix above). They are now always installed.
 
 ---
 
