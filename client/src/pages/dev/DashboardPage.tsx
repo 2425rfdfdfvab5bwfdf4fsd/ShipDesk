@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Plus, FolderOpen, DollarSign, GitMerge, TrendingUp, Search, Archive, LayoutGrid, Loader2 } from "lucide-react";
+import { Plus, FolderOpen, DollarSign, GitMerge, TrendingUp, Search, Archive, LayoutGrid, Loader2, Briefcase, User, AlignLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
 import { useProjects, useCreateProject } from "@/hooks/useProjects";
@@ -234,73 +235,162 @@ export function DashboardPage() {
       </div>
 
       {/* ── New project slide-over ── */}
-      <Sheet open={showNewProject} onOpenChange={setShowNewProject}>
-        <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
-          <SheetHeader className="mb-5 pr-6">
+      <Sheet open={showNewProject} onOpenChange={(open) => {
+        setShowNewProject(open);
+        if (!open) { setNewName(""); setNewClientName(""); setNewDesc(""); }
+      }}>
+        <SheetContent side="right" className="w-full sm:max-w-lg flex flex-col p-0 gap-0">
+          <SheetHeader className="sr-only">
             <SheetTitle>New Project</SheetTitle>
             <SheetDescription>Fill in the details below to create a new client project.</SheetDescription>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-            <div className="space-y-1.5">
-              <Label htmlFor="proj-name" className="text-xs">Project Name *</Label>
+          {/* Coloured header band */}
+          <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-b px-6 pt-8 pb-6 shrink-0">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                <Briefcase className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h2 className="text-base font-semibold leading-tight">New Project</h2>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">Draft</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Set up a project to track deliverables, share updates, and send invoices to your client.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Form body */}
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+            {/* Project Name */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="proj-name" className="text-xs font-medium flex items-center gap-1.5">
+                  <Briefcase className="h-3 w-3 text-muted-foreground" />
+                  Project Name
+                  <span className="text-destructive">*</span>
+                </Label>
+                <span className={`text-[10px] tabular-nums transition-colors ${newName.length > 80 ? "text-amber-500" : "text-muted-foreground/50"}`}>
+                  {newName.length}/100
+                </span>
+              </div>
               <Input
                 id="proj-name"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Client Website Redesign"
+                placeholder="e.g. Client Website Redesign"
                 maxLength={100}
+                autoFocus
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                className="h-9 text-sm"
                 data-testid="input-project-name"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="proj-client-name" className="text-xs">
-                Client Name <span className="text-muted-foreground">(optional)</span>
-              </Label>
+
+            {/* Client Name */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="proj-client-name" className="text-xs font-medium flex items-center gap-1.5">
+                  <User className="h-3 w-3 text-muted-foreground" />
+                  Client Name
+                  <span className="text-muted-foreground font-normal">(optional)</span>
+                </Label>
+                <span className={`text-[10px] tabular-nums transition-colors ${newClientName.length > 80 ? "text-amber-500" : "text-muted-foreground/50"}`}>
+                  {newClientName.length > 0 ? `${newClientName.length}/100` : ""}
+                </span>
+              </div>
               <Input
                 id="proj-client-name"
                 value={newClientName}
                 onChange={(e) => setNewClientName(e.target.value)}
                 placeholder="e.g. Acme Corp or John Smith"
                 maxLength={100}
+                className="h-9 text-sm"
                 data-testid="input-project-client-name"
               />
-              <p className="text-[11px] text-muted-foreground">Used to personalise reports — e.g. "Hi Acme Corp,"</p>
+              <div className="flex items-start gap-1.5 bg-muted/40 rounded-lg px-3 py-2">
+                <Sparkles className="h-3 w-3 text-primary/60 mt-0.5 shrink-0" />
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Used to personalise AI reports — e.g. <span className="text-foreground/70 font-medium">"Hi Acme Corp,"</span>
+                </p>
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="proj-desc" className="text-xs">
-                Description <span className="text-muted-foreground">(optional)</span>
-              </Label>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="proj-desc" className="text-xs font-medium flex items-center gap-1.5">
+                  <AlignLeft className="h-3 w-3 text-muted-foreground" />
+                  Description
+                  <span className="text-muted-foreground font-normal">(optional)</span>
+                </Label>
+                <span className={`text-[10px] tabular-nums transition-colors ${newDesc.length > 400 ? "text-amber-500" : "text-muted-foreground/50"}`}>
+                  {newDesc.length > 0 ? `${newDesc.length}/500` : ""}
+                </span>
+              </div>
               <Textarea
                 id="proj-desc"
                 value={newDesc}
                 onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="Brief description of this project…"
+                placeholder="Brief description of scope, goals, or any notes for this project…"
                 maxLength={500}
-                className="resize-none text-sm"
-                rows={3}
+                className="resize-none text-sm min-h-[100px]"
+                rows={4}
                 data-testid="input-project-desc"
               />
             </div>
+
+            {/* Live preview pill */}
+            {(newName.trim() || newClientName.trim()) && (
+              <div className="rounded-xl border bg-muted/30 p-3 space-y-1">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">Preview</p>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Briefcase className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium leading-tight truncate">{newName || "Untitled Project"}</p>
+                    {newClientName && (
+                      <p className="text-[11px] text-muted-foreground truncate">{newClientName}</p>
+                    )}
+                  </div>
+                  <Badge variant="secondary" className="ml-auto shrink-0 text-[10px]">Active</Badge>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="flex gap-2 pt-4 border-t mt-4 shrink-0">
-            <Button variant="outline" onClick={() => setShowNewProject(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={!newName.trim() || createProject.isPending}
-              className="flex-1"
-              data-testid="button-create-project"
-            >
-              {createProject.isPending ? (
-                <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />Creating…</>
-              ) : (
-                "Create Project"
-              )}
-            </Button>
+          {/* Footer */}
+          <div className="shrink-0 border-t bg-muted/20 px-6 py-4 space-y-3">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowNewProject(false)}
+                className="flex-1 h-9"
+                data-testid="button-cancel-project"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreate}
+                disabled={!newName.trim() || createProject.isPending}
+                className="flex-1 h-9"
+                data-testid="button-create-project"
+              >
+                {createProject.isPending ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />Creating…</>
+                ) : (
+                  <><Plus className="h-3.5 w-3.5 mr-1.5" />Create Project</>
+                )}
+              </Button>
+            </div>
+            <p className="text-center text-[11px] text-muted-foreground/60">
+              Press <kbd className="font-mono bg-muted border rounded px-1 text-[10px]">Enter</kbd> to submit quickly
+            </p>
           </div>
         </SheetContent>
       </Sheet>
