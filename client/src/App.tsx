@@ -28,7 +28,8 @@ import { ClientInvoicesPage } from "./pages/client/ClientInvoicesPage";
 import { ClientScopeChangePage } from "./pages/client/ClientScopeChangePage";
 
 import { SignIn, SignUp } from "@clerk/clerk-react";
-import { Loader2, Settings2, Globe, AlertTriangle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2, Settings2, Globe, AlertTriangle, MailOpen, Lock } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -197,20 +198,74 @@ function SetupPage() {
   );
 }
 
+function PortalUnauthScreen({ expired }: { expired?: boolean }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <div className="max-w-sm w-full text-center space-y-5">
+        <div className="flex justify-center">
+          <div className="rounded-full bg-primary/10 p-5">
+            {expired ? (
+              <Lock className="h-10 w-10 text-primary" />
+            ) : (
+              <MailOpen className="h-10 w-10 text-primary" />
+            )}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-xl font-bold">
+            {expired ? "Session expired" : "Access required"}
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {expired
+              ? "Your session has expired. Please ask your project manager to send you a new invite link."
+              : "This portal requires an invitation. Please use the magic link from your email to sign in, or contact your project manager to request access."}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ClientPortalApp({ workspaceSlug }: { workspaceSlug: string }) {
+  const [location] = useLocation();
+  const isMagicRoute = location === "/auth/magic" || location.startsWith("/auth/magic");
+
+  const { data, isLoading, isError, error } = useQuery<{ clientId: string; workspaceId: string }>({
+    queryKey: ["portal-auth-me"],
+    queryFn: () => api.get("/api/portal/auth/me").then((r) => r.data),
+    retry: false,
+    enabled: !isMagicRoute,
+  });
+
+  const isExpired =
+    isError &&
+    (error as { response?: { data?: { error?: string } } })?.response?.data?.error === "SESSION_EXPIRED";
+
   return (
     <ClientPortalLayout workspaceSlug={workspaceSlug}>
       <Switch>
         <Route path="/auth/magic" component={MagicLinkPage} />
-        <Route path="/" component={ClientPortalHomePage} />
-        <Route path="/projects/:id" component={ClientProjectPage} />
-        <Route path="/projects/:id/reports" component={ClientReportsPage} />
-        <Route path="/projects/:id/reports/:reportId" component={ClientReportViewerPage} />
-        <Route path="/projects/:id/files" component={ClientFilesPage} />
-        <Route path="/projects/:id/messages" component={ClientMessagesPage} />
-        <Route path="/projects/:id/invoices" component={ClientInvoicesPage} />
-        <Route path="/projects/:id/scope-changes" component={ClientScopeChangePage} />
-        <Route component={NotFoundPage} />
+        <>
+          {isLoading && (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          {isError && <PortalUnauthScreen expired={isExpired} />}
+          {data && (
+            <Switch>
+              <Route path="/" component={ClientPortalHomePage} />
+              <Route path="/projects/:id" component={ClientProjectPage} />
+              <Route path="/projects/:id/reports" component={ClientReportsPage} />
+              <Route path="/projects/:id/reports/:reportId" component={ClientReportViewerPage} />
+              <Route path="/projects/:id/files" component={ClientFilesPage} />
+              <Route path="/projects/:id/messages" component={ClientMessagesPage} />
+              <Route path="/projects/:id/invoices" component={ClientInvoicesPage} />
+              <Route path="/projects/:id/scope-changes" component={ClientScopeChangePage} />
+              <Route component={NotFoundPage} />
+            </Switch>
+          )}
+        </>
       </Switch>
     </ClientPortalLayout>
   );

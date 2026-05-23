@@ -121,6 +121,10 @@ router.post("/auth/magic", magicLinkLimiter, async (req, res, next) => {
   }
 });
 
+router.get("/auth/me", requireClientAuth, async (req: ClientAuthRequest, res) => {
+  res.json({ clientId: req.clientId, workspaceId: req.workspaceId });
+});
+
 router.post("/auth/logout", requireClientAuth, async (req: ClientAuthRequest, res, next) => {
   try {
     await db.clientSession.delete({ where: { id: req.sessionId! } });

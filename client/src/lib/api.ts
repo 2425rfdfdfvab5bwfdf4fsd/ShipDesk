@@ -36,7 +36,9 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       const errorCode = err.response?.data?.error;
-      if (errorCode === "SESSION_EXPIRED") {
+      const isPortalRoute = err.config?.url?.includes("/api/portal/");
+      // Only redirect dev users to sign-in on session expiry, never portal clients
+      if (errorCode === "SESSION_EXPIRED" && !isPortalRoute) {
         window.location.href = "/?session=expired";
       }
     }
