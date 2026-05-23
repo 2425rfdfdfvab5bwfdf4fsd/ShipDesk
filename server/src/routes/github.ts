@@ -134,10 +134,16 @@ router.get("/callback", async (req: Request, res: Response) => {
       },
     });
 
-    res.redirect(`${process.env.FRONTEND_URL}/settings?github=connected`);
+    const appBase = process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : (process.env.FRONTEND_URL || "http://localhost:5000").replace(/\/$/, "");
+    res.redirect(`${appBase}/settings?github=connected`);
   } catch (err) {
     console.error("GitHub callback error:", err);
-    res.redirect(`${process.env.FRONTEND_URL}/settings?github=error`);
+    const appBase = process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : (process.env.FRONTEND_URL || "http://localhost:5000").replace(/\/$/, "");
+    res.redirect(`${appBase}/settings?github=error`);
   }
 });
 
@@ -187,8 +193,13 @@ router.post("/connect-repo", requireAuth, async (req: AuthRequest, res, next) =>
     });
     if (!ghConn) throw new AppError("GitHub not connected", 400, "GITHUB_NOT_CONNECTED");
 
-    // FRONTEND_URL is the publicly reachable domain (same host proxies /api to backend).
-    const webhookUrl = `${process.env.FRONTEND_URL || process.env.BACKEND_URL}/api/webhooks/github`;
+    // Webhook URL must point to this running server.
+    // On Replit, REPLIT_DEV_DOMAIN is the live public domain — always use it here.
+    // In production without Replit, fall back to BACKEND_URL then FRONTEND_URL.
+    const serverBase = process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : (process.env.BACKEND_URL || process.env.FRONTEND_URL || "").replace(/\/$/, "");
+    const webhookUrl = `${serverBase}/api/webhooks/github`;
 
     let webhookId: number | null = null;
     try {
@@ -227,6 +238,47 @@ router.post("/connect-repo", requireAuth, async (req: AuthRequest, res, next) =>
     });
 
     res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/reregister-webhook/:projectId", requireAuth, async (req: AuthRequest, res, next) => {
+  try {
+    const workspace = await db.workspace.findUnique({ where: { ownerId: req.userId! } });
+    if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+
+    const project = await db.project.findFirst({
+      where: { id: req.params.projectId, workspaceId: workspace.id },
+    });
+    if (!project) throw new AppError("Project not found", 404, "NOT_FOUND");
+    if (!project.githubRepoFullName) throw new AppError("No repo linked", 400, "NO_REPO");
+
+    const ghConn = await db.gitHubConnection.findUnique({ where: { workspaceId: workspace.id } });
+    if (!ghConn) throw new AppError("GitHub not connected", 400, "GITHUB_NOT_CONNECTED");
+
+    // Delete old webhook if one exists
+    if (project.githubWebhookId) {
+      try {
+        await githubService.deleteWebhook(ghConn.accessTokenEncrypted, project.githubRepoFullName, project.githubWebhookId);
+      } catch {
+        // Old webhook may already be gone — continue
+      }
+    }
+
+    const serverBase = process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : (process.env.BACKEND_URL || process.env.FRONTEND_URL || "").replace(/\/$/, "");
+    const webhookUrl = `${serverBase}/api/webhooks/github`;
+
+    const webhookId = await githubService.registerWebhook(ghConn.accessTokenEncrypted, project.githubRepoFullName, webhookUrl);
+
+    await db.project.update({
+      where: { id: project.id },
+      data: { githubWebhookId: webhookId },
+    });
+
+    res.json({ success: true, webhookId, webhookUrl });
   } catch (err) {
     next(err);
   }

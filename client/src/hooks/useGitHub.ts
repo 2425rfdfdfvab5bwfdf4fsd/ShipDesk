@@ -63,3 +63,16 @@ export function useDisconnectRepo() {
     },
   });
 }
+
+export function useReregisterWebhook() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) =>
+      api
+        .post(`/api/github/reregister-webhook/${projectId}`)
+        .then((r) => r.data),
+    onSuccess: (_data, projectId) => {
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
+    },
+  });
+}

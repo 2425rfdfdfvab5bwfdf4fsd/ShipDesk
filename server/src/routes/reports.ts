@@ -121,7 +121,8 @@ router.post(
 
       const { start, end } = getWeekBounds();
       const events = await db.gitHubEvent.findMany({
-        where: { projectId: project.id, receivedAt: { gte: start } },
+        where: { projectId: project.id, receivedAt: { gte: start, lte: end } },
+        orderBy: { receivedAt: "asc" },
       });
 
       const weekStart = start.toISOString().split("T")[0];

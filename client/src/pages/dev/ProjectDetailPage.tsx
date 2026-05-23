@@ -28,7 +28,7 @@ import { MessageThread } from "@/components/messages/MessageThread";
 import { FileList } from "@/components/files/FileList";
 import { BuildLogsViewer } from "@/components/deployments/BuildLogsViewer";
 import { useProject, useUpdateProject, useDeleteProject } from "@/hooks/useProjects";
-import { useGitHubRepos, useConnectRepo, useDisconnectRepo, useGitHubStatus } from "@/hooks/useGitHub";
+import { useGitHubRepos, useConnectRepo, useDisconnectRepo, useGitHubStatus, useReregisterWebhook } from "@/hooks/useGitHub";
 import { useReport, useReports, useUpdateReport, useDeleteReport } from "@/hooks/useReports";
 import { useInvoices, useMarkInvoicePaid, useDeleteInvoice } from "@/hooks/useInvoices";
 import { useScopeChanges, useSubmitQuote, useMarkScopeChangePaid } from "@/hooks/useScopeChanges";
@@ -194,6 +194,7 @@ export function ProjectDetailPage() {
   const deleteProject = useDeleteProject();
   const connectRepo = useConnectRepo();
   const disconnectRepo = useDisconnectRepo();
+  const reregisterWebhook = useReregisterWebhook();
   const updateReport = useUpdateReport();
   const deleteReport = useDeleteReport();
   const { data: projectClients, isLoading: clientsLoading } = useProjectClients(id);
@@ -815,15 +816,31 @@ export function ProjectDetailPage() {
                       <span className="font-mono text-xs flex-1 truncate">{project.githubRepoFullName}</span>
                       <Badge variant="success" className="text-[10px] px-1.5 py-0.5 shrink-0">Connected</Badge>
                     </div>
-                    <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-destructive text-xs h-7"
-                      onClick={async () => {
-                        try { await disconnectRepo.mutateAsync(project.id); toast({ title: "Repository disconnected" }); }
-                        catch { toast({ variant: "destructive", title: "Failed to disconnect" }); }
-                      }}
-                      disabled={disconnectRepo.isPending}
-                    >
-                      {disconnectRepo.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Unlink className="h-3 w-3" />} Disconnect
-                    </Button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-destructive text-xs h-7"
+                        onClick={async () => {
+                          try { await disconnectRepo.mutateAsync(project.id); toast({ title: "Repository disconnected" }); }
+                          catch { toast({ variant: "destructive", title: "Failed to disconnect" }); }
+                        }}
+                        disabled={disconnectRepo.isPending}
+                      >
+                        {disconnectRepo.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Unlink className="h-3 w-3" />} Disconnect
+                      </Button>
+                      <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-foreground text-xs h-7"
+                        onClick={async () => {
+                          try {
+                            await reregisterWebhook.mutateAsync(project.id);
+                            toast({ title: "Webhook updated", description: "GitHub will now send events to this server." });
+                          } catch {
+                            toast({ variant: "destructive", title: "Failed to update webhook" });
+                          }
+                        }}
+                        disabled={reregisterWebhook.isPending}
+                        title="Re-register the GitHub webhook to point to this server"
+                      >
+                        {reregisterWebhook.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Server className="h-3 w-3" />} Fix Webhook
+                      </Button>
+                    </div>
                   </div>
                 ) : showRepoPicker ? (
                   <div className="space-y-2">

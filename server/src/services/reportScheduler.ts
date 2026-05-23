@@ -36,8 +36,9 @@ export async function generateReportsForAllProjects(): Promise<void> {
       const events = await db.gitHubEvent.findMany({
         where: {
           projectId: project.id,
-          receivedAt: { gte: start },
+          receivedAt: { gte: start, lte: end },
         },
+        orderBy: { receivedAt: "asc" },
       });
 
       const weekStart = start.toISOString().split("T")[0];
@@ -116,9 +117,17 @@ export async function notifyClientsOfPublishedReport(
   if (!report) return;
 
   const content = report.content as { summary?: string | null };
-  const portalBase =
-    process.env.CLIENT_PORTAL_BASE_URL || "https://portal.shipdesk.io";
-  const portalUrl = `https://${report.project.workspace.slug}.${portalBase.replace("https://", "")}/projects/${report.projectId}/reports/${reportId}`;
+  // Use the same URL strategy as magic links: Replit dev → path-based, then subdomain, then FRONTEND_URL.
+  let portalUrl: string;
+  if (process.env.REPLIT_DEV_DOMAIN) {
+    portalUrl = `https://${process.env.REPLIT_DEV_DOMAIN}/portal/${report.project.workspace.slug}/projects/${report.projectId}/reports/${reportId}`;
+  } else if (process.env.CLIENT_PORTAL_BASE_URL) {
+    const base = process.env.CLIENT_PORTAL_BASE_URL.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    portalUrl = `https://${report.project.workspace.slug}.${base}/projects/${report.projectId}/reports/${reportId}`;
+  } else {
+    const base = (process.env.FRONTEND_URL || "http://localhost:5000").replace(/\/$/, "");
+    portalUrl = `${base}/portal/${report.project.workspace.slug}/projects/${report.projectId}/reports/${reportId}`;
+  }
 
   for (const access of report.project.clientAccess) {
     try {
