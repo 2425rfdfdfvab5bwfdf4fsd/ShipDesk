@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useParams, useLocation } from "wouter";
 import {
@@ -35,7 +35,7 @@ import { useMessages, useSendMessage, useMarkMessagesRead } from "@/hooks/useMes
 import { useFiles, useCreateFile, useDeleteFile, useUploadSignature } from "@/hooks/useFiles";
 import { useProjectClients, useInviteClient, useRevokeClientAccess } from "@/hooks/useClients";
 import { toast } from "@/hooks/use-toast";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import type { ScopeChange } from "@/types";
 
 function GitHubConnectButton({
@@ -148,27 +148,6 @@ export function ProjectDetailPage() {
   const [editingInfo, setEditingInfo] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
-  const [headerHeight, setHeaderHeight] = useState(0);
-  const [isMobileLayout, setIsMobileLayout] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth < 1024 : false
-  );
-  const headerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = headerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(() => setHeaderHeight(el.offsetHeight));
-    observer.observe(el);
-    setHeaderHeight(el.offsetHeight);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const check = () => setIsMobileLayout(window.innerWidth < 1024);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
 
   const { data: project, isLoading } = useProject(id);
   const { data: reportsData, isLoading: reportsLoading } = useReports(id);
@@ -287,14 +266,14 @@ export function ProjectDetailPage() {
   const unreadMessages = messages.filter((m) => m.senderType === "CLIENT" && !m.readByDeveloperAt).length;
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col h-full">
       <Tabs
         value={activeTab}
         onValueChange={(v) => { setActiveTab(v); if (v === "messages" && unreadMessages > 0) markRead.mutate(id); }}
         className="flex flex-col flex-1"
       >
         {/* ── Sticky header ── */}
-        <div ref={headerRef} className="border-b bg-card sticky top-0 z-10">
+        <div className="border-b bg-card sticky top-0 z-10">
           <div className="px-3 sm:px-5 pt-2.5">
             {/* Back nav */}
             <button
@@ -391,7 +370,7 @@ export function ProjectDetailPage() {
         </div>
 
         {/* ── Tab content ── */}
-        <div className="flex-1 min-h-0 overflow-auto">
+        <div className={cn("flex-1 min-h-0", activeTab === "messages" ? "overflow-hidden" : "overflow-auto")}>
 
           {/* ── Overview ── */}
           <TabsContent value="overview" className="mt-0 p-3 sm:p-5 space-y-4">
@@ -577,12 +556,7 @@ export function ProjectDetailPage() {
           {/* ── Messages ── */}
           <TabsContent
             value="messages"
-            className="mt-0 relative"
-            style={{
-              height: headerHeight > 0
-                ? `calc(100dvh - ${headerHeight + (isMobileLayout ? 56 : 0)}px)`
-                : `calc(100dvh - ${isMobileLayout ? 216 : 160}px)`,
-            }}
+            className="mt-0 h-full"
           >
             <MessageThread
               messages={messages}
