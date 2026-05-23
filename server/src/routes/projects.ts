@@ -8,6 +8,7 @@ const router = Router();
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(100),
+  clientName: z.string().max(100).optional(),
   description: z.string().max(500).optional(),
   startDate: z.string().datetime().optional(),
   status: z.enum(["ACTIVE", "PAUSED", "COMPLETED"]).optional(),
@@ -15,6 +16,7 @@ const createProjectSchema = z.object({
 
 const updateProjectSchema = z.object({
   name: z.string().min(1).max(100).optional(),
+  clientName: z.string().max(100).nullable().optional(),
   description: z.string().max(500).nullable().optional(),
   status: z.enum(["ACTIVE", "PAUSED", "COMPLETED"]).optional(),
 });
@@ -71,6 +73,7 @@ router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
       data: {
         workspaceId: ws.id,
         name: body.name,
+        clientName: body.clientName || null,
         description: body.description || null,
         startDate: body.startDate ? new Date(body.startDate) : null,
         status: body.status || "ACTIVE",

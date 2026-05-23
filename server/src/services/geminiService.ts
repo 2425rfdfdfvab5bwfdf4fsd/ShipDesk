@@ -132,6 +132,7 @@ function buildEventSummaries(events: GitHubEvent[]): { lines: string[]; stats: R
 
 export async function generateWeeklyReport(opts: {
   projectName: string;
+  clientName?: string | null;
   projectDescription?: string | null;
   weekStartDate: Date;
   weekEndDate: Date;
@@ -141,11 +142,12 @@ export async function generateWeeklyReport(opts: {
   const weekStart = opts.weekStartDate.toISOString().split("T")[0];
   const weekEnd = opts.weekEndDate.toISOString().split("T")[0];
   const sender = opts.developerName || "Your Project Manager";
+  const greeting = opts.clientName?.trim() ? `Hi ${opts.clientName.trim()},` : "Hi,";
 
   // Skip the AI entirely when there is no activity — returning a factual
   // no-activity report avoids hallucinated filler text.
   if (opts.githubEvents.length === 0) {
-    const rawMarkdown = `Hi,
+    const rawMarkdown = `${greeting}
 
 Here is your weekly status update for the **${opts.projectName}** project, covering the week of ${weekStart} to ${weekEnd}.
 
@@ -225,7 +227,7 @@ Return ONLY a valid JSON object — no markdown fences, no extra text before or 
   "summary": "2-3 sentence plain-English overview of what was accomplished this week. Be specific about what features/fixes were delivered.",
   "highlights": ["specific accomplishment 1", "specific accomplishment 2"],
   "nextSteps": ["planned next action 1"],
-  "rawMarkdown": "Full Markdown report. Start with 'Hi,' (no placeholder). Sign off with '${sender}'. Include a Summary section and a What We Did section. Be specific."
+  "rawMarkdown": "Full Markdown report. Start with '${greeting}' (use exactly this greeting, no changes). Sign off with '${sender}'. Include a Summary section and a What We Did section. Be specific."
 }
 
 Rules for highlights:

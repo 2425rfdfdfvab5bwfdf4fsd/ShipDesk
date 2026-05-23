@@ -46,6 +46,7 @@ export function DashboardPage() {
   const [showArchived, setShowArchived] = useState(false);
   const [search, setSearch] = useState("");
   const [newName, setNewName] = useState("");
+  const [newClientName, setNewClientName] = useState("");
   const [newDesc, setNewDesc] = useState("");
 
   const { data: workspace } = useWorkspace();
@@ -72,8 +73,13 @@ export function DashboardPage() {
   const handleCreate = async () => {
     if (!newName.trim()) return;
     try {
-      await createProject.mutateAsync({ name: newName.trim(), description: newDesc || undefined });
+      await createProject.mutateAsync({
+        name: newName.trim(),
+        clientName: newClientName.trim() || undefined,
+        description: newDesc || undefined,
+      });
       setNewName("");
+      setNewClientName("");
       setNewDesc("");
       setShowNewProject(false);
       toast({ title: "Project created" });
@@ -248,6 +254,21 @@ export function DashboardPage() {
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
                 data-testid="input-project-name"
               />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="proj-client-name" className="text-xs">
+                Client Name <span className="text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="proj-client-name"
+                value={newClientName}
+                onChange={(e) => setNewClientName(e.target.value)}
+                placeholder="e.g. Acme Corp or John Smith"
+                maxLength={100}
+                className="h-8 text-sm"
+                data-testid="input-project-client-name"
+              />
+              <p className="text-[11px] text-muted-foreground">Used to personalise reports — e.g. "Hi Acme Corp,"</p>
             </div>
             <div className="space-y-1">
               <Label htmlFor="proj-desc" className="text-xs">

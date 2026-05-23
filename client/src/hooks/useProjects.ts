@@ -25,6 +25,7 @@ export function useCreateProject() {
   return useMutation({
     mutationFn: (data: {
       name: string;
+      clientName?: string;
       description?: string;
       startDate?: string;
       status?: "ACTIVE" | "PAUSED" | "COMPLETED";

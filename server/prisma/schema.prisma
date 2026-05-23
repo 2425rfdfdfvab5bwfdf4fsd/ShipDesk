@@ -45,6 +45,7 @@ model Project {
   id                  String        @id @default(uuid())
   workspaceId         String
   name                String
+  clientName          String?
   description         String?
   status              ProjectStatus @default(ACTIVE)
   startDate           DateTime?

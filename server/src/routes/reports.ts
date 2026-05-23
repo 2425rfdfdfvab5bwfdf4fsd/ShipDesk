@@ -131,6 +131,7 @@ router.post(
 
       const content = await generateWeeklyReport({
         projectName: project.name,
+        clientName: project.clientName,
         projectDescription: project.description,
         weekStartDate: start,
         weekEndDate: end,

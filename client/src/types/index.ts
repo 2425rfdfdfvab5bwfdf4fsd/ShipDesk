@@ -43,6 +43,7 @@ export interface Project {
   id: string;
   workspaceId: string;
   name: string;
+  clientName: string | null;
   description: string | null;
   status: ProjectStatus;
   startDate: string | null;
