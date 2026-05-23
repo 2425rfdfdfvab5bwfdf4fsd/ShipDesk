@@ -303,7 +303,7 @@ export function MessageThread({
                                 "h-3 w-3 transition-colors",
                                 isRead ? "text-primary/70" : "text-muted-foreground/40"
                               )}
-                              title={isRead ? "Read" : "Delivered"}
+                              aria-label={isRead ? "Read" : "Delivered"}
                             />
                           )}
                         </div>
