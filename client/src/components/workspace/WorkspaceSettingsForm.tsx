@@ -187,7 +187,7 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
 
   const handleCopySlug = () => {
     if (!workspace?.slug) return;
-    navigator.clipboard.writeText(`${workspace.slug}.portal.shipdesk.io`);
+    navigator.clipboard.writeText(`https://shipdesk-delta.vercel.app/portal/${workspace.slug}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -241,7 +241,7 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
               <Label>Portal URL</Label>
               <div className="flex items-center gap-2">
                 <Input
-                  value={workspace?.slug ? `${workspace.slug}.portal.shipdesk.io` : ""}
+                  value={workspace?.slug ? `shipdesk-delta.vercel.app/portal/${workspace.slug}` : ""}
                   readOnly
                   className="font-mono bg-muted text-sm"
                   data-testid="input-portal-url"
@@ -323,12 +323,12 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
                 <p className="font-medium text-foreground">DNS Setup Instructions</p>
                 <p>Add a <span className="font-mono bg-background border rounded px-1">CNAME</span> record pointing your domain to:</p>
                 <p className="font-mono bg-background border rounded px-2 py-1 select-all">
-                  {workspace?.slug ? `${workspace.slug}.portal.shipdesk.io` : "your-slug.portal.shipdesk.io"}
+                  {workspace?.slug ? `shipdesk-delta.vercel.app/portal/${workspace.slug}` : "shipdesk-delta.vercel.app/portal/your-slug"}
                 </p>
                 <p className="flex items-center gap-1 mt-1">
                   DNS changes may take up to 48 hours to propagate.
                   <a
-                    href="https://docs.shipdesk.io/custom-domain"
+                    href="https://shipdesk-delta.vercel.app"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-0.5 text-primary hover:underline"
@@ -344,7 +344,7 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
                 <p className="font-medium text-foreground">DNS Setup Instructions</p>
                 <p>Add a <span className="font-mono bg-background border rounded px-1">CNAME</span> record pointing your domain to:</p>
                 <p className="font-mono bg-background border rounded px-2 py-1 select-all">
-                  {workspace?.slug ? `${workspace.slug}.portal.shipdesk.io` : "your-slug.portal.shipdesk.io"}
+                  {workspace?.slug ? `shipdesk-delta.vercel.app/portal/${workspace.slug}` : "shipdesk-delta.vercel.app/portal/your-slug"}
                 </p>
                 <p>DNS changes may take up to 48 hours to propagate.</p>
               </div>

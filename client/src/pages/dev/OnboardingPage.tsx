@@ -192,7 +192,7 @@ export function OnboardingPage() {
                   />
                   {slug && (
                     <p className="text-xs font-mono text-muted-foreground">
-                      {slug}.portal.shipdesk.io
+                      shipdesk-delta.vercel.app/portal/{slug}
                     </p>
                   )}
                   {slugChecked && subdomainData?.available === false && (

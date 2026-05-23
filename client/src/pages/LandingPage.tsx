@@ -149,7 +149,7 @@ function MockDashboard() {
         <div className="w-3 h-3 rounded-full bg-green-500/80" />
         <div className="flex-1 mx-4">
           <div className="bg-white/5 border border-white/10 rounded-md px-3 py-1 text-xs text-white/40 font-mono w-52">
-            acme.portal.shipdesk.io
+            shipdesk-delta.vercel.app/portal/acme
           </div>
         </div>
         <div className="w-5 h-5 rounded bg-indigo-500/20 flex items-center justify-center">

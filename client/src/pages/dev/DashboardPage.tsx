@@ -162,7 +162,7 @@ export function DashboardPage() {
             label="Portal"
             value={workspace?.slug ? "Live" : "—"}
             icon={TrendingUp}
-            sub={workspace?.slug ? `${workspace.slug}.shipdesk.io` : "Set up workspace"}
+            sub={workspace?.slug ? `shipdesk-delta.vercel.app/portal/${workspace.slug}` : "Set up workspace"}
           />
         </div>
 

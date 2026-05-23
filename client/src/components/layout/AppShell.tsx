@@ -96,7 +96,7 @@ export function AppShell({ children }: AppShellProps) {
             <p className="text-[10px] font-medium text-primary/60 uppercase tracking-wider mb-0.5">Workspace</p>
             <p className="text-xs font-semibold truncate">{workspace.agencyName || workspace.name}</p>
             <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
-              {workspace.slug}.portal.shipdesk.io
+              shipdesk-delta.vercel.app/portal/{workspace.slug}
             </p>
           </div>
         )}

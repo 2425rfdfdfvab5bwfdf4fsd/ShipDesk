@@ -321,7 +321,7 @@ router.post("/projects/:id/messages", requireClientAuth, messageLimiter, async (
       });
 
       if (!notifLog || notifLog.lastNotificationSentAt < fiveMinutesAgo) {
-        const portalBase = process.env.FRONTEND_URL || "https://app.shipdesk.io";
+        const portalBase = process.env.FRONTEND_URL || "https://shipdesk-delta.vercel.app";
         sendMessageNotification({
           to: project.workspace.owner.email,
           recipientName: project.workspace.owner.name,
@@ -420,7 +420,7 @@ router.post("/projects/:id/scope-changes", requireClientAuth, async (req: Client
       include: { workspace: { include: { owner: true } } },
     });
     if (project) {
-      const portalBase = process.env.FRONTEND_URL || "https://app.shipdesk.io";
+      const portalBase = process.env.FRONTEND_URL || "https://shipdesk-delta.vercel.app";
       sendScopeChangeNotification({
         to: project.workspace.owner.email,
         recipientName: project.workspace.owner.name,
@@ -480,7 +480,7 @@ router.patch("/scope-changes/:id/respond", requireClientAuth, async (req: Client
       include: { workspace: { include: { owner: true } } },
     });
     if (project) {
-      const portalBase = process.env.FRONTEND_URL || "https://app.shipdesk.io";
+      const portalBase = process.env.FRONTEND_URL || "https://shipdesk-delta.vercel.app";
       sendScopeChangeNotification({
         to: project.workspace.owner.email,
         recipientName: project.workspace.owner.name,
