@@ -226,46 +226,55 @@ function PortalUnauthScreen({ expired }: { expired?: boolean }) {
   );
 }
 
-function ClientPortalApp({ workspaceSlug }: { workspaceSlug: string }) {
-  const [location] = useLocation();
-  const isMagicRoute = location === "/auth/magic" || location.startsWith("/auth/magic");
-
+function PortalAuthGate({ workspaceSlug }: { workspaceSlug: string }) {
   const { data, isLoading, isError, error } = useQuery<{ clientId: string; workspaceId: string }>({
     queryKey: ["portal-auth-me"],
     queryFn: () => api.get("/api/portal/auth/me").then((r) => r.data),
     retry: false,
-    enabled: !isMagicRoute,
+    staleTime: 5 * 60 * 1000,
   });
 
   const isExpired =
     isError &&
     (error as { response?: { data?: { error?: string } } })?.response?.data?.error === "SESSION_EXPIRED";
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <PortalUnauthScreen expired={isExpired} />;
+  }
+
+  if (!data) return null;
+
+  return (
+    <Switch>
+      <Route path="/" component={ClientPortalHomePage} />
+      <Route path="/projects/:id" component={ClientProjectPage} />
+      <Route path="/projects/:id/reports" component={ClientReportsPage} />
+      <Route path="/projects/:id/reports/:reportId" component={ClientReportViewerPage} />
+      <Route path="/projects/:id/files" component={ClientFilesPage} />
+      <Route path="/projects/:id/messages" component={ClientMessagesPage} />
+      <Route path="/projects/:id/invoices" component={ClientInvoicesPage} />
+      <Route path="/projects/:id/scope-changes" component={ClientScopeChangePage} />
+      <Route component={NotFoundPage} />
+    </Switch>
+  );
+}
+
+function ClientPortalApp({ workspaceSlug }: { workspaceSlug: string }) {
   return (
     <ClientPortalLayout workspaceSlug={workspaceSlug}>
       <Switch>
         <Route path="/auth/magic" component={MagicLinkPage} />
-        <>
-          {isLoading && (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          )}
-          {isError && <PortalUnauthScreen expired={isExpired} />}
-          {data && (
-            <Switch>
-              <Route path="/" component={ClientPortalHomePage} />
-              <Route path="/projects/:id" component={ClientProjectPage} />
-              <Route path="/projects/:id/reports" component={ClientReportsPage} />
-              <Route path="/projects/:id/reports/:reportId" component={ClientReportViewerPage} />
-              <Route path="/projects/:id/files" component={ClientFilesPage} />
-              <Route path="/projects/:id/messages" component={ClientMessagesPage} />
-              <Route path="/projects/:id/invoices" component={ClientInvoicesPage} />
-              <Route path="/projects/:id/scope-changes" component={ClientScopeChangePage} />
-              <Route component={NotFoundPage} />
-            </Switch>
-          )}
-        </>
+        <Route>
+          <PortalAuthGate workspaceSlug={workspaceSlug} />
+        </Route>
       </Switch>
     </ClientPortalLayout>
   );
