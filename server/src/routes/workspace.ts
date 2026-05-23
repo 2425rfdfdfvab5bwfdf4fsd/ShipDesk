@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import dns from "dns";
 import { db } from "../lib/prisma.js";
 import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
@@ -12,6 +13,8 @@ const RESERVED_SLUGS = new Set([
   "www", "api", "app", "admin", "portal", "mail", "static", "assets",
   "health", "shipdesk", "support", "help", "billing",
 ]);
+
+const DOMAIN_REGEX = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
 const createWorkspaceSchema = z.object({
   name: z.string().min(1).max(60),
@@ -26,7 +29,12 @@ const updateWorkspaceSchema = z.object({
   agencyName: z.string().max(80).nullable().optional(),
   logoUrl: z.string().url().nullable().optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-  customDomain: z.string().nullable().optional(),
+  customDomain: z
+    .string()
+    .regex(DOMAIN_REGEX, "Invalid domain format")
+    .transform((d) => d.toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, ""))
+    .nullable()
+    .optional(),
 });
 
 router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
@@ -85,6 +93,15 @@ router.patch("/", requireAuth, async (req: AuthRequest, res, next) => {
     });
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
 
+    if (body.customDomain) {
+      const conflict = await db.workspace.findFirst({
+        where: { customDomain: body.customDomain, id: { not: workspace.id } },
+      });
+      if (conflict) {
+        throw new AppError("This domain is already in use by another workspace", 409, "DOMAIN_TAKEN");
+      }
+    }
+
     const updated = await db.workspace.update({
       where: { id: workspace.id },
       data: body,
@@ -111,6 +128,57 @@ router.get(
       }
       const existing = await db.workspace.findUnique({ where: { slug } });
       res.json({ available: !existing });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  "/verify-domain",
+  requireAuth,
+  async (req: AuthRequest, res, next) => {
+    try {
+      const workspace = await db.workspace.findUnique({
+        where: { ownerId: req.userId! },
+      });
+      if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+      if (!workspace.customDomain) {
+        res.json({ verified: false, reason: "No custom domain configured" });
+        return;
+      }
+
+      const expectedCname = `${workspace.slug}.portal.shipdesk.io`;
+      const domain = workspace.customDomain;
+
+      try {
+        const addresses = await dns.promises.resolveCname(domain);
+        const matched = addresses.some(
+          (addr) => addr.toLowerCase().replace(/\.$/, "") === expectedCname.toLowerCase()
+        );
+        if (matched) {
+          res.json({ verified: true, cname: addresses[0] });
+        } else {
+          res.json({
+            verified: false,
+            reason: `CNAME points to "${addresses[0]}" instead of "${expectedCname}"`,
+            cname: addresses[0],
+          });
+        }
+      } catch (dnsErr: unknown) {
+        const code = (dnsErr as NodeJS.ErrnoException).code;
+        if (code === "ENODATA" || code === "ENOTFOUND") {
+          res.json({
+            verified: false,
+            reason: `No CNAME record found for "${domain}". Add a CNAME record pointing to "${expectedCname}".`,
+          });
+        } else {
+          res.json({
+            verified: false,
+            reason: "DNS lookup failed. Please try again shortly.",
+          });
+        }
+      }
     } catch (err) {
       next(err);
     }
