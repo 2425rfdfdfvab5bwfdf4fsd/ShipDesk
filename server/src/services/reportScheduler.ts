@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { db } from "../lib/prisma.js";
 import { generateWeeklyReport } from "./geminiService.js";
 import { sendReportPublished } from "./emailService.js";
+import { buildPortalUrl } from "../lib/portalUrl.js";
 
 function getWeekBounds(): { start: Date; end: Date } {
   const now = new Date();
@@ -118,17 +119,10 @@ export async function notifyClientsOfPublishedReport(
   if (!report) return;
 
   const content = report.content as { summary?: string | null };
-  // Use the same URL strategy as magic links: Replit dev → path-based, then subdomain, then FRONTEND_URL.
-  let portalUrl: string;
-  if (process.env.REPLIT_DEV_DOMAIN) {
-    portalUrl = `https://${process.env.REPLIT_DEV_DOMAIN}/portal/${report.project.workspace.slug}/projects/${report.projectId}/reports/${reportId}`;
-  } else if (process.env.CLIENT_PORTAL_BASE_URL) {
-    const base = process.env.CLIENT_PORTAL_BASE_URL.replace(/^https?:\/\//, "").replace(/\/$/, "");
-    portalUrl = `https://${report.project.workspace.slug}.${base}/projects/${report.projectId}/reports/${reportId}`;
-  } else {
-    const base = (process.env.FRONTEND_URL || "http://localhost:5000").replace(/\/$/, "");
-    portalUrl = `${base}/portal/${report.project.workspace.slug}/projects/${report.projectId}/reports/${reportId}`;
-  }
+  const portalUrl = buildPortalUrl(
+    report.project.workspace.slug,
+    `projects/${report.projectId}/reports/${reportId}`
+  );
 
   for (const access of report.project.clientAccess) {
     try {

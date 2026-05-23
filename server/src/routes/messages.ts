@@ -6,6 +6,7 @@ import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
 import { messageLimiter } from "../middleware/rateLimiter.js";
 import { sendMessageNotification } from "../services/emailService.js";
+import { buildPortalUrl } from "../lib/portalUrl.js";
 
 const router = Router({ mergeParams: true });
 
@@ -86,11 +87,8 @@ router.post(
         include: { client: true },
       });
 
-      // Build portal URL: subdomain in production, path-based in dev
       const portalProjectUrl = (projectId: string, path: string) =>
-        process.env.CLIENT_PORTAL_BASE_URL
-          ? `https://${ws.slug}.${process.env.CLIENT_PORTAL_BASE_URL.replace(/^https?:\/\//, "")}/projects/${projectId}/${path}`
-          : `${process.env.FRONTEND_URL || "http://localhost:5000"}/portal/${ws.slug}/projects/${projectId}/${path}`;
+        buildPortalUrl(ws.slug, `projects/${projectId}/${path}`);
 
       for (const access of clientAccesses) {
         const now = new Date();
