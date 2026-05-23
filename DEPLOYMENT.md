@@ -1,11 +1,11 @@
 # ShipDesk Deployment Guide
 
-ShipDesk is a monorepo with two deployable services:
+ShipDesk is a monorepo with two independently deployed services:
 
 | Service | Platform | What it does |
 |---|---|---|
-| `server/` | **Railway** | Express API + Prisma + background scheduler |
-| `client/` | **Vercel** | React + Vite SPA |
+| `server/` | **Railway** | Express API + Prisma ORM + background scheduler |
+| `client/` | **Vercel** | React + Vite SPA (static) |
 
 Both services share one PostgreSQL database (Neon recommended).
 
@@ -13,14 +13,14 @@ Both services share one PostgreSQL database (Neon recommended).
 
 ## Prerequisites
 
-Before deploying, make sure you have accounts and credentials for:
+Make sure you have accounts and credentials for:
 
-- [Clerk](https://clerk.com) — authentication (developer sign-in)
-- [Neon](https://neon.tech) (or any PostgreSQL provider) — database
+- [Clerk](https://clerk.com) — developer authentication
+- [Neon](https://neon.tech) or any PostgreSQL provider — database
 - [Railway](https://railway.app) — backend hosting
 - [Vercel](https://vercel.com) — frontend hosting
 
-Optional services (features degrade gracefully if absent):
+Optional (features degrade gracefully if absent):
 
 - [Cloudinary](https://cloudinary.com) — file uploads
 - [Resend](https://resend.com) — transactional email
@@ -32,102 +32,98 @@ Optional services (features degrade gracefully if absent):
 
 ## Step 1 — Prepare the Database
 
-1. Create a new PostgreSQL database on [Neon](https://neon.tech) (free tier works).
-2. Copy the **connection string** — it looks like:
+1. Create a PostgreSQL database on [Neon](https://neon.tech) (free tier works).
+2. Copy the **connection string**:
    ```
    postgresql://user:password@ep-xxx.us-east-1.aws.neon.tech/neondb?sslmode=require
    ```
-3. Save it as `DATABASE_URL`. You will paste this into both Railway and any local `.env`.
+3. Save it — you will paste it as `DATABASE_URL` in Railway.
 
 ---
 
 ## Step 2 — Deploy the Backend on Railway
 
-### 2a. Create a new Railway project
+### 2a. Create a Railway project
 
 1. Go to [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub repo**.
 2. Select the `shipdesk` repository.
-3. Railway will detect `railway.toml` and use it automatically.
+3. Railway auto-detects `railway.toml` — no extra configuration needed.
 
 ### 2b. Set environment variables on Railway
 
-In your Railway service → **Variables**, add every variable from the table below.
+In your Railway service → **Variables**, add the following.
 
-**Required:**
+> **Important:** Set `NODE_ENV=production` here as a Runtime Variable — **not** in `railway.toml`.
+> If it's in the toml file it applies at build time too, causing npm to skip `devDependencies`
+> (including `typescript` and `tsx`), which breaks the build with `tsc: not found`.
+
+**Generate secrets:**
+```bash
+# SESSION_SECRET and AES_ENCRYPTION_KEY
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+**Required variables:**
 
 | Variable | Description |
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string from Step 1 |
-| `CLERK_SECRET_KEY` | From Clerk dashboard → API Keys (starts with `sk_`) |
-| `SESSION_SECRET` | Any random string ≥ 32 characters |
-| `AES_ENCRYPTION_KEY` | Exactly 64 hex characters (32 bytes, used to encrypt OAuth tokens) |
+| `CLERK_SECRET_KEY` | Clerk dashboard → API Keys (starts with `sk_live_`) |
+| `SESSION_SECRET` | Random string, at least 32 characters |
+| `AES_ENCRYPTION_KEY` | Exactly 64 hex characters (32 bytes) |
 | `FRONTEND_URL` | Your Vercel frontend URL, e.g. `https://shipdesk.vercel.app` |
-| `NODE_ENV` | Set to `production` |
+| `NODE_ENV` | `production` |
 
-> **⚠️ Important — set `NODE_ENV=production` as a Railway Variable, NOT in `railway.toml`.**
-> If `NODE_ENV=production` is in `railway.toml`'s `[environment]` block it applies during the build phase too, causing npm to skip `devDependencies` (including `typescript`), which breaks the build with `tsc: not found`.
-> Setting it as a Railway Variable makes it runtime-only.
-
-> **Generate secrets quickly:**
-> ```bash
-> # SESSION_SECRET
-> node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-> # AES_ENCRYPTION_KEY
-> node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-> ```
-
-**Optional:**
+**Optional variables:**
 
 | Variable | Description |
 |---|---|
-| `GEMINI_API_KEY` | Google AI Studio key for report generation |
+| `GEMINI_API_KEY` | Google AI Studio key — enables AI report generation |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret |
-| `CLOUDINARY_UPLOAD_PRESET` | Cloudinary unsigned upload preset |
+| `CLOUDINARY_UPLOAD_PRESET` | Cloudinary unsigned upload preset name |
 | `LEMONSQUEEZY_API_KEY` | Lemon Squeezy API key |
 | `LEMONSQUEEZY_STORE_ID` | Lemon Squeezy store ID |
-| `LEMONSQUEEZY_VARIANT_ID` | Lemon Squeezy variant ID for invoices |
+| `LEMONSQUEEZY_VARIANT_ID` | Variant ID for invoice payment links |
 | `LEMONSQUEEZY_WEBHOOK_SECRET` | Lemon Squeezy webhook signing secret |
 | `GITHUB_CLIENT_ID` | GitHub OAuth App client ID |
 | `GITHUB_CLIENT_SECRET` | GitHub OAuth App client secret |
 | `GITHUB_WEBHOOK_SECRET` | GitHub webhook signing secret |
-| `GITHUB_OAUTH_CALLBACK_URL` | Full OAuth callback URL, e.g. `https://your-backend.up.railway.app/api/github/callback` |
-| `RESEND_API_KEY` | Resend API key for emails |
+| `GITHUB_OAUTH_CALLBACK_URL` | `https://your-backend.up.railway.app/api/github/callback` |
+| `RESEND_API_KEY` | Resend API key |
 | `EMAIL_FROM` | From address, e.g. `noreply@yourdomain.com` |
 | `CLIENT_PORTAL_BASE_URL` | Base URL for client portals, e.g. `https://portal.shipdesk.io` |
 
-### 2c. Railway Settings (important)
+> See `server/.env.example` for the full list with comments.
 
-In your Railway service → **Settings**, confirm:
+### 2c. Railway service settings
+
+In Railway service → **Settings**, confirm:
 
 | Setting | Value |
 |---|---|
-| **Source Repo** | your GitHub repo |
-| **Branch** | `main` |
-| **Root Directory** | *(leave blank — Railway reads `railway.toml` from repo root)* |
-| **Builder** | Nixpacks *(auto-detected)* |
-| **Auto-deploy on push** | Enabled |
-| **Wait for CI** | Off *(unless you have GitHub Actions)* |
+| Root Directory | *(leave blank — reads `railway.toml` from repo root)* |
+| Builder | Nixpacks *(auto-detected from `nixpacks.toml`)* |
+| Auto-deploy on push | Enabled |
 
-In **Settings → Networking**, click **Generate Domain** to get your public backend URL (e.g. `https://shipdesk-server.up.railway.app`). Add this URL to Clerk's allowed origins and to Vercel's `VITE_API_BASE_URL`.
+In **Settings → Networking**, click **Generate Domain** to get your public backend URL
+(e.g. `https://shipdesk-server.up.railway.app`). You will need this in Step 3.
 
-### 2d. Deploy
+### 2d. What happens on each Railway deploy
 
-Railway will automatically:
-1. Run `npm install --include=dev` (installs all deps including TypeScript compiler)
-2. Run `npx prisma generate`
-3. Baseline the existing DB with `prisma migrate resolve --applied`
-4. Run `npx prisma migrate deploy` (applies any pending migrations)
-5. Run `npm run build` → compiles TypeScript to `dist/`
-6. Start the server with `node dist/index.js`
+Railway runs these steps automatically:
 
-The healthcheck hits `/health`. Once it returns `200`, your backend is live at a URL like:
-```
-https://shipdesk-server.up.railway.app
-```
+1. `npm install` — installs all workspace dependencies including `devDependencies`
+2. `npx prisma generate` — generates the Prisma client from `schema.prisma`
+3. `npx tsc --project tsconfig.json` — compiles TypeScript to `server/dist/`
+4. **On start:** `npx prisma migrate deploy` — applies any pending migrations
+5. `node dist/index.js` — starts the Express server on `$PORT`
 
-> **If the first deploy fails:** Check that `DATABASE_URL` is set correctly. Migration errors are the most common cause of failed deployments.
+The healthcheck polls `/health`. Once it returns `200`, your backend is live.
+
+> **If the deploy fails:** The most common cause is a missing or incorrect `DATABASE_URL`.
+> Check Railway's deploy logs — the startup DB check logs a clear error message.
 
 ---
 
@@ -137,7 +133,7 @@ https://shipdesk-server.up.railway.app
 
 1. Go to [vercel.com](https://vercel.com) → **Add New Project** → **Import Git Repository**.
 2. Select the `shipdesk` repository.
-3. Vercel reads `vercel.json` at the root — no extra framework settings needed.
+3. Vercel reads `vercel.json` at the root — no framework or build settings to change.
 
 ### 3b. Set environment variables on Vercel
 
@@ -145,111 +141,88 @@ In **Project Settings → Environment Variables**, add:
 
 | Variable | Description |
 |---|---|
-| `VITE_CLERK_PUBLISHABLE_KEY` | From Clerk dashboard → API Keys (starts with `pk_`) |
-| `VITE_API_BASE_URL` | Your Railway backend URL, e.g. `https://shipdesk-server.up.railway.app` |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk dashboard → API Keys (starts with `pk_live_`) |
+| `VITE_API_BASE_URL` | Your Railway backend URL — **no trailing slash**, **no `/api`** |
 
-> `VITE_*` variables are embedded into the JavaScript bundle at build time. Never put secret keys here.
+Example value for `VITE_API_BASE_URL`:
+```
+https://shipdesk-server.up.railway.app
+```
 
-### 3c. Deploy
+> `VITE_*` variables are embedded into the JS bundle at build time. Never put secret keys here.
 
-Vercel will automatically:
-1. Run `npm install`
-2. Run `npm run build --workspace=client` (TypeScript compile + Vite bundle)
-3. Serve `client/dist/` as a static site
-4. Redirect all routes to `index.html` (SPA routing)
-5. Cache `/assets/*` files for 1 year (they are content-hashed)
+> See `client/.env.example` for the full list.
+
+### 3c. What happens on each Vercel deploy
+
+1. `npm install` — installs all workspace dependencies
+2. `npm run build --workspace=client` — Vite bundles React to `client/dist/`
+3. `client/dist/` is served as a static site
+4. All routes are rewritten to `index.html` (SPA routing — no 404s on refresh)
+5. `/assets/*` files are cached for 1 year (they are content-hashed by Vite)
 
 ---
 
-## Step 4 — Run Database Migrations
-
-Migrations run automatically on each Railway deploy via `prisma migrate deploy`.
-
-To run them manually (e.g. from a local machine):
-
-```bash
-# From repo root
-cd server
-DATABASE_URL="your-connection-string" npx prisma migrate deploy
-```
-
-To create a new migration during development:
-
-```bash
-cd server
-npm run db:migrate -- --name describe_your_change
-```
-
-To push schema changes without migrations (prototyping only):
-
-```bash
-cd server
-npm run db:push
-```
-
----
-
-## Step 5 — Connect Clerk to Production
+## Step 4 — Connect Clerk to Production
 
 1. In the Clerk dashboard, go to **Domains** and add your Vercel frontend URL.
 2. Add your Railway backend URL as an **Allowed origin**.
-3. Switch to **Production** instance keys in Clerk and update both `CLERK_SECRET_KEY` (Railway) and `VITE_CLERK_PUBLISHABLE_KEY` (Vercel) with the production keys.
+3. Switch to **Production** instance keys and update:
+   - `CLERK_SECRET_KEY` in Railway variables
+   - `VITE_CLERK_PUBLISHABLE_KEY` in Vercel environment variables
+4. Trigger a redeploy on both Railway and Vercel after updating the keys.
 
 ---
 
-## Step 6 — Configure GitHub OAuth (Optional)
+## Step 5 — Configure GitHub OAuth (Optional)
 
 1. Go to **GitHub → Settings → Developer Settings → OAuth Apps → New OAuth App**.
 2. Set:
    - **Homepage URL**: your Vercel frontend URL
    - **Authorization callback URL**: `https://your-backend.up.railway.app/api/github/callback`
-3. Copy the **Client ID** and **Client Secret** into Railway variables.
+3. Copy **Client ID** and **Client Secret** to Railway variables.
+
+---
+
+## Local Development
+
+```bash
+# 1. Clone the repo
+git clone <repo-url>
+cd shipdesk
+
+# 2. Install all dependencies (npm workspaces — installs client + server)
+npm install
+
+# 3. Copy env files and fill in values
+cp server/.env.example server/.env
+cp client/.env.example client/.env.local
+
+# 4. Push DB schema (first time only)
+cd server && npx prisma db push && cd ..
+
+# 5. Start both servers
+npm run dev
+```
+
+The Vite dev server runs on **port 5000** and proxies `/api/*` to the Express server on **port 3000**. No `VITE_API_BASE_URL` needed locally.
 
 ---
 
 ## Environment Variable Reference
 
-### Railway (Backend) — Full list
+### Railway (Backend) — required
 
 ```env
-# Required
 DATABASE_URL=postgresql://...
 CLERK_SECRET_KEY=sk_live_...
-SESSION_SECRET=<32+ random chars>
+SESSION_SECRET=<64 hex chars>
 AES_ENCRYPTION_KEY=<64 hex chars>
 FRONTEND_URL=https://your-app.vercel.app
 NODE_ENV=production
-
-# AI
-GEMINI_API_KEY=
-
-# File uploads
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-CLOUDINARY_UPLOAD_PRESET=
-
-# Payments
-LEMONSQUEEZY_API_KEY=
-LEMONSQUEEZY_STORE_ID=
-LEMONSQUEEZY_VARIANT_ID=
-LEMONSQUEEZY_WEBHOOK_SECRET=
-
-# Email
-RESEND_API_KEY=
-EMAIL_FROM=noreply@yourdomain.com
-
-# GitHub OAuth
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
-GITHUB_WEBHOOK_SECRET=
-GITHUB_OAUTH_CALLBACK_URL=https://your-backend.up.railway.app/api/github/callback
-
-# Client portal
-CLIENT_PORTAL_BASE_URL=https://portal.yourdomain.com
 ```
 
-### Vercel (Frontend) — Full list
+### Vercel (Frontend) — required
 
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=pk_live_...
@@ -258,61 +231,74 @@ VITE_API_BASE_URL=https://your-backend.up.railway.app
 
 ---
 
-## Architecture Overview
+## Architecture
 
 ```
 Browser
   │
-  ├──▶ Vercel (React SPA)         client/dist/
-  │      └── /api/* proxied ──▶  Railway (Express API)    port from $PORT
-  │                                   └── Neon PostgreSQL
+  ├──▶ Vercel (React SPA)              client/dist/
+  │      All /api/* calls ────────▶   Railway (Express API)     $PORT
+  │      via VITE_API_BASE_URL              └── Neon PostgreSQL
   │
-  └──▶ *.portal.shipdesk.io       Same Vercel deployment
-         (client portal subdomain)     Detected via hostname
+  └──▶ Custom domain portals           Same Vercel deployment
+       (e.g. client.agency.com)        Hostname detected client-side
 ```
 
-In production, the React app calls the backend directly via `VITE_API_BASE_URL`. CORS is configured on the backend to allow your Vercel domain.
+In production the React app calls the Railway backend directly using `VITE_API_BASE_URL`. CORS on the backend is configured to allow your Vercel domain automatically.
 
 ---
 
 ## Troubleshooting
 
 ### Railway: `@prisma/client did not initialize yet`
-Run the build manually to regenerate the client:
-```bash
-cd server && npx prisma generate
-```
-Make sure `DATABASE_URL` is set in Railway variables.
 
-### Railway: `prisma migrate deploy` fails
-- Check that `DATABASE_URL` points to a reachable database.
-- If you see `P3005: database schema is not empty`, the database has tables but no migration history. Run a baseline:
+Prisma client was not generated before TypeScript compilation. Check the build logs — if `prisma generate` did not run, verify the build command in `railway.json`:
+```
+npm install && npm run build --workspace=server
+```
+And confirm `server/package.json` build script starts with `npx prisma generate`.
+
+### Railway: `prisma migrate deploy` fails on start
+
+- Verify `DATABASE_URL` is set and the database is reachable.
+- If the error is `P3005: database schema is not empty`, the DB has tables but no migration history. Run a baseline from your local machine:
   ```bash
-  npx prisma migrate resolve --applied "migration_name"
+  cd server
+  DATABASE_URL="your-connection-string" npx prisma migrate resolve --applied "initial_migration"
   ```
 
-### Vercel: blank page / 404 on refresh
-Ensure `vercel.json` has the SPA rewrite rule:
+### Railway: `tsc: not found` during build
+
+`NODE_ENV=production` is set in the build environment, causing npm to skip `devDependencies`. Fix: remove `NODE_ENV` from `railway.toml` and set it only as a Railway Runtime Variable.
+
+### Railway: healthcheck timeout
+
+The default healthcheck timeout is 120 seconds. If your DB is slow to cold-start (common with Neon free tier), increase `healthcheckTimeout` in `railway.json`.
+
+### Vercel: blank page or 404 on page refresh
+
+The SPA rewrite in `vercel.json` must be present:
 ```json
-{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
+{ "rewrites": [{ "source": "/((?!assets/).*)", "destination": "/index.html" }] }
 ```
 
-### Vercel: API calls fail with CORS error
-Set `FRONTEND_URL` on Railway to match your exact Vercel deployment URL (including `https://`).
+### Vercel: all API calls return HTML (the React app itself)
 
-### Vercel: `VITE_CLERK_PUBLISHABLE_KEY` not found
-Environment variables must be set **before** the build runs. Add them in Vercel project settings and redeploy.
+`VITE_API_BASE_URL` is not set. Add it to Vercel project settings pointing to your Railway backend URL, then trigger a redeploy.
 
-### Railway: deployment times out on healthcheck
-Increase `healthcheckTimeout` in `railway.toml`. Default is 60s. Common cause: database connection hanging on startup.
+### Vercel: CORS error in browser console
+
+Set `FRONTEND_URL` in Railway to your exact Vercel deployment URL (e.g. `https://shipdesk.vercel.app`). The backend uses this for the CORS allowed-origins list.
+
+### Vercel: environment variables not found after adding them
+
+Variables added to Vercel must be present **before** the build runs. After adding new `VITE_*` variables, trigger a manual redeploy in the Vercel dashboard.
 
 ---
 
 ## Redeployment Checklist
 
-When pushing a new release:
-
-- [ ] New migration? It runs automatically via `prisma migrate deploy` on Railway deploy.
-- [ ] New `VITE_*` env var? Add it to Vercel project settings and trigger a redeploy.
-- [ ] New server env var? Add it to Railway variables — Railway auto-redeploys on variable changes.
-- [ ] Schema changed? Run `npm run db:generate` locally and commit the generated types if needed.
+- [ ] New DB migration? Runs automatically via `prisma migrate deploy` on Railway startup.
+- [ ] New `VITE_*` env var? Add to Vercel settings and trigger a redeploy.
+- [ ] New server env var? Add to Railway Variables — Railway auto-redeploys on variable changes.
+- [ ] Schema change without migration? Run `npm run db:push --workspace=server` locally then commit.
