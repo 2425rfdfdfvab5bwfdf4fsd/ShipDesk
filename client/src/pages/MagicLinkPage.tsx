@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Loader2, XCircle } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, storeClientSessionToken } from "@/lib/api";
 
 const ERROR_MESSAGES: Record<string, string> = {
   LINK_EXPIRED: "This link has expired. Contact your project manager to request a new invitation.",
@@ -24,7 +24,8 @@ export function MagicLinkPage() {
 
     api.post("/api/portal/auth/magic", { token })
       .then((res) => {
-        const { projectIds } = res.data as { clientId: string; projectIds: string[] };
+        const { projectIds, sessionToken } = res.data as { clientId: string; projectIds: string[]; sessionToken?: string };
+        if (sessionToken) storeClientSessionToken(sessionToken);
         if (projectIds.length === 1) {
           navigate(`/projects/${projectIds[0]}`);
         } else {

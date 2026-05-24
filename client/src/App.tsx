@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Switch, Route, Router, useLocation } from "wouter";
 import { useAuth } from "@clerk/clerk-react";
-import { setApiToken } from "./lib/api";
+import { api, setApiToken } from "./lib/api";
 
 import { AppShell } from "./components/layout/AppShell";
 import { ClientPortalLayout } from "./components/layout/ClientPortalLayout";

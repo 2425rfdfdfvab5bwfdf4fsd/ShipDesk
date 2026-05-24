@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { usePortalBranding } from "@/hooks/usePortalBranding";
-import { api } from "@/lib/api";
+import { api, clearClientSessionToken } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
 import { LogOut, ChevronLeft, Menu, X, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,7 @@ export function ClientPortalLayout({ children, workspaceSlug }: ClientPortalLayo
   const logout = useMutation({
     mutationFn: () => api.post("/api/portal/auth/logout").then((r) => r.data),
     onSuccess: () => {
+      clearClientSessionToken();
       window.location.href = "/";
     },
   });

@@ -13,6 +13,20 @@ function normalizeBaseUrl(url: string): string {
   return `https://${trimmed}`;
 }
 
+const SESSION_KEY = "shipdesk_client_session_token";
+
+export function storeClientSessionToken(token: string) {
+  try { sessionStorage.setItem(SESSION_KEY, token); } catch { /* ignore */ }
+}
+
+export function clearClientSessionToken() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+}
+
+function getClientSessionToken(): string | null {
+  try { return sessionStorage.getItem(SESSION_KEY); } catch { return null; }
+}
+
 export const api = axios.create({
   baseURL: import.meta.env.PROD
     ? normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL ?? "")
@@ -25,6 +39,10 @@ api.interceptors.request.use(async (config) => {
     const clerkToken = (window as { __clerkToken?: string }).__clerkToken;
     if (clerkToken) {
       config.headers.Authorization = `Bearer ${clerkToken}`;
+    }
+    const sessionToken = getClientSessionToken();
+    if (sessionToken) {
+      config.headers["X-Client-Session-Token"] = sessionToken;
     }
   }
   return config;

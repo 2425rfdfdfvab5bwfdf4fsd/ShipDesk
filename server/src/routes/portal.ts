@@ -115,6 +115,7 @@ router.post("/auth/magic", magicLinkLimiter, async (req, res, next) => {
     res.json({
       clientId: decoded.clientId,
       projectIds: allAccess.map((a) => a.projectId),
+      sessionToken: session.id,
     });
   } catch (err) {
     next(err);

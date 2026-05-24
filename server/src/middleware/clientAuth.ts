@@ -13,7 +13,9 @@ export async function requireClientAuth(
   next: NextFunction
 ): Promise<void> {
   try {
-    const sessionId = req.cookies?.shipdesk_client_session;
+    const sessionId =
+      (req.headers["x-client-session-token"] as string | undefined) ||
+      req.cookies?.shipdesk_client_session;
     if (!sessionId) {
       res.status(401).json({ error: "UNAUTHORIZED" });
       return;
