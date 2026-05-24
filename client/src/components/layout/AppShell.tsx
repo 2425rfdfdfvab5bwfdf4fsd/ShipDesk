@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import {
   LayoutDashboard, DollarSign, GitMerge, Settings,
-  Menu, X, Sun, Moon, LogOut, MessageSquare
+  Menu, X, Sun, Moon, LogOut, MessageSquare, CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/invoices", label: "Invoices", icon: DollarSign },
   { href: "/scope-changes", label: "Scope Changes", icon: GitMerge },
+  { href: "/billing", label: "Billing", icon: CreditCard },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -91,7 +92,17 @@ export function AppShell({ children }: AppShellProps) {
         {/* Workspace badge */}
         {workspace && (
           <div className="mx-3 mt-3 mb-1 px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
-            <p className="text-[10px] font-medium text-primary/60 uppercase tracking-wider mb-0.5">Workspace</p>
+            <div className="flex items-center justify-between mb-0.5">
+              <p className="text-[10px] font-medium text-primary/60 uppercase tracking-wider">Workspace</p>
+              <span className={cn(
+                "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full",
+                workspace.plan === "AGENCY" ? "bg-violet-500/20 text-violet-500" :
+                workspace.plan === "SOLO" ? "bg-primary/20 text-primary" :
+                "bg-muted text-muted-foreground"
+              )}>
+                {workspace.plan}
+              </span>
+            </div>
             <p className="text-xs font-semibold truncate">{workspace.agencyName || workspace.name}</p>
             <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
               shipdesk-delta.vercel.app/portal/{workspace.slug}
@@ -105,7 +116,8 @@ export function AppShell({ children }: AppShellProps) {
             const Icon = item.icon;
             const active = location === item.href ||
               (item.href === "/settings" && location.startsWith("/settings")) ||
-              (item.href !== "/dashboard" && item.href !== "/settings" && location.startsWith(item.href));
+              (item.href === "/billing" && location.startsWith("/billing")) ||
+              (item.href !== "/dashboard" && item.href !== "/settings" && item.href !== "/billing" && location.startsWith(item.href));
             const showBadge = item.href === "/dashboard" && unreadCount > 0;
             return (
               <Link

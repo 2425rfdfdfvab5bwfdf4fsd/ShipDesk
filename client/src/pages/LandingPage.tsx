@@ -548,8 +548,9 @@ export function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/sign-up">
+                <Link href={`/sign-up?plan=${plan.name.toUpperCase()}`}>
                   <Button
+                    data-testid={`button-pricing-${plan.name.toLowerCase()}`}
                     className={`w-full h-11 ${
                       plan.highlight
                         ? "bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25"

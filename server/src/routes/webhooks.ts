@@ -129,6 +129,82 @@ router.post("/lemonsqueezy", (req: Request, res: Response) => {
   const orderId = payload.data.id;
   const customData = payload.meta.custom_data || {};
 
+  const eventName = payload.meta.event_name;
+
+  // ── Subscription lifecycle events ──────────────────────────────────────
+  if (
+    eventName === "subscription_created" ||
+    eventName === "subscription_updated" ||
+    eventName === "subscription_resumed"
+  ) {
+    const handleSubscription = async () => {
+      const workspaceId = customData.workspaceId;
+      const plan = customData.plan as "SOLO" | "AGENCY" | undefined;
+      if (!workspaceId) return { received: true, skipped: "no_workspace_id" };
+
+      const subscriptionId = payload.data.id;
+      const attrs = payload.data.attributes as Record<string, unknown>;
+      const status = (attrs.status as string) || "active";
+      const customerId = attrs.customer_id ? String(attrs.customer_id) : undefined;
+
+      const trialEndsAt =
+        typeof attrs.trial_ends_at === "string"
+          ? new Date(attrs.trial_ends_at)
+          : null;
+
+      await db.workspace.update({
+        where: { id: workspaceId },
+        data: {
+          plan: plan || "SOLO",
+          lsSubscriptionId: subscriptionId,
+          lsSubscriptionStatus: status,
+          ...(customerId ? { lsCustomerId: customerId } : {}),
+          ...(trialEndsAt ? { trialEndsAt } : {}),
+        },
+      });
+      return { received: true };
+    };
+
+    handleSubscription()
+      .then((r) => res.json(r))
+      .catch((err) => {
+        console.error("Lemon Squeezy subscription webhook error:", err);
+        res.status(500).json({ error: "Internal error" });
+      });
+    return;
+  }
+
+  if (
+    eventName === "subscription_cancelled" ||
+    eventName === "subscription_expired"
+  ) {
+    const handleCancel = async () => {
+      const workspaceId = customData.workspaceId;
+      if (!workspaceId) return { received: true, skipped: "no_workspace_id" };
+
+      const attrs = payload.data.attributes as Record<string, unknown>;
+      const status = (attrs.status as string) || "cancelled";
+
+      await db.workspace.update({
+        where: { id: workspaceId },
+        data: {
+          lsSubscriptionStatus: status,
+          // Only reset plan to FREE if subscription is fully expired/cancelled
+          ...(eventName === "subscription_expired" ? { plan: "FREE" } : {}),
+        },
+      });
+      return { received: true };
+    };
+
+    handleCancel()
+      .then((r) => res.json(r))
+      .catch((err) => {
+        console.error("Lemon Squeezy cancel webhook error:", err);
+        res.status(500).json({ error: "Internal error" });
+      });
+    return;
+  }
+
   if (payload.meta.event_name === "order_created") {
     const processOrder = async () => {
       const [existingInvoice, existingScope] = await Promise.all([

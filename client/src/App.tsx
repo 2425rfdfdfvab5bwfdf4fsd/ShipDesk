@@ -22,6 +22,7 @@ import { ProjectDetailPage } from "./pages/dev/ProjectDetailPage";
 import { InvoicesPage } from "./pages/dev/InvoicesPage";
 import { ScopeChangesPage } from "./pages/dev/ScopeChangesPage";
 import { SettingsPage } from "./pages/dev/SettingsPage";
+import { BillingPage } from "./pages/dev/BillingPage";
 
 import { ClientPortalHomePage } from "./pages/client/ClientPortalHomePage";
 import { ClientProjectPage } from "./pages/client/ClientProjectPage";
@@ -109,7 +110,7 @@ function DevApp() {
   const { isLoaded, isSignedIn } = useAuth();
   const [location, navigate] = useLocation();
 
-  const publicRoutes = ["/", "/sign-in", "/sign-up", "/build-logs", "/privacy", "/terms", "/cookies", "/contact"];
+  const publicRoutes = ["/", "/sign-in", "/sign-up", "/build-logs", "/privacy", "/terms", "/cookies", "/contact", "/billing"];
   const isPublic = publicRoutes.includes(location);
 
   useEffect(() => {
@@ -164,6 +165,9 @@ function DevApp() {
         </Route>
         <Route path="/settings/workspace">
           <AppShell><SettingsPage /></AppShell>
+        </Route>
+        <Route path="/billing">
+          <AppShell><BillingPage /></AppShell>
         </Route>
         <Route component={NotFoundPage} />
       </Switch>

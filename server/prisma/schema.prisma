@@ -8,6 +8,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Plan {
+  FREE
+  SOLO
+  AGENCY
+}
+
 model User {
   id        String   @id @default(uuid())
   clerkId   String   @unique
@@ -21,17 +27,22 @@ model User {
 }
 
 model Workspace {
-  id                 String   @id @default(uuid())
-  ownerId            String   @unique
-  name               String
-  agencyName         String?
-  slug               String   @unique
-  logoUrl            String?
-  primaryColor       String   @default("#6366F1")
-  customDomain       String?  @unique
-  onboardingComplete Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                   String   @id @default(uuid())
+  ownerId              String   @unique
+  name                 String
+  agencyName           String?
+  slug                 String   @unique
+  logoUrl              String?
+  primaryColor         String   @default("#6366F1")
+  customDomain         String?  @unique
+  onboardingComplete   Boolean  @default(false)
+  plan                 Plan     @default(FREE)
+  lsSubscriptionId     String?
+  lsSubscriptionStatus String?
+  lsCustomerId         String?
+  trialEndsAt          DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   owner         User            @relation(fields: [ownerId], references: [id])
   projects      Project[]

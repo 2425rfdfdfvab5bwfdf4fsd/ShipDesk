@@ -1,4 +1,5 @@
 export type Currency = "USD" | "EUR" | "GBP" | "CAD" | "AUD";
+export type Plan = "FREE" | "SOLO" | "AGENCY";
 export type UploaderType = "DEVELOPER" | "CLIENT";
 export type SenderType = "DEVELOPER" | "CLIENT";
 export type ProjectStatus = "ACTIVE" | "PAUSED" | "COMPLETED";
@@ -35,6 +36,11 @@ export interface Workspace {
   primaryColor: string;
   customDomain: string | null;
   onboardingComplete: boolean;
+  plan: Plan;
+  lsSubscriptionId: string | null;
+  lsSubscriptionStatus: string | null;
+  lsCustomerId: string | null;
+  trialEndsAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
