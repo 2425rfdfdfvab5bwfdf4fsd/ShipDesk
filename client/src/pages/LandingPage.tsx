@@ -600,6 +600,18 @@ export function LandingPage() {
                     </li>
                   ))}
                 </ul>
+                <Link href="/sign-up">
+                  <Button
+                    data-testid={`button-pricing-${plan.name.toLowerCase()}`}
+                    className={`w-full h-11 ${
+                      plan.highlight
+                        ? "bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25"
+                        : "bg-white/10 hover:bg-white/15 text-white border border-white/15"
+                    }`}
+                  >
+                    Start free trial
+                  </Button>
+                </Link>
               </motion.div>
             ))}
           </div>
