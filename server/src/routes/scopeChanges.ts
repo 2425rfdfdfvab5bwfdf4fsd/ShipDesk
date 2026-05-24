@@ -94,7 +94,7 @@ router.patch("/:id/quote", requireAuth, async (req: AuthRequest, res, next) => {
         include: { workspace: true },
       });
       if (project) {
-        const portalBase = process.env.FRONTEND_URL || "https://shipdesk-delta.vercel.app";
+        const portalBase = process.env.FRONTEND_URL || "https://shipdesk-nine.vercel.app";
         sendScopeChangeNotification({
           to: client.email,
           recipientName: client.name,

@@ -148,7 +148,7 @@ router.get(
         return;
       }
 
-      const expectedCname = `shipdesk-delta.vercel.app`;
+      const expectedCname = `shipdesk-nine.vercel.app`;
       const domain = workspace.customDomain;
 
       try {
