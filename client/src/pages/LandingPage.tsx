@@ -231,67 +231,6 @@ function MockDashboard() {
   );
 }
 
-function MobileMockDashboard() {
-  return (
-    <div className="w-full rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-[#0f1117]">
-      {/* Browser chrome */}
-      <div className="bg-[#1a1d27] border-b border-white/10 px-3 py-2.5 flex items-center gap-1.5">
-        <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-        <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-        <div className="flex-1 mx-2">
-          <div className="bg-white/5 border border-white/10 rounded px-2 py-0.5 text-[9px] text-white/40 font-mono truncate">
-            shipdesk-delta.vercel.app/dashboard
-          </div>
-        </div>
-        <div className="w-4 h-4 rounded bg-indigo-500/20 flex items-center justify-center">
-          <Bell className="w-2.5 h-2.5 text-indigo-400" />
-        </div>
-      </div>
-      {/* Content */}
-      <div className="p-3 space-y-2.5 bg-[#0f1117]">
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: "Active Projects", value: "4", color: "text-white" },
-            { label: "Unpaid Invoices", value: "2", color: "text-amber-400" },
-            { label: "Pending Scope", value: "1", color: "text-orange-400" },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-white/5 border border-white/10 rounded-lg p-2">
-              <p className="text-white/40 text-[9px] mb-1 leading-tight">{stat.label}</p>
-              <p className={`text-sm font-bold ${stat.color}`}>{stat.value}</p>
-            </div>
-          ))}
-        </div>
-        {/* Projects */}
-        <p className="text-white/30 text-[9px] font-semibold uppercase tracking-wider">Active Projects</p>
-        <div className="space-y-1.5">
-          {[
-            { name: "Acme Corp Website", badge: "Active", dot: "bg-emerald-500" },
-            { name: "Mobile App v2", badge: "Active", dot: "bg-emerald-500" },
-          ].map((p) => (
-            <div key={p.name} className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className={`w-1.5 h-1.5 rounded-full ${p.dot} flex-shrink-0`} />
-                <span className="text-white/80 text-xs font-medium truncate">{p.name}</span>
-              </div>
-              <span className="text-[10px] text-white/40 font-medium flex-shrink-0">{p.badge}</span>
-            </div>
-          ))}
-        </div>
-        {/* AI notification */}
-        <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-2.5 flex items-start gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse mt-1 flex-shrink-0" />
-          <div>
-            <p className="text-indigo-300 text-[11px] font-medium">New report generated</p>
-            <p className="text-white/40 text-[10px] mt-0.5">Acme Corp Website · Week of May 19</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -440,11 +379,6 @@ export function LandingPage() {
           >
             <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-white/20 to-white/5 blur-sm" />
             <div className="absolute -inset-4 sm:-inset-8 bg-indigo-600/10 rounded-3xl blur-2xl" />
-            {/* Mobile: compact dashboard preview */}
-            <div className="relative block md:hidden mx-2">
-              <MobileMockDashboard />
-            </div>
-            {/* Desktop: full dashboard */}
             <div className="relative hidden md:block">
               <MockDashboard />
             </div>
