@@ -1,25 +1,9 @@
 import axios from "axios";
 
-const ADMIN_KEY_STORAGE = "shipdesk_admin_key";
-const ADMIN_EMAIL_STORAGE = "shipdesk_admin_email";
+let _tokenGetter: (() => Promise<string | null>) | null = null;
 
-export function getAdminKey(): string | null {
-  try { return sessionStorage.getItem(ADMIN_KEY_STORAGE); } catch { return null; }
-}
-export function getAdminEmail(): string | null {
-  try { return sessionStorage.getItem(ADMIN_EMAIL_STORAGE); } catch { return null; }
-}
-export function setAdminCredentials(key: string, email: string) {
-  try {
-    sessionStorage.setItem(ADMIN_KEY_STORAGE, key);
-    sessionStorage.setItem(ADMIN_EMAIL_STORAGE, email);
-  } catch { /* ignore */ }
-}
-export function clearAdminCredentials() {
-  try {
-    sessionStorage.removeItem(ADMIN_KEY_STORAGE);
-    sessionStorage.removeItem(ADMIN_EMAIL_STORAGE);
-  } catch { /* ignore */ }
+export function setAdminTokenGetter(fn: () => Promise<string | null>) {
+  _tokenGetter = fn;
 }
 
 function normalizeBaseUrl(url: string): string {
@@ -34,10 +18,10 @@ export const adminApi = axios.create({
     : "",
 });
 
-adminApi.interceptors.request.use((config) => {
-  const key = getAdminKey();
-  const email = getAdminEmail();
-  if (key) config.headers["X-Admin-Key"] = key;
-  if (email) config.headers["X-Admin-Email"] = email;
+adminApi.interceptors.request.use(async (config) => {
+  if (_tokenGetter) {
+    const token = await _tokenGetter();
+    if (token) config.headers["Authorization"] = `Bearer ${token}`;
+  }
   return config;
 });

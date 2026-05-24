@@ -1,31 +1,34 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Response, NextFunction } from "express";
 import { db } from "../lib/prisma.js";
+import { requireAuth, AuthRequest } from "../middleware/auth.js";
 
 const router = Router();
 
-function requireAdmin(req: Request, res: Response, next: NextFunction): void {
-  const secret = process.env.ADMIN_SECRET_KEY;
+async function requireAdminEmail(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   const allowedEmail = process.env.ADMIN_EMAIL;
-  if (!secret) {
-    res.status(503).json({ error: "ADMIN_NOT_CONFIGURED" });
+  if (!allowedEmail) {
+    res.status(503).json({ error: "ADMIN_EMAIL_NOT_CONFIGURED" });
     return;
   }
-  const key = req.headers["x-admin-key"] as string | undefined;
-  if (!key || key !== secret) {
-    res.status(401).json({ error: "UNAUTHORIZED" });
-    return;
-  }
-  if (allowedEmail) {
-    const email = (req.headers["x-admin-email"] as string | undefined)?.toLowerCase().trim();
-    if (!email || email !== allowedEmail.toLowerCase().trim()) {
+  try {
+    const user = await db.user.findUnique({ where: { id: req.userId } });
+    if (!user || user.email.toLowerCase().trim() !== allowedEmail.toLowerCase().trim()) {
       res.status(403).json({ error: "FORBIDDEN" });
       return;
     }
+    next();
+  } catch (err) {
+    next(err);
   }
-  next();
 }
 
-router.get("/stats", requireAdmin, async (_req, res, next) => {
+const adminGuard = [requireAuth, requireAdminEmail];
+
+router.get("/stats", ...adminGuard, async (_req, res, next) => {
   try {
     const [
       userCount,
@@ -77,7 +80,7 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
   }
 });
 
-router.get("/users", requireAdmin, async (req, res, next) => {
+router.get("/users", ...adminGuard, async (req, res, next) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = 20;
@@ -116,7 +119,7 @@ router.get("/users", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.get("/projects", requireAdmin, async (req, res, next) => {
+router.get("/projects", ...adminGuard, async (req, res, next) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = 20;
@@ -145,7 +148,7 @@ router.get("/projects", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.get("/reports", requireAdmin, async (req, res, next) => {
+router.get("/reports", ...adminGuard, async (req, res, next) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = 20;
@@ -174,7 +177,7 @@ router.get("/reports", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.get("/invoices", requireAdmin, async (req, res, next) => {
+router.get("/invoices", ...adminGuard, async (req, res, next) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = 20;
