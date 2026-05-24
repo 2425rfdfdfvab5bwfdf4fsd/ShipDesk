@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@clerk/clerk-react";
 import { useSEO } from "@/lib/seo";
@@ -7,7 +7,8 @@ import {
   Zap, Github, FileText, DollarSign, MessageSquare, Shield,
   ArrowRight, CheckCircle, Clock, Users, BarChart3,
   Mail, Star, TrendingUp, Layers, Menu, X, Sparkles,
-  GitPullRequest, Bell, ChevronRight, Lock, Globe
+  GitPullRequest, Bell, ChevronRight, Lock, Globe,
+  LayoutDashboard, LogIn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -251,7 +252,14 @@ function MockDashboard() {
 
 export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { isSignedIn } = useAuth();
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useSEO({
     title: "ShipDesk — AI Client Portal for Freelance Developers",
@@ -264,87 +272,160 @@ export function LandingPage() {
   return (
     <div className="min-h-screen bg-[#06080f] text-white [overflow-x:clip]">
       {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#06080f]/90 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <img src="/favicon.svg" alt="ShipDesk" className="w-8 h-8" />
-            <span className="font-bold text-lg tracking-tight">ShipDesk</span>
-          </div>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-white/60">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">How it works</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-            <a href="#testimonials" className="hover:text-white transition-colors">Reviews</a>
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-[#06080f]/95 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_1px_40px_rgba(0,0,0,0.5)]"
+            : "bg-transparent border-b border-transparent"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-[68px] flex items-center justify-between gap-8">
+
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:shadow-indigo-500/50 transition-shadow">
+              <img src="/favicon.svg" alt="" className="w-5 h-5" />
+            </div>
+            <span className="font-bold text-[17px] tracking-tight text-white">ShipDesk</span>
+          </Link>
+
+          {/* Desktop nav — centered */}
+          <nav className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
+            {[
+              { label: "Features", href: "#features" },
+              { label: "How it works", href: "#how-it-works" },
+              { label: "Pricing", href: "#pricing" },
+              { label: "Reviews", href: "#testimonials" },
+            ].map(({ label, href }) => (
+              <a
+                key={href}
+                href={href}
+                className="relative px-3.5 py-1.5 text-sm font-medium text-white/55 hover:text-white transition-colors duration-200 rounded-lg hover:bg-white/[0.06] group"
+              >
+                {label}
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-px w-0 group-hover:w-4 bg-indigo-400/70 transition-all duration-300 rounded-full" />
+              </a>
+            ))}
           </nav>
-          <div className="hidden md:flex items-center gap-2">
+
+          {/* Desktop CTA */}
+          <div className="hidden md:flex items-center gap-2 shrink-0">
             {isSignedIn ? (
               <Link href="/dashboard">
-                <Button size="sm" className="gap-1.5 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25">
-                  Go to Dashboard <ArrowRight className="h-3.5 w-3.5" />
+                <Button
+                  size="sm"
+                  className="gap-2 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/20 h-9 px-4 text-sm font-semibold"
+                >
+                  <LayoutDashboard className="h-3.5 w-3.5" />
+                  Dashboard
                 </Button>
               </Link>
             ) : (
               <>
                 <Link href="/sign-in">
-                  <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
+                  <button className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/[0.06]">
+                    <LogIn className="h-3.5 w-3.5" />
                     Sign in
-                  </Button>
+                  </button>
                 </Link>
                 <Link href="/sign-up">
-                  <Button size="sm" className="gap-1.5 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25">
-                    Get started <ArrowRight className="h-3.5 w-3.5" />
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25 h-9 px-4 text-sm font-semibold"
+                  >
+                    Start free trial
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
               </>
             )}
           </div>
+
+          {/* Mobile hamburger */}
           <button
-            className="md:hidden p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10"
+            data-testid="button-mobile-menu"
+            className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
           >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={mobileMenuOpen ? "close" : "open"}
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </motion.div>
+            </AnimatePresence>
           </button>
         </div>
+
+        {/* Mobile drawer */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-t border-white/10 bg-[#06080f] px-4 py-4 space-y-1"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="md:hidden bg-[#0c0e18]/98 backdrop-blur-2xl border-t border-white/[0.08] px-5 pb-6 pt-3"
             >
-              {["#features", "#how-it-works", "#pricing", "#testimonials"].map((href) => (
-                <a
-                  key={href}
-                  href={href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block py-2.5 px-3 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/5 capitalize"
-                >
-                  {href.replace("#", "").replace("-", " ")}
-                </a>
-              ))}
-              <div className="pt-2 flex flex-col gap-2">
+              {/* Nav links */}
+              <div className="space-y-0.5 mb-5">
+                {[
+                  { label: "Features", href: "#features" },
+                  { label: "How it works", href: "#how-it-works" },
+                  { label: "Pricing", href: "#pricing" },
+                  { label: "Reviews", href: "#testimonials" },
+                ].map(({ label, href }) => (
+                  <a
+                    key={href}
+                    href={href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between py-3 px-3 rounded-xl text-[15px] font-medium text-white/65 hover:text-white hover:bg-white/[0.05] transition-colors"
+                  >
+                    {label}
+                    <ChevronRight className="h-4 w-4 text-white/25" />
+                  </a>
+                ))}
+              </div>
+
+              {/* Divider */}
+              <div className="h-px bg-white/[0.07] mb-5" />
+
+              {/* CTA */}
+              <div className="flex flex-col gap-2.5">
                 {isSignedIn ? (
                   <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                    <Button size="sm" className="w-full bg-indigo-500 hover:bg-indigo-400">
+                    <Button className="w-full h-11 gap-2 bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold">
+                      <LayoutDashboard className="h-4 w-4" />
                       Go to Dashboard
                     </Button>
                   </Link>
                 ) : (
                   <>
-                    <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="ghost" size="sm" className="w-full text-white/70 hover:text-white hover:bg-white/10">
-                        Sign in
+                    <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
+                      <Button className="w-full h-11 gap-2 bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold shadow-lg shadow-indigo-500/20">
+                        Start free trial
+                        <ArrowRight className="h-4 w-4" />
                       </Button>
                     </Link>
-                    <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
-                      <Button size="sm" className="w-full bg-indigo-500 hover:bg-indigo-400">
-                        Get started free
-                      </Button>
+                    <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>
+                      <button className="w-full h-10 flex items-center justify-center gap-2 text-sm font-medium text-white/55 hover:text-white transition-colors rounded-xl hover:bg-white/[0.05]">
+                        <LogIn className="h-4 w-4" />
+                        Sign in to your account
+                      </button>
                     </Link>
                   </>
                 )}
               </div>
+
+              {/* Footer note */}
+              <p className="mt-5 text-center text-xs text-white/25">
+                14-day free trial · No credit card required
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
