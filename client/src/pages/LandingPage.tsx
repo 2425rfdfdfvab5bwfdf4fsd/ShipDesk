@@ -109,14 +109,14 @@ const PRICING = [
     name: "Starter",
     price: "$5",
     period: "/month",
-    description: "Just getting started? Ship your first client portal today.",
+    description: "Get your first client portal live in minutes.",
     features: [
-      "3 active projects",
-      "10 AI reports/month",
-      "Branded client portal",
-      "Invoice + payment links",
-      "File sharing",
-      "Async messaging",
+      { label: "3 client projects" },
+      { label: "10 AI status reports / month" },
+      { label: "Magic link client portal" },
+      { label: "Invoice + Lemon Squeezy checkout" },
+      { label: "File uploads & sharing" },
+      { label: "Async client messaging" },
     ],
     cta: "Start free trial",
     highlight: false,
@@ -125,15 +125,15 @@ const PRICING = [
     name: "Solo",
     price: "$29",
     period: "/month",
-    description: "Perfect for freelancers managing a handful of clients.",
+    description: "Everything a freelancer needs to look like a studio.",
     features: [
-      "Up to 10 active projects",
-      "Unlimited AI reports",
-      "Branded client portal",
-      "Invoice + payment links",
-      "Scope change flow",
-      "File sharing",
-      "Async messaging",
+      { label: "Up to 10 client projects" },
+      { label: "Unlimited AI reports (Gemini 1.5 Pro)" },
+      { label: "GitHub webhook integration" },
+      { label: "Branded portal + client invites" },
+      { label: "Invoice + payment collection" },
+      { label: "Scope change requests & quoting" },
+      { label: "File sharing + async messaging" },
     ],
     cta: "Start free trial",
     highlight: false,
@@ -142,15 +142,16 @@ const PRICING = [
     name: "Agency",
     price: "$79",
     period: "/month",
-    description: "For growing agencies with more projects and clients.",
+    description: "Scale your client operations without the overhead.",
     features: [
-      "Unlimited projects",
-      "Unlimited AI reports",
-      "Custom domain portal",
-      "Everything in Solo",
-      "Priority support",
-      "Team seats (coming soon)",
-      "Linear & Vercel integration",
+      { label: "Unlimited projects" },
+      { label: "Unlimited AI reports (Gemini 1.5 Pro)" },
+      { label: "Custom domain client portal" },
+      { label: "GitHub integration + DNS verification" },
+      { label: "Everything in Solo" },
+      { label: "Priority support" },
+      { label: "Team seats", soon: true },
+      { label: "Linear & Vercel sync", soon: true },
     ],
     cta: "Start free trial",
     highlight: true,
@@ -514,14 +515,14 @@ export function LandingPage() {
 
       {/* Pricing */}
       <section id="pricing" className="py-24 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 bg-white/5 text-white/50 border border-white/10 rounded-full px-3 py-1 text-xs font-medium mb-4">
               <DollarSign className="h-3.5 w-3.5" />
               Simple pricing
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-              Pay once. Save hours every week.
+              Every feature. Fully working. Right now.
             </h2>
             <p className="text-white/50 max-w-md mx-auto">
               14-day free trial, no credit card required. Cancel any time.
@@ -535,7 +536,7 @@ export function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className={`relative rounded-2xl p-7 ${
+                className={`relative rounded-2xl p-7 flex flex-col ${
                   plan.highlight
                     ? "bg-indigo-500/10 border-2 border-indigo-500/40 shadow-xl shadow-indigo-500/10"
                     : "bg-white/[0.03] border border-white/10"
@@ -556,11 +557,24 @@ export function LandingPage() {
                     <span className="text-white/50 text-sm">{plan.period}</span>
                   </div>
                 </div>
-                <ul className="space-y-2.5 mb-7">
+                <ul className="space-y-2.5 mb-7 flex-1">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2.5 text-sm text-white/70">
-                      <CheckCircle className="h-4 w-4 text-emerald-400 flex-shrink-0" />
-                      {feature}
+                    <li key={feature.label} className="flex items-center gap-2.5 text-sm">
+                      {feature.soon ? (
+                        <span className="h-4 w-4 flex-shrink-0 flex items-center justify-center">
+                          <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
+                        </span>
+                      ) : (
+                        <CheckCircle className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                      )}
+                      <span className={feature.soon ? "text-white/30" : "text-white/70"}>
+                        {feature.label}
+                      </span>
+                      {feature.soon && (
+                        <span className="ml-auto text-[10px] font-medium text-white/25 border border-white/10 rounded px-1 py-0.5 leading-none flex-shrink-0">
+                          soon
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
