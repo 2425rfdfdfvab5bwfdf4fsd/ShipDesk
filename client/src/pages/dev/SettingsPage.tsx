@@ -155,7 +155,7 @@ function PlanTab() {
         </div>
       </div>
 
-      {/* CTA when on trial or expired */}
+      {/* CTA when on trial, expired, or on free plan with no trial */}
       {!billing?.lsSubscriptionId && (
         <div className={cn(
           "rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3",
@@ -163,12 +163,18 @@ function PlanTab() {
         )}>
           <div>
             <p className="text-sm font-semibold">
-              {trialExpired ? "Your trial has ended" : "Enjoying your trial?"}
+              {trialExpired
+                ? "Your trial has ended"
+                : trialActive
+                ? "Enjoying your trial?"
+                : "Unlock more with a paid plan"}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {trialExpired
                 ? "Upgrade now to regain full access to all your projects and data."
-                : `You have ${remaining} day${remaining !== 1 ? "s" : ""} left. Upgrade any time to keep full access.`}
+                : trialActive
+                ? `You have ${remaining} day${remaining !== 1 ? "s" : ""} left. Upgrade any time to keep full access.`
+                : "Get more projects, AI reports, payments, and a branded client portal."}
             </p>
           </div>
           <Button
