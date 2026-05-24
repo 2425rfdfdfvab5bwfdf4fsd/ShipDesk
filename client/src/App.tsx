@@ -11,6 +11,10 @@ import { MagicLinkPage } from "./pages/MagicLinkPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { AdminPage } from "./pages/admin/AdminPage";
 import { BuildLogsDemo } from "./pages/BuildLogsDemo";
+import { PrivacyPolicyPage } from "./pages/legal/PrivacyPolicyPage";
+import { TermsOfServicePage } from "./pages/legal/TermsOfServicePage";
+import { CookiePolicyPage } from "./pages/legal/CookiePolicyPage";
+import { ContactUsPage } from "./pages/legal/ContactUsPage";
 
 import { OnboardingPage } from "./pages/dev/OnboardingPage";
 import { DashboardPage } from "./pages/dev/DashboardPage";
@@ -105,7 +109,7 @@ function DevApp() {
   const { isLoaded, isSignedIn } = useAuth();
   const [location, navigate] = useLocation();
 
-  const publicRoutes = ["/", "/sign-in", "/sign-up", "/build-logs"];
+  const publicRoutes = ["/", "/sign-in", "/sign-up", "/build-logs", "/privacy", "/terms", "/cookies", "/contact"];
   const isPublic = publicRoutes.includes(location);
 
   useEffect(() => {
@@ -127,6 +131,10 @@ function DevApp() {
       <TokenSync />
       <Switch>
         <Route path="/" component={LandingPage} />
+        <Route path="/privacy" component={PrivacyPolicyPage} />
+        <Route path="/terms" component={TermsOfServicePage} />
+        <Route path="/cookies" component={CookiePolicyPage} />
+        <Route path="/contact" component={ContactUsPage} />
         <Route path="/build-logs" component={BuildLogsDemo} />
         <Route path="/sign-in">
           <div className="min-h-screen flex items-center justify-center bg-background">

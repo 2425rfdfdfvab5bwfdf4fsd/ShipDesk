@@ -701,7 +701,7 @@ export function LandingPage() {
                   <a href="/privacy" className="block hover:text-white/70 transition-colors">Privacy Policy</a>
                   <a href="/terms" className="block hover:text-white/70 transition-colors">Terms of Service</a>
                   <a href="/cookies" className="block hover:text-white/70 transition-colors">Cookie Policy</a>
-                  <a href="mailto:support@shipdesk.io" className="block hover:text-white/70 transition-colors">Contact Us</a>
+                  <Link href="/contact" className="block hover:text-white/70 transition-colors">Contact Us</Link>
                 </div>
               </div>
             </div>
