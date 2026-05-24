@@ -284,6 +284,100 @@ router.post("/reregister-webhook/:projectId", requireAuth, async (req: AuthReque
   }
 });
 
+router.post("/sync-commits/:projectId", requireAuth, async (req: AuthRequest, res, next) => {
+  try {
+    const workspace = await db.workspace.findUnique({ where: { ownerId: req.userId! } });
+    if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+
+    const project = await db.project.findFirst({
+      where: { id: req.params.projectId, workspaceId: workspace.id },
+    });
+    if (!project) throw new AppError("Project not found", 404, "NOT_FOUND");
+    if (!project.githubRepoFullName) throw new AppError("No GitHub repo linked", 400, "NO_REPO");
+
+    const ghConn = await db.gitHubConnection.findUnique({ where: { workspaceId: workspace.id } });
+    if (!ghConn) throw new AppError("GitHub not connected", 400, "GITHUB_NOT_CONNECTED");
+
+    // Current week bounds (Mon–Sun UTC)
+    const now = new Date();
+    const day = now.getUTCDay();
+    const mondayOffset = day === 0 ? -6 : 1 - day;
+    const weekStart = new Date(now);
+    weekStart.setUTCDate(now.getUTCDate() + mondayOffset);
+    weekStart.setUTCHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
+    weekEnd.setUTCHours(23, 59, 59, 999);
+
+    // Fetch commits from GitHub API
+    const commits = await githubService.fetchCommitsForWeek(
+      ghConn.accessTokenEncrypted,
+      project.githubRepoFullName,
+      weekStart,
+      weekEnd
+    );
+
+    if (commits.length === 0) {
+      res.json({ synced: 0, message: "No commits found this week on GitHub." });
+      return;
+    }
+
+    // Get existing event SHAs (from webhooks) so we don't duplicate
+    const existingEvents = await db.gitHubEvent.findMany({
+      where: { projectId: project.id, receivedAt: { gte: weekStart, lte: weekEnd }, status: "RECEIVED" },
+      select: { payload: true },
+    });
+    const existingShas = new Set<string>();
+    for (const ev of existingEvents) {
+      const p = ev.payload as Record<string, unknown>;
+      const payloadCommits = (p.commits as { id?: string }[]) || [];
+      for (const c of payloadCommits) {
+        if (c.id) existingShas.add(c.id);
+      }
+    }
+
+    // Delete any previously API-synced events this week to avoid stacking up
+    await db.gitHubEvent.deleteMany({
+      where: { projectId: project.id, receivedAt: { gte: weekStart, lte: weekEnd }, status: "PROCESSED" },
+    });
+
+    // Build payload in the same shape as a GitHub push webhook
+    const newCommits = commits.filter((c) => !existingShas.has(c.sha));
+    if (newCommits.length === 0) {
+      res.json({ synced: 0, message: "All commits already synced via webhook." });
+      return;
+    }
+
+    const pusher = newCommits[0].author?.login || newCommits[0].commit.author.name;
+    const payload = {
+      ref: "refs/heads/main",
+      pusher: { name: pusher },
+      commits: newCommits.map((c) => ({
+        id: c.sha,
+        message: c.commit.message,
+        author: { name: c.commit.author.name },
+        timestamp: c.commit.author.date,
+      })),
+      _apiSync: true,
+    };
+
+    await db.gitHubEvent.create({
+      data: {
+        projectId: project.id,
+        eventType: "push",
+        payload: payload as object,
+        repoFullName: project.githubRepoFullName,
+        status: "PROCESSED",
+        receivedAt: new Date(),
+      },
+    });
+
+    res.json({ synced: newCommits.length, message: `Synced ${newCommits.length} commit(s) from GitHub.` });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.delete(
   "/disconnect-repo/:projectId",
   requireAuth,

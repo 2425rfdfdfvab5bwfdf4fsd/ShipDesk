@@ -6,7 +6,7 @@ import {
   CheckCircle, PauseCircle, XCircle, Loader2, Search, Unlink, Lock,
   FileText, Receipt, GitPullRequest, LayoutDashboard, BarChart2,
   FolderOpen, MessageSquare, ScrollText, ArrowRightLeft, Server, Settings2,
-  Edit2, UserMinus, Zap, MoreHorizontal, Copy, ExternalLink,
+  Edit2, UserMinus, Zap, MoreHorizontal, Copy, ExternalLink, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +28,7 @@ import { MessageThread } from "@/components/messages/MessageThread";
 import { FileList } from "@/components/files/FileList";
 import { useProject, useUpdateProject, useDeleteProject } from "@/hooks/useProjects";
 import { useGitHubRepos, useConnectRepo, useDisconnectRepo, useGitHubStatus, useReregisterWebhook } from "@/hooks/useGitHub";
-import { useReport, useReports, useUpdateReport, useDeleteReport } from "@/hooks/useReports";
+import { useReport, useReports, useUpdateReport, useDeleteReport, useSyncGitHubCommits } from "@/hooks/useReports";
 import { useInvoices, useMarkInvoicePaid, useDeleteInvoice } from "@/hooks/useInvoices";
 import { useScopeChanges, useSubmitQuote, useMarkScopeChangePaid } from "@/hooks/useScopeChanges";
 import { useMessages, useSendMessage, useMarkMessagesRead } from "@/hooks/useMessages";
@@ -183,6 +183,7 @@ export function ProjectDetailPage() {
   const reregisterWebhook = useReregisterWebhook();
   const updateReport = useUpdateReport();
   const deleteReport = useDeleteReport();
+  const syncCommits = useSyncGitHubCommits();
   const { data: projectClients, isLoading: clientsLoading } = useProjectClients(id);
   const inviteClient = useInviteClient();
   const revokeClient = useRevokeClientAccess();
@@ -514,7 +515,31 @@ export function ProjectDetailPage() {
             <SectionHeader
               title="Reports"
               description="AI-generated weekly status updates for your client."
-              action={<GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" variant="outline" existingDraftThisWeek={existingDraftThisWeek} />}
+              action={
+                <div className="flex items-center gap-2">
+                  {hasGitHub && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      disabled={syncCommits.isPending}
+                      data-testid="button-sync-github"
+                      onClick={async () => {
+                        try {
+                          const result = await syncCommits.mutateAsync(id) as { synced: number; message: string };
+                          toast({ title: result.synced > 0 ? `Synced ${result.synced} commit(s)` : "Already up to date", description: result.message });
+                        } catch {
+                          toast({ variant: "destructive", title: "Sync failed", description: "Could not fetch commits from GitHub." });
+                        }
+                      }}
+                    >
+                      {syncCommits.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                      Sync
+                    </Button>
+                  )}
+                  <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" variant="outline" existingDraftThisWeek={existingDraftThisWeek} />
+                </div>
+              }
             />
             {reportsLoading ? (
               <div className="space-y-2.5">

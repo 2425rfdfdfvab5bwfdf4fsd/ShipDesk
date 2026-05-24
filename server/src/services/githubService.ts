@@ -118,3 +118,45 @@ export async function getAuthenticatedUser(
   });
   return response.data as { id: number; login: string };
 }
+
+interface GitHubCommit {
+  sha: string;
+  commit: {
+    message: string;
+    author: { name: string; date: string };
+  };
+  author: { login: string } | null;
+}
+
+export async function fetchCommitsForWeek(
+  accessTokenEncrypted: string,
+  repoFullName: string,
+  since: Date,
+  until: Date
+): Promise<GitHubCommit[]> {
+  const token = decrypt(accessTokenEncrypted);
+  const allCommits: GitHubCommit[] = [];
+  let page = 1;
+
+  while (page <= 10) {
+    const response = await axios.get<GitHubCommit[]>(
+      `${GITHUB_API}/repos/${repoFullName}/commits`,
+      {
+        headers: getHeaders(token),
+        params: {
+          since: since.toISOString(),
+          until: until.toISOString(),
+          per_page: 100,
+          page,
+        },
+      }
+    );
+    const data = response.data;
+    if (!data.length) break;
+    allCommits.push(...data);
+    if (data.length < 100) break;
+    page++;
+  }
+
+  return allCommits;
+}

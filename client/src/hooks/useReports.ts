@@ -58,3 +58,10 @@ export function useDeleteReport() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reports"] }),
   });
 }
+
+export function useSyncGitHubCommits() {
+  return useMutation({
+    mutationFn: (projectId: string) =>
+      api.post(`/api/github/sync-commits/${projectId}`).then((r) => r.data),
+  });
+}
