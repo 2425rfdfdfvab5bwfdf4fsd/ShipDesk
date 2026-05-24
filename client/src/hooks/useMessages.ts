@@ -44,7 +44,9 @@ export function useMarkMessagesRead() {
       api
         .patch(`/api/projects/${projectId}/messages/read`)
         .then((r) => r.data),
-    onSuccess: (_data, projectId) =>
-      qc.invalidateQueries({ queryKey: ["messages", projectId] }),
+    onSuccess: (_data, projectId) => {
+      qc.invalidateQueries({ queryKey: ["messages", projectId] });
+      qc.invalidateQueries({ queryKey: ["unread-message-counts"] });
+    },
   });
 }
