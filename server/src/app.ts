@@ -104,10 +104,10 @@ app.get("/health", async (_req, res) => {
 
 app.use(defaultLimiter);
 app.use("/api/workspace", workspaceRouter);
+app.use("/api/projects", messagesRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api/projects", clientsRouter);
 app.use("/api/projects", filesRouter);
-app.use("/api/projects", messagesRouter);
 app.use("/api/github", githubRouter);
 app.use("/api/reports", reportsRouter);
 app.use("/api/invoices", invoicesRouter);
