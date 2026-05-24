@@ -1,457 +1,691 @@
-Fullstack Developer Resource Stack
-Free Platforms & Services for Modern Development
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  FULLSTACK DEVELOPER RESOURCE STACK — 2026 EDITION
+  Free Platforms & Services for Modern Development
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A curated collection of free-tier tools and platforms useful for frontend development, backend systems, databases, AI integration, deployment, storage, authentication, DevOps, and productivity.
+A curated collection of free-tier tools and platforms for frontend,
+backend, databases, AI, deployment, storage, auth, DevOps, and
+productivity. Updated for 2026 — stale or shut-down tools removed.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Frontend Hosting Platforms
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Deploy static sites, Next.js apps, React apps, and frontend projects.
+  NOTE: "Free tier" means there is a usable free plan. Always check
+  the provider's current pricing page before committing, as limits
+  change frequently.
 
-Vercel               — Best for Next.js and React. Generous free tier with edge network.
-Netlify              — Great CI/CD workflow with serverless functions and form handling.
-Cloudflare Pages     — Fast edge deployment with global CDN and unlimited requests.
-GitHub Pages         — Ideal for portfolios and static sites. Free with any GitHub account.
-Firebase Hosting     — Secure hosting with SSL, CDN, and Google infrastructure.
-Surge                — Lightweight static hosting via CLI. Instant deploys.
-Zeabur               — Modern platform supporting static, Node.js, and container apps.
-Coolify              — Self-hosted Heroku/Netlify alternative. Free on your own server.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 1. FRONTEND HOSTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Deploy static sites, Next.js, React, Astro, SvelteKit, and Nuxt apps.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-2. Backend Hosting Platforms
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Deploy APIs, Node.js servers, Express apps, and backend services.
+Vercel            ★★★★★  Best for React/Next.js. Edge CDN. 100 GB bandwidth/month free.
+Netlify           ★★★★☆  CI/CD, serverless functions, forms, identity. 100 GB free.
+Cloudflare Pages  ★★★★★  Unlimited requests. Built-in edge network. No cold starts.
+GitHub Pages      ★★★☆☆  Free for public repos. Simple, no build customization.
+Firebase Hosting  ★★★☆☆  Google CDN. 10 GB storage + 360 MB/day transfer free.
+Surge             ★★★☆☆  Instant CLI deploys for static sites. Unlimited projects.
+Zeabur            ★★★☆☆  Supports static, Node.js, containers. Asia-Pacific strong.
+Coolify           ★★★★☆  Self-hosted PaaS. Run on your own VPS. Completely free.
+CapRover          ★★★☆☆  Self-hosted PaaS on Docker. Great Heroku replacement.
 
-Railway              — Beginner-friendly. Auto-detects framework. $5 free credit/month.
-Render               — Supports web services, background workers, and databases.
-Fly.io               — Run applications globally close to users. Generous free allowance.
-Koyeb                — Modern serverless deployment with always-on free tier.
-Deno Deploy          — Edge functions and APIs. Instant global deployment.
-Glitch               — Quick prototype hosting. Great for demos and experiments.
-Cyclic               — Serverless Node.js hosting. No cold starts on free tier.
-Porter               — Kubernetes-based. Free tier for small projects.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 2. BACKEND HOSTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Deploy APIs, Node.js, Python, Go, Rust backends and containers.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-3. Database Providers
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Free databases for production and development.
+Railway           ★★★★★  Best DX. Auto-detects framework. $5 credit/month free.
+Render            ★★★★☆  Free web services (spin-down after inactivity). Good for APIs.
+Fly.io            ★★★★☆  Global anycast routing. 3 shared VMs free. No cold starts.
+Koyeb             ★★★★☆  Always-on free tier. No sleep. 512 MB RAM / 0.1 vCPU free.
+Deno Deploy       ★★★★☆  Edge JS/TS functions globally. 1M requests/month free.
+Glitch            ★★★☆☆  Prototype-friendly. Persistent container. Great for demos.
+Porter            ★★★☆☆  Kubernetes-based. Free tier for small projects.
+Dokku             ★★★☆☆  Self-hosted mini-Heroku. Free on your own VPS.
 
-— SQL Databases —
-Neon                 — Serverless PostgreSQL with branching. 0.5 GB free.
-Supabase             — PostgreSQL + APIs + Auth + Storage + Realtime. 500 MB free.
-PlanetScale          — Serverless MySQL with schema branching. Free hobby tier.
-Turso               — Edge SQLite database by the LibSQL team. 9 GB free.
-CockroachDB          — Distributed SQL. 5 GB free storage on serverless plan.
-Xata                 — Serverless Postgres with search and file attachments built in.
+  ⚠  REMOVED: Cyclic.sh — shut down permanently in early 2024.
+  ⚠  NOTE: Heroku free tier was removed in November 2022.
 
-— NoSQL Databases —
-Firebase Firestore   — Real-time NoSQL with offline sync. 1 GB free.
-MongoDB Atlas        — 512 MB free cluster. Great for document data.
-Appwrite             — Open-source BaaS with databases, auth, storage, and functions.
-PocketBase           — Single-file Go backend with embedded SQLite. Self-hosted.
-Upstash              — Serverless Redis and Kafka. 10,000 commands/day free.
-Redis Cloud          — Managed Redis. 30 MB free database.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 3. DATABASES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-— Vector Databases (for AI / RAG apps) —
-Pinecone             — Leading vector DB for AI apps. 2M vectors free.
-Qdrant Cloud         — Open-source vector DB with managed cloud. Free 1 GB cluster.
-Weaviate Cloud       — Vector + keyword search. 14-day free sandbox.
-Chroma               — Open-source, embeddable vector DB. Self-hosted for free.
-Turbopuffer          — Fast vector search. Developer-friendly free tier.
+── SQL / Relational ────────────────────────────────────────────
+Neon              ★★★★★  Serverless PostgreSQL with branching. 3 GB/branch + 10 branches free.
+Supabase          ★★★★★  PostgreSQL + Auth + Storage + Realtime. 500 MB + 5 GB bandwidth.
+Turso             ★★★★☆  Edge SQLite (LibSQL). 9 GB storage. 500 databases free.
+CockroachDB       ★★★☆☆  Distributed SQL. 5 GB free on serverless plan.
+Xata              ★★★☆☆  Serverless Postgres + full-text search + file attachments.
+Nile              ★★★☆☆  Multi-tenant Postgres. Free tier for early-stage projects.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-4. File & Media Storage Providers
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Store images, videos, user uploads, and assets.
+  ⚠  PlanetScale removed its free tier in March 2024. Check their
+     current pricing before using.
 
-Cloudinary           — Image/video optimization, transformation, and CDN. 25 credits/month free.
-Uploadcare           — Smart file uploader with CDN and image processing. 3 GB free.
-ImageKit             — Real-time image optimization and CDN. 20 GB bandwidth free.
-Supabase Storage     — S3-compatible object storage. 1 GB free with Supabase project.
-Firebase Storage     — Google-backed file storage with rules engine.
-Backblaze B2         — 10 GB free storage, 1 GB/day download free. S3-compatible.
-Bunny.net            — Affordable CDN + storage. Free trial available.
-Filestack            — File picker + upload + transformation API. Free developer plan.
+── NoSQL / Document ────────────────────────────────────────────
+Firebase Firestore ★★★★☆  Real-time NoSQL. 1 GB storage + 50K reads/day free.
+MongoDB Atlas      ★★★★☆  M0 cluster: 512 MB. Best for document data. Always free.
+Appwrite           ★★★★☆  Open-source BaaS with databases + auth + storage + functions.
+PocketBase         ★★★★☆  Single executable Go backend. SQLite embedded. Self-host free.
+Upstash            ★★★★★  Serverless Redis + Kafka + Vector. 10K commands/day free.
+Redis Cloud        ★★★☆☆  Managed Redis. 30 MB free database (Memcached also available).
+Valkey             ★★★★☆  Open-source Redis fork (2024). Backed by AWS, Google, Oracle.
+                          Drop-in Redis replacement. Completely free to self-host.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-5. Authentication Platforms
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-User login and identity management.
+── Key-Value / Cache ────────────────────────────────────────────
+Upstash Redis      ★★★★★  Per-request pricing. Serverless. Free tier generous for dev.
+Cloudflare KV      ★★★★☆  100K reads/day + 1K writes/day free. Global edge.
+Vercel KV          ★★★☆☆  Redis-compatible. 256 MB free. Integrated with Vercel.
+Deno KV            ★★★☆☆  Built-in to Deno. Global replicas. Free on Deno Deploy.
 
-Clerk                — Best DX for React/Next.js. Magic links, OAuth, MFA. 10K MAU free.
-Auth0                — Enterprise-grade. Social login, MFA, custom rules. 7,500 MAU free.
-Firebase Auth        — Google-backed. Email, phone, OAuth providers. Free up to 10K/month.
-Supabase Auth        — Postgres-native auth with RLS policies. Built into Supabase.
-Better Auth          — Open-source, TypeScript-first auth framework. Self-hosted.
-Lucia                — Lightweight open-source auth library. Framework-agnostic.
-Kinde                — Modern auth with feature flags. 10,500 MAU free.
-Stack Auth           — Open-source Clerk alternative. Self-hostable.
+── Vector Databases (for AI / RAG) ─────────────────────────────
+Pinecone           ★★★★★  Leading vector DB. 2M vectors + 2 GB free. 1 index free.
+Qdrant Cloud       ★★★★☆  Open-source + managed cloud. 1 GB free cluster.
+Weaviate Cloud     ★★★☆☆  Hybrid vector + keyword search. Sandbox tier free.
+Chroma             ★★★★☆  Open-source embeddable vector DB. Self-hosted, zero cost.
+Milvus             ★★★★☆  Scalable open-source vector DB. Zilliz Cloud free tier.
+LanceDB            ★★★☆☆  Embedded vector DB for AI apps. Open-source + cloud free tier.
+Turbopuffer        ★★★☆☆  Fast HTTP-based vector search. Developer-friendly free tier.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-6. Free AI APIs & Models
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Useful for AI integrations and SaaS products.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 4. FILE, MEDIA & OBJECT STORAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Store images, videos, user uploads, documents, and assets.
 
-OpenRouter           — Access 200+ AI models via one unified API. Pay-per-use, no subscription.
-Groq                 — Extremely fast LLM inference. Free tier with generous daily limits.
-Google AI Studio     — Gemini models. Free tier with high quota. Great for production prototyping.
-Hugging Face         — 350,000+ open-source models. Free Inference API for popular models.
-Together AI          — Run and fine-tune open models. $25 free credits on signup.
-Cohere               — Language AI for search, generation, and classification. Free trial API.
-Mistral AI           — Efficient European models. Free tier via La Plateforme.
-Anthropic Claude     — Claude models via API. $5 free credits on signup.
-Perplexity API       — Search-augmented AI. $5 free credits.
-Ollama               — Run LLMs locally (Llama, Mistral, Gemma, etc.). Completely free.
-LM Studio            — Desktop app to run local models. Free and offline.
-Jan                  — Open-source local AI assistant. Supports multiple model formats.
+Cloudinary        ★★★★★  25 credits/month free. Image/video transform + CDN. Best overall.
+Supabase Storage  ★★★★☆  1 GB + 2 GB bandwidth free. S3-compatible. Auth-aware.
+Firebase Storage  ★★★★☆  5 GB storage + 1 GB/day download free.
+Uploadcare        ★★★☆☆  3 GB storage + uploads + CDN + image processing.
+ImageKit          ★★★★☆  20 GB bandwidth/month free. Real-time transformations.
+Backblaze B2      ★★★★☆  10 GB free + 1 GB/day egress. S3-compatible. Very affordable.
+Bunny.net         ★★★☆☆  Fast CDN + storage. Pay-as-you-go with free trial credit.
+R2 (Cloudflare)   ★★★★★  No egress fees. 10 GB free. S3-compatible. Best for large files.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-7. Backend-as-a-Service (BaaS)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Full backend infrastructure with APIs, auth, and databases.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 5. AUTHENTICATION & IDENTITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User login, magic links, OAuth, MFA, and session management.
 
-Supabase             — Postgres + Auth + Storage + Realtime + Edge Functions. Best overall free BaaS.
-Firebase             — Google's full BaaS. Real-time DB, Auth, Hosting, Functions.
-Appwrite             — Open-source Firebase alternative. Self-host or use cloud.
-PocketBase           — Go-based BaaS in a single executable. Zero dependencies.
-Nhost                — GraphQL-first BaaS built on Hasura + Postgres.
-Convex               — Reactive backend with real-time queries. 1M function calls/month free.
-Liveblocks           — Collaboration infrastructure (presence, cursors, comments). 100 MAU free.
+Clerk             ★★★★★  10K MAU free. Best DX. React/Next.js first. Magic links, OAuth, MFA.
+Auth0             ★★★★☆  7,500 MAU free. Enterprise-grade. Social login, custom flows.
+Supabase Auth     ★★★★★  50K MAU free. Postgres RLS policies. Built into Supabase project.
+Firebase Auth     ★★★★☆  10K/month free. Email, phone, Google, GitHub OAuth.
+Better Auth       ★★★★☆  Open-source TypeScript-first. Self-hosted. No vendor lock-in.
+Lucia             ★★★★☆  Lightweight open-source auth. Framework-agnostic. Self-hosted.
+Kinde             ★★★★☆  10,500 MAU free. Feature flags built in. Great onboarding.
+Stack Auth        ★★★☆☆  Open-source Clerk alternative. Self-hostable.
+WorkOS            ★★★★☆  1M MAU free on new pricing. SSO, SCIM, MagicAuth.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-8. Real-Time & WebSocket Platforms
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Add live features: chat, notifications, presence, collaborative editing.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 6. AI APIs & LANGUAGE MODEL PROVIDERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LLM APIs with free tiers or generous free credits.
 
-Pusher               — WebSocket channels. 200 connections + 200K messages/day free.
-Ably                 — Real-time pub/sub. 6M messages/month free.
-PartyKit             — Real-time collaboration framework. Free for developers.
-Soketi               — Open-source, self-hosted Pusher-compatible server.
-Socket.io            — Open-source WebSocket library. Free to self-host.
-Supabase Realtime    — Postgres change streaming. Included in Supabase free tier.
-Liveblocks           — Real-time presence and collaborative features.
+── Multi-Model Routers ──────────────────────────────────────────
+OpenRouter        ★★★★★  200+ models via one API. Pay-per-token. Many free models.
+                         Best for model-agnostic apps. Supports streaming + tool calls.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-9. Email APIs
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Send verification, transactional, and marketing emails.
+── Fast Inference (Ultra-Low Latency) ───────────────────────────
+Groq              ★★★★★  Fastest LLM inference (LPU chip). Llama, Gemma, Mixtral.
+                         Free tier: generous daily token limits.
+Cerebras          ★★★★★  World's fastest AI inference. Llama 3.3 70B at 2000+ tokens/sec.
+                         Free tier available. Great Groq alternative.
+SambaNova         ★★★★☆  Fast inference for large models. Free API tier. Llama 3.x support.
 
-Resend               — Best DX for developers. React Email support. 3,000 emails/month free.
-Brevo (Sendinblue)   — 300 emails/day free. Also has SMS and WhatsApp.
-Mailgun              — Powerful API. 5,000 emails/month free for 3 months.
-SendGrid             — 100 emails/day free forever. Industry standard.
-Postmark             — Excellent deliverability. 100 emails/month free.
-Mailtrap             — Email sandbox for testing. Catch all emails in dev. Free plan available.
-MJML                 — Open-source email template framework. Free to use.
-React Email          — Build emails with React components. Open-source, free.
+── Major Model Providers ─────────────────────────────────────────
+Google AI Studio  ★★★★★  Gemini 2.0 Flash free. 1M tokens/min free. Best free quota.
+                         Supports multimodal: text, images, audio, video.
+Anthropic         ★★★★☆  Claude 3.5 Sonnet / Haiku. $5 free credits on signup.
+xAI (Grok)        ★★★★☆  Grok-3 mini free tier. 25 requests/hour free via API.
+Mistral AI        ★★★★☆  Efficient models. Mistral Nemo free via La Plateforme.
+Cohere            ★★★☆☆  Embed, classify, generate. Free trial API key.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-10. Payment Processing
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Accept payments and manage billing.
+── Open-Source & Self-Hosted ─────────────────────────────────────
+Hugging Face      ★★★★★  400K+ models. Free Inference API for popular models.
+                         Serverless endpoints for your own models.
+Together AI       ★★★★☆  $25 free credits on signup. Fine-tune open models.
+Perplexity API    ★★★☆☆  Sonar models with real-time web search. $5 free credits.
+Replicate         ★★★★☆  Run open models via API. Pay-per-run. $0.01 free credit.
+Fal.ai            ★★★★☆  Fast image/video AI. Flux, SDXL, LoRA fine-tuning. Free tier.
 
-Stripe               — Industry standard. No monthly fee. 2.9% + 30¢ per transaction.
-Lemon Squeezy        — Merchant of Record. Handles global VAT automatically.
-Paddle               — Another Merchant of Record. Great for SaaS subscriptions.
-Polar.sh             — Payments for open-source developers. Low fees.
-Dodo Payments        — Emerging Merchant of Record. Competitive rates.
+── Run Models Locally (Completely Free) ──────────────────────────
+Ollama            ★★★★★  Run Llama, Mistral, Gemma, Phi, DeepSeek locally. Zero cost.
+                         REST API on localhost:11434. Works offline.
+LM Studio         ★★★★★  Desktop GUI to download and run local models. Free.
+Jan               ★★★★☆  Open-source local AI assistant. API-compatible. Free.
+GPT4All           ★★★☆☆  Run local models on CPU. Privacy-first. Free.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-11. Monitoring, Logging & Error Tracking
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 7. AI CODING ASSISTANTS (2026 ESSENTIAL CATEGORY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AI tools that help you write, review, and understand code faster.
+
+Cursor            ★★★★★  AI-first VS Code fork. Free tier: 2K completions/month.
+                         Tab autocomplete, chat, and inline edits. Best overall.
+Windsurf          ★★★★★  Agentic AI editor by Codeium. Free tier with Cascade AI.
+                         Writes whole features end-to-end. Competitors to Cursor.
+GitHub Copilot    ★★★★☆  Free for verified students and open-source maintainers.
+                         Also free tier for individual developers (limited).
+Codeium           ★★★★☆  Free forever for individuals. VSCode, JetBrains, Vim, Emacs.
+Continue.dev      ★★★★☆  Open-source AI coding assistant. Bring your own model.
+                         Works with Ollama, OpenRouter, etc. Free and extensible.
+Aider             ★★★★☆  AI pair programmer in your terminal. Open-source + free.
+                         Works with any LLM. Git-aware. Great for refactoring.
+Supermaven        ★★★☆☆  Acquired by Cursor. Ultra-fast completions. Free tier.
+Zed               ★★★☆☆  Fast open-source editor with built-in AI. Free.
+Amazon Q          ★★★☆☆  AWS's AI assistant. Free for individual use.
+
+── App Generators (Prompt to Full App) ───────────────────────────
+Bolt.new          ★★★★★  StackBlitz-based. Prompt → full-stack app. Free tier.
+v0 (Vercel)       ★★★★☆  Prompt → React UI components. Free 200 credits/month.
+Lovable           ★★★★☆  Prompt → full React app with Supabase. Free tier.
+Replit Agent      ★★★☆☆  AI builds and runs apps in the browser. Free tier.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 8. AI AGENTS & WORKFLOW AUTOMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Build AI agents, RAG pipelines, and multi-step AI workflows.
+
+── Agent Frameworks (Code-First) ─────────────────────────────────
+LangChain         ★★★★☆  Most popular AI orchestration framework. Python + TypeScript.
+                         Free and open-source. Huge ecosystem of integrations.
+LlamaIndex        ★★★★★  Best for RAG and data-connected agents. Free + open-source.
+CrewAI            ★★★★☆  Multi-agent collaboration framework. Free and open-source.
+AutoGen / AG2     ★★★★☆  Microsoft's multi-agent framework. Open-source, free.
+Haystack          ★★★☆☆  Production RAG pipelines by deepset. Open-source + free.
+DSPy              ★★★☆☆  Stanford's framework for programming LM pipelines. Free.
+Pydantic AI       ★★★★☆  Type-safe AI agent framework from Pydantic team. Free.
+
+── No-Code / Low-Code Agent Builders ─────────────────────────────
+Dify              ★★★★★  Open-source LLM app builder. Self-host or cloud free tier.
+                         Visual workflow + RAG + agents. Best Flowise alternative.
+Flowise           ★★★★☆  Drag-and-drop LangChain UI. Open-source. Self-host free.
+n8n               ★★★★★  Workflow automation (Zapier alternative). Self-host free.
+                         250 workflow executions/month on cloud free tier.
+Windmill          ★★★★☆  Open-source workflow automation + internal tools. Self-host.
+Langflow          ★★★☆☆  Visual LangChain builder. Open-source, self-host free.
+Activepieces      ★★★☆☆  Open-source Zapier alternative. Self-host or cloud free tier.
+
+── AI Gateway & LLM Proxy ────────────────────────────────────────
+LiteLLM           ★★★★★  Unified OpenAI-compatible API for 100+ LLMs. Open-source.
+                         Rate limiting, retry logic, cost tracking. Self-host free.
+PortKey           ★★★★☆  AI gateway with observability. 10K requests/month free.
+Helicone          ★★★★☆  LLM observability + proxy. 10K logs/month free.
+                         Track costs, latency, and errors across providers.
+
+── AI Observability & Tracing ────────────────────────────────────
+Langfuse          ★★★★★  Open-source LLM observability. Traces, evals, prompts.
+                         Self-host free or cloud generous free tier.
+LangSmith         ★★★★☆  LangChain's tracing platform. 5K traces/month free.
+Braintrust        ★★★☆☆  AI eval and tracing. Free for individuals.
+Arize Phoenix     ★★★☆☆  Open-source AI observability. Self-host free.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 9. AI IMAGE & MEDIA GENERATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Fal.ai            ★★★★★  Flux, SDXL, Kling, video AI. Fast API. Free credits on signup.
+Replicate         ★★★★☆  Run any open image/video model. Pay-per-run. Free credit.
+Hugging Face      ★★★★☆  Free image generation via Inference API (SDXL, Flux).
+Stability AI      ★★★☆☆  Stable Diffusion models. Free API tier with daily limits.
+ComfyUI           ★★★★☆  Open-source visual node editor for image generation. Free.
+                         Run locally with GPU. Most powerful self-hosted option.
+Automatic1111     ★★★★☆  Most popular Stable Diffusion UI. Open-source, free.
+Ideogram          ★★★☆☆  Text-in-images. 10 free generations/day.
+Playground AI     ★★★☆☆  100 free images/day. Great for product mockups.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. BACKEND-AS-A-SERVICE (BaaS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Complete backend infrastructure — database, auth, storage, functions.
+
+Supabase          ★★★★★  Postgres + Auth + Storage + Realtime + Edge Functions.
+                         Best overall free BaaS. 500 MB DB + 1 GB storage free.
+Firebase          ★★★★☆  Google's full BaaS. NoSQL, Auth, Hosting, Cloud Functions.
+Appwrite          ★★★★★  Open-source Firebase alternative. Cloud or self-host.
+                         Databases, Auth, Storage, Functions, Messaging.
+PocketBase        ★★★★★  Single Go executable. SQLite + auth + files + REST + realtime.
+                         Zero dependencies. Self-host for free.
+Convex            ★★★★☆  Reactive TypeScript backend. 1M function calls/month free.
+Nhost             ★★★☆☆  GraphQL + Postgres + Auth + Storage (built on Hasura).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11. REAL-TIME & WEBSOCKET PLATFORMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Add live features: chat, notifications, presence, multiplayer.
+
+Pusher            ★★★★☆  200 connections + 200K messages/day free. WebSocket standard.
+Ably              ★★★★★  6M messages/month + 200 connections free. Reliable pub/sub.
+PartyKit          ★★★★☆  Collaborative real-time apps. Free for developers.
+Soketi            ★★★★☆  Open-source self-hosted Pusher. Drop-in compatible. Free.
+Socket.io         ★★★★★  Open-source WebSocket library. Free to self-host.
+Supabase Realtime ★★★★★  Postgres CDC streaming. Included in Supabase free tier.
+Liveblocks        ★★★★☆  Multiplayer + presence + comments + undo history. 100 MAU free.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12. EMAIL APIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Resend            ★★★★★  3,000 emails/month free. React Email. Best DX for developers.
+Brevo             ★★★★☆  300 emails/day free. Email + SMS + WhatsApp + marketing.
+SendGrid          ★★★★☆  100 emails/day forever free. Industry standard deliverability.
+Postmark          ★★★★☆  100 emails/month free. Best deliverability for transactional.
+Mailgun           ★★★☆☆  5,000 emails/month free (first 3 months only). Then paid.
+Mailtrap          ★★★★☆  Dev email sandbox + SMTP testing. 1,000 emails/month free.
+React Email       ★★★★★  Build HTML emails using React components. Open-source, free.
+MJML              ★★★★☆  Open-source email template language. Free. Mobile-responsive.
+Nodemailer        ★★★★☆  Node.js email library. Send via SMTP. Open-source, free.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+13. PAYMENT PROCESSING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+No monthly fee — pay only on successful transactions.
+
+Stripe            ★★★★★  Global standard. 2.9% + 30¢/transaction. No monthly fee.
+                         Test mode is completely free. Best developer API.
+Lemon Squeezy     ★★★★★  Merchant of Record. Handles VAT, sales tax globally.
+                         5% + 50¢/transaction. Great for SaaS and digital products.
+Paddle            ★★★★☆  Merchant of Record for SaaS. EU-compliant. 5% + 50¢/transaction.
+Polar.sh          ★★★★☆  Open-source. Built for open-source developers and OSS funding.
+Dodo Payments     ★★★☆☆  Emerging MoR with competitive rates. Good Asia coverage.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14. MONITORING, LOGGING & ERROR TRACKING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Know when your app breaks before your users do.
 
-Sentry               — #1 error tracking tool. Full stack. 5,000 errors/month free.
-LogRocket            — Session replay + error tracking. 1,000 sessions/month free.
-Highlight.io         — Open-source session replay + error monitoring. 500 sessions/month free.
-BetterStack          — Uptime monitoring + log management. 10 monitors free.
-UptimeRobot          — Website uptime monitoring. 50 monitors, 5-min checks free.
-Axiom                — Log management and querying. 500 GB ingest/month free.
-Cronitor             — Cron job monitoring. 5 monitors free.
-Checkly              — API and E2E monitoring. 50,000 check runs/month free.
+── Error Tracking ────────────────────────────────────────────────
+Sentry            ★★★★★  #1 error tracking. 5K errors/month free. Full stack coverage.
+Highlight.io      ★★★★☆  Open-source session replay + errors + logs. 500 sessions free.
+LogRocket         ★★★☆☆  Session replay + errors. 1,000 sessions/month free.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-12. Analytics Platforms
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Understand how users use your product.
+── Uptime & Status ───────────────────────────────────────────────
+BetterStack       ★★★★★  10 monitors + incident management + log drain. Free tier.
+UptimeRobot       ★★★★☆  50 monitors, 5-minute check interval. Free forever.
+Freshping         ★★★★☆  50 monitors, 1-min checks. Free forever.
+Cronitor          ★★★★☆  Cron job + heartbeat + uptime monitoring. 5 monitors free.
 
-PostHog              — Product analytics + session recording + feature flags. 1M events/month free.
-Umami                — Open-source, privacy-friendly Google Analytics alternative. Self-host free.
-Plausible            — Simple, privacy-first analytics. 30-day free trial.
-Mixpanel             — Event-based product analytics. 20M events/month free.
-Vercel Analytics     — Built-in Web Vitals + page views. Included with Vercel free tier.
-Hotjar               — Heatmaps + session recordings. 35 sessions/day free.
-Microsoft Clarity    — Free heatmaps and session recordings. No limits.
-Pirsch               — Privacy-focused analytics. 10,000 page views/month free.
+── Log Management ────────────────────────────────────────────────
+Axiom             ★★★★★  500 GB/month ingest free. Real-time log querying. Best free tier.
+Grafana Loki      ★★★★☆  Open-source log aggregation. Self-host free or Grafana Cloud.
+Logtail           ★★★☆☆  Structured log management. Part of BetterStack. Free tier.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-13. Headless CMS Platforms
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Manage content separately from your frontend.
+── Observability / APM ───────────────────────────────────────────
+Grafana Cloud     ★★★★★  Metrics + logs + traces + dashboards. Generous free tier.
+                         10K series (Prometheus), 50 GB logs, 50 GB traces/month free.
+OpenTelemetry     ★★★★★  Open-source standard for traces/metrics/logs. Free to self-host.
+Checkly           ★★★★☆  API + E2E monitoring with Playwright. 50K check runs/month free.
 
-Sanity               — Flexible, real-time CMS. 100K API requests/month free.
-Contentful           — Enterprise headless CMS. 25,000 API calls/month free.
-Strapi               — Open-source, self-hosted. Full control, no vendor lock-in.
-PayloadCMS           — TypeScript-first, self-hosted. Code-first schema approach.
-Directus             — Open-source data platform. Wraps any SQL database.
-Hygraph              — GraphQL-native CMS. 3 environments free.
-Keystatic            — Git-based CMS. Works with GitHub. Free and open-source.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+15. ANALYTICS PLATFORMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-14. Caching & Edge Computing
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Speed up your app with caching and edge execution.
+PostHog           ★★★★★  1M events/month free. Analytics + session replay + flags + surveys.
+                         Open-source. Self-host for unlimited. Best all-in-one tool.
+Umami             ★★★★★  Open-source, privacy-first. Self-host free. Cloud: 100K/month.
+Microsoft Clarity ★★★★★  Completely free. Heatmaps + session recordings. No limits.
+Plausible         ★★★★☆  Privacy-first. Simple dashboard. 30-day trial. Then paid.
+Mixpanel          ★★★★☆  20M events/month free. Best for funnel and retention analysis.
+Hotjar            ★★★☆☆  35 sessions/day free. Heatmaps and recordings.
+Vercel Analytics  ★★★☆☆  Web Vitals + real user monitoring. Included in Vercel free tier.
+Pirsch            ★★★☆☆  Privacy-focused analytics. 10K pageviews/month free.
 
-Upstash Redis        — Serverless Redis. 10,000 commands/day free. Per-request pricing.
-Cloudflare Workers   — Edge functions. 100,000 requests/day free. 0ms cold starts.
-Cloudflare KV        — Key-value store at the edge. 100,000 reads/day free.
-Cloudflare D1        — Serverless SQLite at the edge. 5 GB free.
-Vercel KV            — Redis-compatible key-value store. Included in Vercel free tier.
-Deno KV              — Built-in key-value store in Deno. Free on Deno Deploy.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16. HEADLESS CMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-15. Background Jobs & Queues
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Run tasks asynchronously, schedule jobs, and process queues.
+Sanity            ★★★★★  100K API requests/month free. Realtime CMS. Best developer DX.
+Contentful        ★★★★☆  25K API calls/month free. Enterprise-grade. Great ecosystem.
+Strapi            ★★★★★  Open-source, self-hosted. Full control. Node.js + REST + GraphQL.
+PayloadCMS        ★★★★★  TypeScript-first, code-driven. Self-hosted. v3 is excellent.
+Directus          ★★★★☆  Wraps any SQL database. Open-source. Self-host free.
+Keystatic         ★★★★☆  Git-based CMS. Works with GitHub. Markdown + YAML. Free.
+TinaCMS           ★★★☆☆  Visual editing + git-based storage. Free self-hosted.
+Hygraph           ★★★☆☆  GraphQL-native CMS. 3 environments + 1M API ops free.
 
-Trigger.dev          — Open-source background job platform. Free tier available.
-Inngest              — Event-driven functions and workflows. Free tier available.
-Upstash QStash       — HTTP-based message queue. 500 messages/day free.
-BullMQ               — Redis-based job queue for Node.js. Open-source, self-hosted.
-Cron-job.org         — Free cron job scheduling. Unlimited jobs, 1-min intervals.
-EasyCron             — Cron jobs as a service. Free plan with 200 executions/day.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+17. CACHING & EDGE COMPUTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-16. Search Platforms
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Add fast, typo-tolerant search to your app.
+Cloudflare Workers ★★★★★  100K requests/day free. 0ms cold start. JS/TS/WASM at edge.
+Cloudflare KV      ★★★★☆  100K reads/day + 1K writes/day free. Global.
+Cloudflare D1      ★★★★★  Serverless SQLite at edge. 5M rows read/day free. 5 GB.
+Cloudflare R2      ★★★★★  10 GB object storage free. Zero egress fees. S3-compatible.
+Upstash Redis      ★★★★★  Serverless Redis. 10K commands/day free. Global replicas.
+Upstash QStash     ★★★★☆  HTTP message queue + cron scheduler. 500 messages/day free.
+Vercel Edge        ★★★★☆  Edge functions + KV + Blob. Included in Vercel free tier.
 
-Algolia              — Hosted search. 10,000 records + 10,000 searches/month free.
-Meilisearch          — Open-source, fast search. Self-host free or use cloud.
-Typesense            — Open-source Algolia alternative. Self-host or cloud free tier.
-Elasticsearch        — Open-source. Self-host for free, or use Elastic Cloud free tier.
-Orama                — In-browser search engine. Open-source and free.
-Fuse.js              — Lightweight fuzzy search library. No backend needed. Free.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+18. BACKGROUND JOBS & QUEUES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-17. CI/CD & DevOps
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Automate testing, building, and deploying your projects.
+Trigger.dev       ★★★★★  Open-source background jobs. 50K free runs/month. TypeScript.
+                         Long-running tasks, cron, event-driven. Best DX.
+Inngest           ★★★★★  Event-driven durable functions. 50K runs/month free.
+                         Retries, fan-out, human-in-the-loop workflows.
+Upstash QStash    ★★★★☆  HTTP message queue + delays + cron. 500 messages/day free.
+Temporal          ★★★★☆  Open-source durable workflow engine. Self-host free.
+BullMQ            ★★★★☆  Redis-based job queue for Node.js. Open-source, self-host.
+Cron-job.org      ★★★★★  Unlimited free cron jobs. 1-minute minimum interval. No account needed.
+EasyCron          ★★★☆☆  200 executions/day free. GUI-based cron management.
 
-GitHub Actions       — 2,000 minutes/month free. Best integration with GitHub repos.
-GitLab CI/CD         — 400 minutes/month free. Built into GitLab.
-CircleCI             — 6,000 build minutes/month free.
-Woodpecker CI        — Open-source, self-hosted CI/CD. Free on your own server.
-Docker               — Containerize apps. Free Docker Hub plan with public repos.
-ngrok                — Expose localhost to the internet. Useful for webhook dev. Free tier.
-Cloudflare Tunnel    — Secure tunnel to localhost. Free with Cloudflare account.
-LocalTunnel          — Lightweight open-source localhost tunnel. Completely free.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+19. SEARCH PLATFORMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-18. Feature Flags & A/B Testing
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Ship features safely and run experiments.
+Algolia           ★★★★★  10K records + 10K searches/month free. Fastest hosted search.
+Meilisearch       ★★★★★  Open-source, typo-tolerant, instant search. Self-host free.
+                         Cloud: 100K documents + 10K searches/month free.
+Typesense         ★★★★☆  Open-source Algolia alternative. Self-host or cloud free tier.
+Orama             ★★★★☆  In-browser full-text + vector search. Open-source, free.
+Fuse.js           ★★★★☆  Lightweight client-side fuzzy search. No backend needed.
+Elasticsearch     ★★★☆☆  Distributed search. Open-source, self-host free.
+                         Elastic Cloud: 14-day trial.
 
-PostHog              — Feature flags + experiments. 1M events/month free.
-Flagsmith            — Open-source feature flags. 50,000 requests/month free.
-GrowthBook           — Open-source A/B testing. Self-host free or cloud free tier.
-Unleash              — Open-source feature toggles. Self-hosted free.
-DevCycle             — Feature flag SDK. 1,000 MAU free.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+20. CI/CD & DEVOPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-19. Forms & Surveys
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Collect user input without building a backend.
+── CI/CD Pipelines ───────────────────────────────────────────────
+GitHub Actions    ★★★★★  2,000 min/month free. Best integration. Huge marketplace.
+GitLab CI/CD      ★★★★☆  400 min/month free. Built-in Docker registry.
+CircleCI          ★★★☆☆  6,000 build minutes/month free on new plans.
+Woodpecker CI     ★★★☆☆  Open-source. Self-hosted. YAML pipelines. Free.
 
-Tally.so             — Beautiful forms. Unlimited forms and submissions. Fully free.
-Typeform             — Conversational forms. 10 responses/month free.
-Formspree            — Form backend for static sites. 50 submissions/month free.
-Web3Forms            — Simple form API for static sites. 250 submissions/month free.
-Getform              — Form endpoint service. 100 submissions/month free.
-Google Forms         — Free, unlimited. Integrates with Google Sheets.
+── Tunneling (Webhook Development) ───────────────────────────────
+ngrok             ★★★★★  Fixed subdomain + 40 connections free. Best for local dev.
+Cloudflare Tunnel ★★★★★  Zero-trust secure tunnel. Free with any Cloudflare account.
+LocalTunnel       ★★★☆☆  Open-source, instant tunneling. npm install -g localtunnel.
+Serveo            ★★★☆☆  SSH-based tunneling. No install. Just use SSH command.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-20. UI Component Libraries (Free & Open Source)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Ready-made components to build UIs faster.
+── Container & Infrastructure ────────────────────────────────────
+Docker            ★★★★★  Free Docker Desktop + Docker Hub (public repos unlimited).
+Podman            ★★★★☆  Docker-compatible container engine. Free and rootless.
+Kamal             ★★★★☆  Deploy via SSH to any VPS. Free open-source tool by 37signals.
 
-shadcn/ui            — Copy-paste accessible React components. Tailwind-based. Free.
-Radix UI             — Headless, accessible primitives for React. Free.
-DaisyUI              — Tailwind component library. 50+ themes. Free.
-Mantine              — Feature-rich React component library. Free.
-Tremor               — React components for dashboards and data apps. Free.
-Aceternity UI        — Animated, modern components. Free.
-Magic UI             — Motion-first component library. Free.
-NextUI               — Beautiful React components. Free.
-Chakra UI            — Accessible component library. Free.
-Headless UI          — Unstyled, accessible components from Tailwind team. Free.
+── Security Scanning ─────────────────────────────────────────────
+Snyk              ★★★★☆  Dependency + code scanning. Free for open-source.
+Trivy             ★★★★★  Container/IaC/code scanner. Open-source, free. CLI tool.
+SonarCloud        ★★★★☆  Code quality + security analysis. Free for open-source projects.
+OWASP ZAP         ★★★☆☆  Web app security scanner. Open-source, free.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-21. State Management (Frontend)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Manage client-side state in React and other frameworks.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+21. FEATURE FLAGS & EXPERIMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TanStack Query       — Async state management. Best for server data. Free.
-Zustand              — Lightweight global state. Tiny and simple. Free.
-Jotai                — Atomic state management. Fine-grained reactivity. Free.
-Valtio               — Proxy-based state management. Free.
-Redux Toolkit        — Official Redux with DX improvements. Free.
-Recoil               — Facebook's atomic state for React. Free.
+PostHog           ★★★★★  Flags + A/B tests + surveys built in. 1M events/month free.
+Flagsmith         ★★★★☆  Open-source flags + analytics. 50K requests/month free.
+GrowthBook        ★★★★☆  Open-source A/B testing. Self-host free or cloud free tier.
+Unleash           ★★★★☆  Enterprise-grade open-source flags. Self-host free.
+DevCycle          ★★★☆☆  OpenFeature-compatible SDK. 1,000 MAU free.
+Bucket            ★★★☆☆  Feature flags with usage-based rollouts. Free tier.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-22. ORM & Database Tooling
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Interact with databases safely and with type-safety.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+22. FORMS, SURVEYS & DATA COLLECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Prisma               — Type-safe ORM with migrations. Free and open-source.
-Drizzle ORM          — Lightweight TypeScript ORM. SQL-like syntax. Free.
-Kysely               — Type-safe SQL query builder. Free.
-TypeORM              — ORM for TypeScript. Supports many SQL databases. Free.
-Sequelize            — Mature Node.js ORM. Supports MySQL, Postgres, SQLite. Free.
+Tally.so          ★★★★★  Unlimited forms + unlimited responses. Completely free forever.
+Google Forms      ★★★★★  Free. Unlimited. Integrates with Google Sheets instantly.
+Typeform          ★★★☆☆  Beautiful conversational forms. 10 responses/month free.
+Formspree         ★★★★☆  Form backend for static sites. 50 submissions/month free.
+Web3Forms         ★★★★☆  Simple form API for static sites. 250 submissions/month free.
+Fillout           ★★★★☆  Powerful forms with logic. 1,000 submissions/month free.
+Pocketforms       ★★★☆☆  Simple self-hosted form tool. Open-source.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-23. Developer Utilities
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+23. UI COMPONENT LIBRARIES & DESIGN SYSTEMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+All free and open-source unless noted.
 
-— API Testing —
-Postman              — API client with collections and environments. Free plan.
-Insomnia             — REST + GraphQL client. Free open-source version.
-Bruno                — Open-source API client. Offline, Git-friendly. Free.
-Hoppscotch           — Web-based API client. Open-source alternative to Postman.
+── Tailwind-Based (Copy-Paste Model) ─────────────────────────────
+shadcn/ui         ★★★★★  THE standard in 2026. Accessible, composable, customizable.
+                         Not a library — copy components into your codebase.
+DaisyUI           ★★★★☆  50+ Tailwind components. 35+ themes. Plugin-based.
+Tailwind UI       ★★★☆☆  Official Tailwind components. Paid ($149 one-time), worth it.
+HyperUI           ★★★★☆  Free open-source Tailwind components. No install needed.
 
-— Design & Prototyping —
-Figma                — #1 UI/UX design tool. Free for up to 3 projects.
-Penpot               — Open-source Figma alternative. Free and self-hostable.
-Excalidraw           — Whiteboard diagrams. Open-source, free.
+── Headless / Accessible Primitives ──────────────────────────────
+Radix UI          ★★★★★  Unstyled, accessible React primitives. Used by shadcn/ui.
+Headless UI       ★★★★☆  Tailwind Labs headless components. Free + accessible.
+Ariakit           ★★★★☆  WAI-ARIA accessible React components. Open-source.
+Ark UI            ★★★☆☆  Headless components for React/Vue/Solid. Free.
 
-— Documentation —
-Swagger / OpenAPI    — API documentation standard. Free tools to generate docs.
-Scalar               — Modern, beautiful API docs from OpenAPI specs. Free.
-Docusaurus           — Open-source documentation site generator by Meta. Free.
-Mintlify             — Beautiful docs hosting. Free tier for open-source.
-GitBook              — Documentation platform. Free for public and open-source projects.
+── Full Component Libraries ──────────────────────────────────────
+Mantine           ★★★★★  100+ components + hooks. Dark mode. TypeScript-first. Free.
+Chakra UI         ★★★★☆  Accessible, composable. v3 rewritten with Ark UI.
+NextUI / HeroUI   ★★★★☆  Beautiful components. Tailwind + Framer Motion. Free.
+Ant Design        ★★★★☆  Enterprise-grade. 60+ components. Free.
+Tremor            ★★★★☆  Dashboard components (charts, KPI cards). Tailwind-based.
 
-— Code Quality & Formatting —
-ESLint               — JavaScript/TypeScript linter. Free and open-source.
-Prettier             — Code formatter. Works with all major languages. Free.
-Biome                — Fast all-in-one linter + formatter. Rust-based. Free.
-SonarCloud           — Code quality analysis. Free for open-source projects.
-Husky                — Git hooks made easy. Enforce linting before commits. Free.
+── Animation Libraries ───────────────────────────────────────────
+Motion (Framer)   ★★★★★  Formerly Framer Motion. React animation library. Free & open-source.
+GSAP              ★★★★★  Industry-standard animation. Free for personal + open-source use.
+AutoAnimate       ★★★★☆  Add animations to any element with one line of code. Free.
+Anime.js          ★★★★☆  Lightweight JavaScript animation engine. Free + open-source.
+Theatre.js        ★★★☆☆  Animation editor for web. Free for personal use.
 
-— Version Control & Collaboration —
-GitHub               — Industry standard. Unlimited public + private repos. Free.
-GitLab               — Full DevOps platform. Generous free tier.
-Gitea                — Lightweight self-hosted Git service. Free.
-CodeSandbox          — Online IDE with instant environments. Free tier.
-StackBlitz           — Browser-based IDE. Instant Node.js environments. Free.
-Replit               — Cloud IDE with hosting. Great for prototypes. Free tier.
+── Specialty UI / Effects ────────────────────────────────────────
+Aceternity UI     ★★★★☆  Stunning animated components. Free. Tailwind + Framer Motion.
+Magic UI          ★★★★☆  Component collection for landing pages. Free.
+Cult UI           ★★★☆☆  Copy-paste components with unique interactions. Free.
+Float UI          ★★★☆☆  Free open-source Tailwind component blocks. No install.
 
-— Tunneling (Webhook Development) —
-ngrok                — Expose local server to internet. Free tier with fixed URL limit.
-Cloudflare Tunnel    — Zero-trust tunneling. Free with Cloudflare account.
-LocalTunnel          — Open-source tunnel. Simple and free.
-Serveo               — SSH-based tunneling. No install needed. Free.
+── Icon Libraries ────────────────────────────────────────────────
+Lucide            ★★★★★  Beautiful consistent icons. 1,500+ icons. Free + open-source.
+Heroicons         ★★★★☆  By Tailwind Labs. SVG icons in two styles. Free.
+Phosphor Icons    ★★★★☆  Flexible icon family. 1,400+ icons in 6 weights. Free.
+Tabler Icons      ★★★★☆  4,700+ open-source icons. Free.
+Iconify           ★★★★★  Universal icon framework. 200K+ icons from 100+ sets. Free.
+React Icons       ★★★★☆  Popular icon sets for React. npm package. Free.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-24. Maps & Location
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+24. RUNTIME, BUILD TOOLS & JAVASCRIPT ECOSYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Mapbox               — Interactive maps and geocoding. 50,000 map loads/month free.
-Leaflet              — Open-source JavaScript maps. Free. Uses OpenStreetMap tiles.
-OpenStreetMap        — Free map data. No API key needed.
-Google Maps          — $200/month credit = ~28,000 map loads free per month.
-Radar.io             — Geocoding + location features. 100,000 API calls/month free.
+── JavaScript Runtimes ───────────────────────────────────────────
+Node.js           ★★★★★  The standard. v22 LTS in 2026. Free + open-source.
+Bun               ★★★★★  All-in-one: runtime + bundler + test runner + package manager.
+                         3-4x faster than Node. Drop-in compatible. Free + open-source.
+Deno 2.0          ★★★★☆  Secure by default. Node.js compatible. Built-in TypeScript.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-25. Push Notifications
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+── Build Tools & Bundlers ────────────────────────────────────────
+Vite              ★★★★★  Standard frontend build tool. Fast HMR. Free + open-source.
+Turbopack         ★★★★☆  Rust-based Next.js bundler. 10x faster than Webpack. Free.
+Rolldown          ★★★☆☆  Rust-based Rollup replacement. Under active development.
+esbuild           ★★★★★  Extreme speed JS bundler. Free + open-source.
+Rollup            ★★★★☆  Module bundler. Best for libraries. Free + open-source.
+tsup              ★★★★☆  Build TypeScript libraries. Uses esbuild under the hood.
 
-OneSignal            — Web + mobile push notifications. 10,000 subscribers free.
-Knock                — Notification infrastructure (email, SMS, push, in-app). Free tier.
-Novu                 — Open-source notification infrastructure. 30,000 events/month free.
-Firebase FCM         — Free push notifications for Android, iOS, and web.
-Ntfy.sh              — Self-hosted push notifications. Open-source and free.
+── Package Managers ──────────────────────────────────────────────
+pnpm              ★★★★★  Fastest + most efficient. Disk space savings via linking.
+Bun               ★★★★★  Fastest package installs. Drop-in npm replacement.
+npm               ★★★★☆  Default. Included with Node.js. Fine for most projects.
+yarn              ★★★☆☆  Still popular. Plug'n'Play mode. Workspaces support.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-26. Customer Support & Live Chat
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+── Code Quality & Formatting ─────────────────────────────────────
+Biome             ★★★★★  All-in-one: linter + formatter (ESLint + Prettier replacement).
+                         100x faster. Written in Rust. Free + open-source.
+ESLint            ★★★★★  JavaScript/TypeScript linter. Flat config in v9. Free.
+Prettier          ★★★★★  Opinionated code formatter. Free + open-source.
+Husky             ★★★★☆  Git hooks made easy. Run lint before commits. Free.
+lint-staged       ★★★★☆  Run linters only on staged files. Free + open-source.
+Knip              ★★★☆☆  Find unused code, exports, and dependencies. Free.
 
-Crisp                — Live chat + helpdesk. Free plan with 2 seats.
-Tawk.to              — 100% free live chat. Unlimited agents and chats.
-Chatwoot             — Open-source customer support. Self-host free.
-Intercom             — Industry leader. Early-stage startup plan available.
-Plain                — Developer-focused support tool. API-first.
+── Testing ───────────────────────────────────────────────────────
+Vitest            ★★★★★  Vite-native unit testing. Drop-in Jest replacement. Fast.
+Jest              ★★★★☆  Industry standard unit testing. Free + open-source.
+Playwright        ★★★★★  End-to-end browser testing by Microsoft. Free + open-source.
+Cypress           ★★★★☆  E2E testing. Visual runner. Free open-source version.
+Testing Library   ★★★★★  Test user behavior, not implementation. Free + open-source.
+MSW               ★★★★★  Mock Service Worker. API mocking for browser and Node. Free.
+Storybook         ★★★★☆  Component development and documentation. Free + open-source.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-27. SMS & Phone APIs
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+25. ORM & DATABASE TOOLING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Twilio               — SMS, voice, and WhatsApp. $15 free trial credit.
-Vonage (Nexmo)       — SMS and voice API. €2 free credits on signup.
-Brevo                — SMS + email combined. 300 SMS/day free.
-Sinch                — SMS and calling API. Free trial credits available.
+Prisma            ★★★★★  Type-safe ORM with migrations + Prisma Studio GUI. Free.
+                         v6 is the current version. Works with Postgres, SQLite, MySQL.
+Drizzle ORM       ★★★★★  Lightweight TypeScript ORM. SQL-like API. No magic.
+                         Fastest growing ORM. Excellent with Neon and Turso.
+Kysely            ★★★★☆  Type-safe SQL query builder. No magic. Full SQL power. Free.
+TypeORM           ★★★☆☆  Decorator-based ORM. Mature. Works with many databases.
+MikroORM          ★★★☆☆  Data Mapper pattern. TypeScript-first. Free + open-source.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-28. Domain & DNS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+26. STATE MANAGEMENT (FRONTEND)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Cloudflare DNS       — Free, fastest DNS resolver. DDoS protection included.
-Freenom              — Free .tk, .ml, .ga, .cf, .gq domains.
-Name.com             — Affordable domain registrar. Student discounts available.
-Namecheap            — Cheap domains. Free WhoisGuard privacy protection.
+TanStack Query    ★★★★★  Server state management. Caching, sync, loading states.
+                         v5 is the standard. Works with any fetch function. Free.
+Zustand           ★★★★★  Tiny, fast global state. Minimal API. No boilerplate. Free.
+Jotai             ★★★★☆  Atomic state model. Fine-grained re-renders. Free.
+Valtio            ★★★☆☆  Proxy-based. Mutable state that stays reactive. Free.
+Redux Toolkit     ★★★★☆  Official modern Redux. RTK Query for data fetching. Free.
+XState            ★★★★☆  State machines + statecharts. Predictable, visual. Free.
+Nanostores        ★★★☆☆  Tiny framework-agnostic state. Works in React, Vue, Svelte.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-29. Testing Tools
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+27. DEVELOPER UTILITIES & PRODUCTIVITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Vitest               — Fast unit testing. Vite-native. Free and open-source.
-Jest                 — JavaScript testing framework by Meta. Free.
-Playwright           — End-to-end browser testing by Microsoft. Free.
-Cypress              — E2E testing framework. Free open-source version.
-Testing Library      — Utilities for testing UI components. Free.
-MSW                  — Mock Service Worker. API mocking for tests. Free.
+── API Testing ───────────────────────────────────────────────────
+Postman           ★★★★★  API client + collections + environments. Free plan.
+Bruno             ★★★★★  Open-source. Git-friendly. Offline. Best Postman alternative.
+Hoppscotch        ★★★★☆  Web-based REST + GraphQL + WebSocket client. Open-source.
+Insomnia          ★★★★☆  REST + gRPC + GraphQL. Free open-source version.
+Httpie            ★★★★☆  Friendly HTTP client. CLI + desktop GUI. Free.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-30. Recommended Modern Stacks
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+── Design & Prototyping ──────────────────────────────────────────
+Figma             ★★★★★  Industry standard UI design. Free for 3 projects + 3 pages.
+Penpot            ★★★★☆  Open-source Figma alternative. Self-host or cloud. Free.
+Excalidraw        ★★★★★  Hand-drawn whiteboard diagrams. Open-source, web-based. Free.
+TLDraw            ★★★★☆  Collaborative infinite canvas. Open-source. Free.
+FigJam            ★★★☆☆  Collaborative whiteboard from Figma. Free with Figma.
 
-— SaaS / Client Portal Stack (Excellent Free Combination) —
-Frontend:       Vercel + React/Next.js
-Backend:        Railway or Render
-Database:       Supabase / Neon (PostgreSQL)
-Real-time:      Supabase Realtime or Pusher
-Storage:        Cloudinary
-Authentication: Clerk
-AI:             OpenRouter + Groq
-Email:          Resend
-Payments:       Lemon Squeezy or Stripe
-Analytics:      PostHog
-Errors:         Sentry
-Background:     Trigger.dev or Inngest
-Source Control: GitHub
+── Documentation & Knowledge ─────────────────────────────────────
+Scalar            ★★★★★  Beautiful API docs from OpenAPI spec. Open-source. Free.
+Swagger/OpenAPI   ★★★★★  Industry API documentation standard. Free tools to generate.
+Docusaurus        ★★★★☆  Open-source documentation site generator by Meta. Free.
+Mintlify          ★★★★★  Beautiful docs hosting. Free for open-source. Best hosted docs.
+GitBook           ★★★★☆  Documentation platform. Free for public/open-source projects.
+Notion            ★★★★☆  Knowledge base + docs + tasks. Free plan with unlimited pages.
 
-— AI-First App Stack —
-Frontend:       Vercel + Next.js
-Backend:        Railway
-Database:       Neon (PostgreSQL) + Upstash Redis
-Vector DB:      Pinecone or Qdrant
-AI Models:      OpenRouter (multi-model) + Groq (speed)
-Local Models:   Ollama
-Authentication: Clerk
-Storage:        Cloudinary
-Email:          Resend
-Source Control: GitHub
+── Online IDEs & Sandboxes ───────────────────────────────────────
+StackBlitz        ★★★★★  Instant Node.js environment in the browser. Fast. Free tier.
+CodeSandbox       ★★★★☆  Online IDE with instant environments. Free for public sandboxes.
+Replit            ★★★★☆  Cloud IDE + hosting. Great for prototypes. Free tier.
+CodePen           ★★★★☆  Frontend sandbox. Public pens always free.
+JSFiddle          ★★★☆☆  Quick frontend experiments. Free + no account needed.
 
-— Indie Hacker / Solo Developer Stack —
-Frontend:       Vercel + Next.js
-Database:       Supabase (auth + db + storage all-in-one)
-Payments:       Lemon Squeezy
-Email:          Brevo (free 300/day)
-Analytics:      Umami (self-hosted) or Microsoft Clarity
-Forms:          Tally.so (free)
-Support:        Tawk.to (free)
-Source Control: GitHub
+── Version Control ───────────────────────────────────────────────
+GitHub            ★★★★★  Industry standard. Unlimited public + private repos. Free.
+GitLab            ★★★★☆  Full DevOps. Unlimited repos + 5 GB storage. Free tier.
+Gitea             ★★★☆☆  Lightweight self-hosted Git. Free to run on any server.
+Bitbucket         ★★★☆☆  5 users free. Integrated with Jira. Atlassian product.
 
-This setup is powerful enough to build portfolios, SaaS products, AI apps,
-e-commerce projects, dashboards, and production-ready fullstack applications
-using mostly free tiers.
+── Validation & Schema ───────────────────────────────────────────
+Zod               ★★★★★  TypeScript schema validation. v4 is faster. Free + open-source.
+Valibot           ★★★★☆  Smaller Zod alternative. Tree-shakable. Free.
+Yup               ★★★☆☆  Schema validation. Older but still widely used. Free.
+ArkType           ★★★★☆  Blazing fast type-safe validation. Free + open-source.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+28. MAPS, PUSH NOTIFICATIONS & SMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── Maps & Location ───────────────────────────────────────────────
+Mapbox            ★★★★★  50,000 map loads/month free. Best map rendering + geocoding API.
+Leaflet           ★★★★★  Open-source. Uses OpenStreetMap tiles. No API key. Free.
+Radar.io          ★★★★☆  Geocoding + geofencing. 100K API calls/month free.
+Google Maps       ★★★★☆  $200 credit/month = ~28K map loads free.
+Protomaps         ★★★★☆  Self-hosted vector map tiles. Open-source. Free.
+
+── Push Notifications ────────────────────────────────────────────
+OneSignal         ★★★★★  Web + iOS + Android. 10K subscribers free.
+Novu              ★★★★★  Open-source notification infra. Email + SMS + push + in-app.
+                         30K events/month free. Unified API for all channels.
+Firebase FCM      ★★★★☆  Free mobile + web push. Unlimited notifications.
+Knock             ★★★★☆  Notification workflows. 1K MAU free. Great developer API.
+Ntfy.sh           ★★★☆☆  Self-hosted push via HTTP. Open-source, free.
+
+── SMS & Messaging ───────────────────────────────────────────────
+Twilio            ★★★★★  SMS + voice + WhatsApp. $15 trial credit. Industry standard.
+Vonage            ★★★☆☆  SMS + voice API. Trial credits available.
+Brevo             ★★★★☆  SMS + email. 300 SMS/day free.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+29. CUSTOMER SUPPORT & COMMUNICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tawk.to           ★★★★★  100% free live chat. Unlimited agents + chats. No limits.
+Crisp             ★★★★☆  Live chat + helpdesk + CRM. Free plan: 2 agents.
+Chatwoot          ★★★★☆  Open-source omnichannel support. Self-host free.
+Plain             ★★★★☆  Developer-focused support. API-first. Slack-like UX. Free tier.
+Pylon             ★★★☆☆  B2B support in Slack. Free tier for early-stage startups.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+30. DNS, DOMAIN & INFRASTRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Cloudflare        ★★★★★  Free DNS. DDoS protection. WAF. CDN. SSL. Page Rules.
+                         Best free infrastructure tool available. Truly free.
+Namecheap         ★★★★☆  Affordable domains. Free WhoisGuard privacy. ~$1/year domains.
+Porkbun           ★★★★★  Cheapest registrar. Includes free WHOIS privacy + SSL + email.
+Name.com          ★★★☆☆  Solid registrar. Student discounts via GitHub Education.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+31. RECOMMENDED STACKS FOR 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+── SaaS / Client Portal ─────────────────────────────────────────
+  Frontend      Vercel + Next.js 15 (App Router) or Vite + React
+  Backend       Railway (Node.js/Express or Hono)
+  Database      Neon (Postgres) + Upstash Redis
+  Real-time     Supabase Realtime or Ably
+  Auth          Clerk (10K MAU free)
+  Storage       Cloudflare R2 + Cloudinary (images)
+  Email         Resend + React Email
+  Payments      Stripe or Lemon Squeezy
+  Analytics     PostHog (1M events free)
+  Errors        Sentry
+  Jobs          Trigger.dev or Inngest
+  CI/CD         GitHub Actions
+
+── AI-First App / RAG Pipeline ───────────────────────────────────
+  Frontend      Vercel + Next.js (streaming UI)
+  Backend       Railway
+  Database      Neon (Postgres) + Upstash Redis
+  Vector DB     Pinecone or Qdrant
+  LLM API       OpenRouter (multi-model) or Google AI Studio (free tier)
+  Fast LLM      Groq or Cerebras
+  Agent/RAG     LlamaIndex or LangChain
+  Observability Langfuse (free + open-source)
+  AI Gateway    LiteLLM or PortKey
+  Local Models  Ollama (dev) → Replicate/Fal.ai (prod)
+  Auth          Clerk
+  Storage       Cloudflare R2
+
+── Indie Hacker / Solo Developer ─────────────────────────────────
+  Everything    Supabase (db + auth + storage + realtime all-in-one)
+  Frontend      Vercel + Next.js
+  Payments      Lemon Squeezy (no Stripe tax config needed)
+  Email         Brevo (300/day free) or Resend
+  Analytics     PostHog or Microsoft Clarity (free)
+  Forms         Tally.so (unlimited, completely free)
+  Support       Tawk.to (completely free)
+  AI            Google AI Studio (best free quota) + Ollama (local)
+  Coding        Cursor or Windsurf (free tier)
+  CI/CD         GitHub Actions
+
+── Self-Hosted / Budget Server ($5/month VPS) ────────────────────
+  VPS           Hetzner (~$4/month, best value) or Oracle Cloud (free tier)
+  PaaS          Coolify or Dokku (deploy any app)
+  Database      Self-hosted Postgres + Redis
+  Auth          Better Auth or Lucia
+  Storage       Backblaze B2 + Cloudflare CDN (zero egress cost)
+  CI/CD         Woodpecker CI or Forgejo Actions
+  Monitoring    Grafana + Loki + Prometheus (all free)
+  Tunnel        Cloudflare Tunnel (secure public access)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Last updated: May 2026
+  Always verify current free tier limits at each provider's
+  pricing page — limits change frequently.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
