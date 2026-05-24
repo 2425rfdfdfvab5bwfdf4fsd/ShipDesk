@@ -243,7 +243,7 @@ export function LandingPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#06080f] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#06080f] text-white [overflow-x:clip]">
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#06080f]/90 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
