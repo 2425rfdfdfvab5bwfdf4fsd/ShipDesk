@@ -321,23 +321,12 @@ export function LandingPage() {
                 </Button>
               </Link>
             ) : (
-              <>
-                <Link href="/sign-in">
-                  <button className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/[0.06]">
-                    <LogIn className="h-3.5 w-3.5" />
-                    Sign in
-                  </button>
-                </Link>
-                <Link href="/sign-up">
-                  <Button
-                    size="sm"
-                    className="gap-1.5 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25 h-9 px-4 text-sm font-semibold"
-                  >
-                    Start free trial
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                </Link>
-              </>
+              <Link href="/sign-in">
+                <button className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/[0.06]">
+                  <LogIn className="h-3.5 w-3.5" />
+                  Sign in
+                </button>
+              </Link>
             )}
           </div>
 
