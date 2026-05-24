@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "W0x7cx46AZyZBAq6PlsO-"
+uri = "file://attached_assets/New_Text_Document_1779589899105.txt"
+type = "text"
+title = "Fullstack Developer Resource Stack (Expanded)"
