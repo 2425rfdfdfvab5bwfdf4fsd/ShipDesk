@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, Copy, Check, Globe, ExternalLink, CheckCircle2, XCircle, AlertCircle, Trash2 } from "lucide-react";
+import { Loader2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,20 +15,6 @@ interface WorkspaceSettingsFormProps {
   showBrandingOnly?: boolean;
 }
 
-type DnsStatus = "idle" | "checking" | "verified" | "failed";
-
-interface DnsResult {
-  verified: boolean;
-  reason?: string;
-  cname?: string;
-}
-
-const DOMAIN_REGEX = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-
-function isDomainValid(domain: string): boolean {
-  const cleaned = domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "");
-  return DOMAIN_REGEX.test(cleaned);
-}
 
 export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = false }: WorkspaceSettingsFormProps) {
   const { data: workspace, isLoading } = useWorkspace();
@@ -38,14 +24,8 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
   const [agencyName, setAgencyName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#6366F1");
   const [logoUrl, setLogoUrl] = useState("");
-  const [customDomain, setCustomDomain] = useState("");
-  const [savedDomain, setSavedDomain] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [savingDomain, setSavingDomain] = useState(false);
-  const [dnsStatus, setDnsStatus] = useState<DnsStatus>("idle");
-  const [dnsResult, setDnsResult] = useState<DnsResult | null>(null);
-  const [domainError, setDomainError] = useState<string | null>(null);
 
   useEffect(() => {
     if (workspace) {
@@ -53,8 +33,6 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
       setAgencyName(workspace.agencyName || "");
       setPrimaryColor(workspace.primaryColor || "#6366F1");
       setLogoUrl(workspace.logoUrl || "");
-      setCustomDomain(workspace.customDomain || "");
-      setSavedDomain(workspace.customDomain || null);
     }
   }, [workspace]);
 

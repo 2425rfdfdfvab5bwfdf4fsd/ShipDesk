@@ -29,12 +29,6 @@ const updateWorkspaceSchema = z.object({
   agencyName: z.string().max(80).nullable().optional(),
   logoUrl: z.string().url().nullable().optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-  customDomain: z
-    .string()
-    .regex(DOMAIN_REGEX, "Invalid domain format")
-    .transform((d) => d.toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, ""))
-    .nullable()
-    .optional(),
 });
 
 router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
@@ -96,15 +90,6 @@ router.patch("/", requireAuth, async (req: AuthRequest, res, next) => {
       where: { ownerId: req.userId! },
     });
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
-
-    if (body.customDomain) {
-      const conflict = await db.workspace.findFirst({
-        where: { customDomain: body.customDomain, id: { not: workspace.id } },
-      });
-      if (conflict) {
-        throw new AppError("This domain is already in use by another workspace", 409, "DOMAIN_TAKEN");
-      }
-    }
 
     const updated = await db.workspace.update({
       where: { id: workspace.id },
