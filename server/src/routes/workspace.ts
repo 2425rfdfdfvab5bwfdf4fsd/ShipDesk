@@ -23,6 +23,7 @@ const createWorkspaceSchema = z.object({
 
 const updateWorkspaceSchema = z.object({
   name: z.string().min(1).max(60).optional(),
+  slug: z.string().min(3).max(30).regex(/^[a-z0-9-]+$/, "Slug may only contain lowercase letters, numbers and hyphens").optional(),
   agencyName: z.string().max(80).nullable().optional(),
   logoUrl: z.string().url().nullable().optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
@@ -87,6 +88,15 @@ router.patch("/", requireAuth, async (req: AuthRequest, res, next) => {
       where: { ownerId: req.userId! },
     });
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+
+    if (body.slug && body.slug !== workspace.slug) {
+      const newSlug = body.slug.toLowerCase();
+      if (RESERVED_SLUGS.has(newSlug)) {
+        throw new AppError("This subdomain is reserved", 409, "SLUG_TAKEN");
+      }
+      const taken = await db.workspace.findUnique({ where: { slug: newSlug } });
+      if (taken) throw new AppError("This subdomain is already taken", 409, "SLUG_TAKEN");
+    }
 
     const updated = await db.workspace.update({
       where: { id: workspace.id },

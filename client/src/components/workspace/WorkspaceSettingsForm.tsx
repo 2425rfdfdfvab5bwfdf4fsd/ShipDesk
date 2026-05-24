@@ -23,6 +23,8 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
   const [agencyName, setAgencyName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#6366F1");
   const [logoUrl, setLogoUrl] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugError, setSlugError] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -32,8 +34,21 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
       setAgencyName(workspace.agencyName || "");
       setPrimaryColor(workspace.primaryColor || "#6366F1");
       setLogoUrl(workspace.logoUrl || "");
+      setSlug(workspace.slug || "");
     }
   }, [workspace]);
+
+  const handleSlugChange = (val: string) => {
+    const cleaned = val.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    setSlug(cleaned);
+    if (cleaned.length > 0 && cleaned.length < 3) {
+      setSlugError("Must be at least 3 characters");
+    } else if (cleaned.length > 30) {
+      setSlugError("Must be 30 characters or fewer");
+    } else {
+      setSlugError(null);
+    }
+  };
 
   const handleLogoUpload = async (file: File) => {
     if (file.size > 2 * 1024 * 1024) {
@@ -81,16 +96,23 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
   };
 
   const handleSave = async () => {
+    if (slugError || !slug.trim()) return;
     try {
       await updateWorkspace.mutateAsync({
         name: name.trim(),
+        slug: slug.trim(),
         agencyName: agencyName.trim() || null,
         primaryColor,
         logoUrl: logoUrl || null,
       });
       toast({ title: "Settings saved" });
-    } catch {
-      toast({ variant: "destructive", title: "Failed to save settings" });
+    } catch (err: unknown) {
+      const code = (err as { response?: { data?: { code?: string } } })?.response?.data?.code;
+      if (code === "SLUG_TAKEN") {
+        setSlugError("This subdomain is already taken");
+      } else {
+        toast({ variant: "destructive", title: "Failed to save settings" });
+      }
     }
   };
 
@@ -145,19 +167,31 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
             </div>
 
             <div className="space-y-2">
-              <Label>Portal URL</Label>
+              <Label htmlFor="ws-slug">Portal URL</Label>
               <div className="flex items-center gap-2">
-                <Input
-                  value={workspace?.slug ? `shipdesk-nine.vercel.app/portal/${workspace.slug}` : ""}
-                  readOnly
-                  className="font-mono bg-muted text-sm"
-                  data-testid="input-portal-url"
-                />
+                <div className="flex items-center flex-1 border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-0">
+                  <span className="px-3 py-2 text-xs font-mono text-muted-foreground bg-muted border-r select-none whitespace-nowrap">
+                    shipdesk-nine.vercel.app/portal/
+                  </span>
+                  <Input
+                    id="ws-slug"
+                    value={slug}
+                    onChange={(e) => handleSlugChange(e.target.value)}
+                    className={`border-0 rounded-none shadow-none font-mono text-sm focus-visible:ring-0 min-w-0 ${slugError ? "text-destructive" : ""}`}
+                    placeholder="your-slug"
+                    maxLength={30}
+                    data-testid="input-portal-slug"
+                  />
+                </div>
                 <Button variant="outline" size="icon" onClick={handleCopySlug} className="flex-shrink-0" data-testid="button-copy-portal-url">
                   {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Subdomain is permanent and cannot be changed.</p>
+              {slugError ? (
+                <p className="text-xs text-destructive">{slugError}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Only lowercase letters, numbers, and hyphens. Min 3 characters.</p>
+              )}
             </div>
           </CardContent>
         </Card>
