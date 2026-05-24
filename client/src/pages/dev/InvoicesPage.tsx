@@ -120,8 +120,8 @@ export function InvoicesPage() {
             )}
           </div>
         ) : (
-          <div className="rounded-lg border overflow-hidden bg-card">
-            <Table>
+          <div className="rounded-lg border overflow-hidden bg-card overflow-x-auto">
+            <Table className="min-w-[480px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent bg-muted/30">
                   <TableHead className="hidden sm:table-cell">Project</TableHead>

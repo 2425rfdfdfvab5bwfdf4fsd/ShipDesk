@@ -30,15 +30,15 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <div className="bg-card border rounded-xl p-3 flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-medium text-muted-foreground tracking-wide uppercase">{label}</span>
-        <div className={`w-6 h-6 rounded-md flex items-center justify-center ${accent ? "bg-amber-500/10" : "bg-primary/8"}`}>
+    <div className="bg-card border rounded-xl p-3 flex flex-col gap-2 min-w-0">
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-[11px] font-medium text-muted-foreground tracking-wide uppercase truncate">{label}</span>
+        <div className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${accent ? "bg-amber-500/10" : "bg-primary/8"}`}>
           <Icon className={`h-3.5 w-3.5 ${accent ? "text-amber-500" : "text-primary"}`} />
         </div>
       </div>
       <div className="text-xl font-bold leading-none tabular-nums">{value}</div>
-      {sub && <p className="text-[11px] text-muted-foreground leading-tight">{sub}</p>}
+      {sub && <p className="text-[11px] text-muted-foreground leading-tight truncate" title={sub}>{sub}</p>}
     </div>
   );
 }

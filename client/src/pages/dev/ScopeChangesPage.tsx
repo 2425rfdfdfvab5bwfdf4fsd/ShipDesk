@@ -35,19 +35,19 @@ export function ScopeChangesPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Sticky header + filters */}
-      <div className="sticky top-0 z-10 bg-background border-b px-6 py-3">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b px-4 sm:px-6 py-3">
         <div className="mb-3">
-          <h1 className="text-lg font-bold leading-tight">Scope Changes</h1>
+          <h1 className="text-base sm:text-lg font-bold leading-tight">Scope Changes</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             Client-submitted change requests across all projects
           </p>
         </div>
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex gap-1 sm:gap-1.5 flex-wrap">
           {STATUSES.map((s) => (
             <button
               key={s.key}
               onClick={() => setStatusFilter(s.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                 statusFilter === s.key
                   ? "bg-primary text-primary-foreground border-primary shadow-sm"
                   : "bg-card text-muted-foreground border-border hover:bg-accent hover:text-foreground"
@@ -59,7 +59,7 @@ export function ScopeChangesPage() {
         </div>
       </div>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
 
       {isLoading ? (
         <div className="space-y-3">
