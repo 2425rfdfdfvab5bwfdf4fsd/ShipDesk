@@ -175,7 +175,7 @@ export function BillingPage() {
   const featuresForDisplay = hasActiveSub ? PLAN_FEATURES[currentPlan] : PLAN_FEATURES["STARTER"];
 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-8">
+    <div className="p-6 max-w-5xl mx-auto space-y-8">
       <div>
         <h1 className="text-xl font-bold mb-1">Billing</h1>
         <p className="text-sm text-muted-foreground">Manage your subscription and billing details.</p>
