@@ -273,7 +273,7 @@ export function LandingPage() {
     <div className="min-h-screen bg-[#06080f] text-white [overflow-x:clip]">
       {/* Nav */}
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
+        className={`sticky top-0 z-30 transition-all duration-300 ${
           scrolled
             ? "bg-[#06080f]/95 backdrop-blur-2xl border-b border-white/[0.08] shadow-[0_1px_40px_rgba(0,0,0,0.5)]"
             : "bg-transparent border-b border-transparent"
