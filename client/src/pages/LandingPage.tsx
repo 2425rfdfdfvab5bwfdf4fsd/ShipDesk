@@ -506,7 +506,7 @@ export function LandingPage() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto h-12 border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-white/30"
+                  className="w-full sm:w-auto h-12 border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-white/30 hover:text-white"
                 >
                   Sign in to your workspace
                 </Button>
