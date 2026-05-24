@@ -33,8 +33,7 @@ export const PLAN_FEATURES: Record<Plan, string[]> = {
   AGENCY: [
     "Unlimited projects",
     "Unlimited AI reports",
-    "Custom domain client portal",
-    "GitHub integration + DNS verification",
+    "GitHub integration",
     "Everything in Solo",
     "Priority support",
     "Team seats (coming soon)",

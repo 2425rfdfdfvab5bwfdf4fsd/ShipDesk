@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Switch, Route, Router, useLocation } from "wouter";
 import { useAuth } from "@clerk/clerk-react";
 import { api, setApiToken } from "./lib/api";
@@ -36,7 +36,7 @@ import { ClientScopeChangePage } from "./pages/client/ClientScopeChangePage";
 
 import { SignIn, SignUp } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings2, Globe, AlertTriangle, MailOpen, Lock } from "lucide-react";
+import { Loader2, Settings2, MailOpen, Lock } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,36 +57,6 @@ function getWorkspaceSlug(): string | null {
 function isSubdomainPortal(): boolean {
   const parts = window.location.hostname.split(".");
   return parts.length >= 3 && parts[1] === "portal";
-}
-
-/** Returns true when the hostname looks like a user-owned custom domain */
-function isLikelyCustomDomain(): boolean {
-  const host = window.location.hostname;
-  // Exclude localhost / bare IPs
-  if (host === "localhost" || /^(\d{1,3}\.){3}\d{1,3}$/.test(host)) return false;
-  // Exclude Replit infrastructure domains
-  if (
-    host.endsWith(".replit.dev") ||
-    host.endsWith(".repl.co") ||
-    host.endsWith(".replit.app") ||
-    host.endsWith(".sisko.replit.dev") ||
-    host.endsWith(".kirk.replit.dev")
-  ) return false;
-  // Exclude deployment platform domains (not user-owned)
-  if (
-    host.endsWith(".vercel.app") ||
-    host.endsWith(".railway.app") ||
-    host.endsWith(".up.railway.app") ||
-    host.endsWith(".onrender.com") ||
-    host.endsWith(".netlify.app") ||
-    host.endsWith(".fly.dev") ||
-    host.endsWith(".herokuapp.com") ||
-    host.endsWith(".pages.dev")
-  ) return false;
-  // Exclude shipdesk's own domains
-  if (host === "shipdesk.io" || host.endsWith(".shipdesk.io")) return false;
-  // Must contain at least one dot (rules out bare hostnames)
-  return host.includes(".");
 }
 
 // ---------------------------------------------------------------------------
@@ -322,55 +292,6 @@ function ClientPortalApp({ workspaceSlug }: { workspaceSlug: string }) {
   );
 }
 
-// Resolves a custom domain to a workspace slug by calling the backend.
-// Shows a spinner while loading and an error screen if the domain isn't mapped.
-function CustomDomainPortal() {
-  const [slug, setSlug] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const hostname = window.location.hostname;
-    fetch(`/api/portal/resolve-domain?domain=${encodeURIComponent(hostname)}`)
-      .then((r) => {
-        if (!r.ok) throw new Error("not_found");
-        return r.json();
-      })
-      .then((data: { slug: string }) => setSlug(data.slug))
-      .catch(() => setError(hostname));
-  }, []);
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <div className="max-w-sm w-full text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="rounded-full bg-destructive/10 p-4">
-              <AlertTriangle className="h-10 w-10 text-destructive" />
-            </div>
-          </div>
-          <h1 className="text-xl font-bold">Domain not found</h1>
-          <p className="text-sm text-muted-foreground">
-            <span className="font-mono">{error}</span> is not linked to any ShipDesk workspace. If you just set this up, DNS propagation can take up to 48 hours.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!slug) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Globe className="h-8 w-8 text-muted-foreground animate-pulse" />
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      </div>
-    );
-  }
-
-  return <ClientPortalApp workspaceSlug={slug} />;
-}
-
 // ---------------------------------------------------------------------------
 // Root
 // ---------------------------------------------------------------------------
@@ -396,12 +317,7 @@ export default function App({ clerkEnabled = false }: { clerkEnabled?: boolean }
     );
   }
 
-  // 2. Custom domain (e.g. portal.carboy.com) — resolve asynchronously
-  if (isLikelyCustomDomain()) {
-    return <CustomDomainPortal />;
-  }
-
-  // 3. Dev / production app
+  // 2. Dev / production app
   if (!clerkEnabled) {
     return <SetupPage />;
   }

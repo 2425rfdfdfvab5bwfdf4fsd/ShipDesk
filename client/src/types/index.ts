@@ -34,7 +34,6 @@ export interface Workspace {
   slug: string;
   logoUrl: string | null;
   primaryColor: string;
-  customDomain: string | null;
   onboardingComplete: boolean;
   plan: Plan;
   lsSubscriptionId: string | null;

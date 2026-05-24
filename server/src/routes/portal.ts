@@ -18,27 +18,6 @@ const ALLOWED_HTML = {
   allowedAttributes: {},
 };
 
-router.get("/resolve-domain", async (req, res, next) => {
-  try {
-    const domain = (req.query.domain as string)?.toLowerCase().trim();
-    if (!domain) {
-      res.status(400).json({ error: "domain query param required" });
-      return;
-    }
-    const workspace = await db.workspace.findFirst({
-      where: { customDomain: domain },
-      select: { slug: true, id: true, agencyName: true, logoUrl: true, primaryColor: true },
-    });
-    if (!workspace) {
-      res.status(404).json({ error: "No workspace found for this domain" });
-      return;
-    }
-    res.json(workspace);
-  } catch (err) {
-    next(err);
-  }
-});
-
 router.get("/:workspaceSlug/branding", brandingLimiter, async (req, res, next) => {
   try {
     const workspace = await db.workspace.findUnique({
