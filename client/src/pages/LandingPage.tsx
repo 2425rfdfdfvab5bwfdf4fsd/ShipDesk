@@ -114,13 +114,12 @@ const PRICING = [
     description: "Get your first client portal live in minutes.",
     features: [
       { label: "3 client projects" },
-      { label: "10 AI status reports / month" },
+      { label: "10 AI status reports/month" },
       { label: "Magic link client portal" },
-      { label: "Invoice + Lemon Squeezy checkout" },
+      { label: "Invoice + payment links" },
       { label: "File uploads & sharing" },
       { label: "Async client messaging" },
     ],
-    cta: "Start free trial",
     highlight: false,
   },
   {
@@ -135,9 +134,8 @@ const PRICING = [
       { label: "Branded portal + client invites" },
       { label: "Invoice + payment collection" },
       { label: "Scope change requests & quoting" },
-      { label: "File sharing + async messaging" },
+      { label: "File sharing & async messaging" },
     ],
-    cta: "Start free trial",
     highlight: false,
   },
   {
@@ -155,7 +153,6 @@ const PRICING = [
       { label: "Team seats", soon: true },
       { label: "Linear & Vercel sync", soon: true },
     ],
-    cta: "Start free trial",
     highlight: true,
   },
 ];

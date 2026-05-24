@@ -10,11 +10,6 @@ import {
 
 const router = Router();
 
-const PLAN_LABELS: Record<string, string> = {
-  SOLO: "Solo",
-  AGENCY: "Agency",
-};
-
 const checkoutSchema = z.object({
   plan: z.enum(["STARTER", "SOLO", "AGENCY"]),
   redirectUrl: z.string().url().optional(),

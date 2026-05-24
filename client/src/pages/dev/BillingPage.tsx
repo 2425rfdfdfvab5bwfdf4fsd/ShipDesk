@@ -5,13 +5,13 @@ import { api } from "@/lib/api";
 import { useSEO } from "@/lib/seo";
 import {
   CheckCircle, Zap, Building2, Loader2, ExternalLink,
-  CreditCard, AlertTriangle, ArrowRight, Star
+  CreditCard, ArrowRight, Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-
-type Plan = "FREE" | "STARTER" | "SOLO" | "AGENCY";
+import { PLAN_FEATURES, PLAN_PRICES } from "@/lib/planFeatures";
+import type { Plan } from "@/types";
 
 interface BillingStatus {
   plan: Plan;
@@ -20,43 +20,6 @@ interface BillingStatus {
   lsCustomerId: string | null;
   trialEndsAt: string | null;
 }
-
-const PLAN_FEATURES: Record<Plan, string[]> = {
-  FREE: ["1 active project", "Manual reports only", "Basic client portal", "Community support"],
-  STARTER: [
-    "3 active projects",
-    "10 AI reports/month",
-    "Branded client portal",
-    "Invoice + payment links",
-    "File sharing",
-    "Async messaging",
-  ],
-  SOLO: [
-    "Up to 10 active projects",
-    "Unlimited AI reports",
-    "Branded client portal",
-    "Invoice + payment links",
-    "Scope change flow",
-    "File sharing",
-    "Async messaging",
-  ],
-  AGENCY: [
-    "Unlimited projects",
-    "Unlimited AI reports",
-    "Custom domain portal",
-    "Everything in Solo",
-    "Priority support",
-    "Team seats (coming soon)",
-    "Linear & Vercel integration",
-  ],
-};
-
-const PLAN_PRICES: Record<Plan, string> = {
-  FREE: "$0",
-  STARTER: "$5",
-  SOLO: "$29",
-  AGENCY: "$79",
-};
 
 const STATUS_BADGE: Record<string, { label: string; variant: "success" | "warning" | "destructive" | "secondary" }> = {
   active: { label: "Active", variant: "success" },
@@ -272,8 +235,7 @@ export function BillingPage() {
       ) : (
         <>
           {/* Plan cards */}
-          {(currentPlan === "FREE" || currentPlan !== "FREE") && (
-            <div>
+          <div>
               <h2 className="text-sm font-semibold mb-4">
                 {billing?.lsSubscriptionId ? "Switch plan" : "Choose a plan"}
               </h2>
@@ -305,8 +267,7 @@ export function BillingPage() {
                   No credit card required during trial · Cancel any time
                 </p>
               )}
-            </div>
-          )}
+          </div>
 
           {/* What's included for current plan */}
           <div className="rounded-xl border bg-card p-5">

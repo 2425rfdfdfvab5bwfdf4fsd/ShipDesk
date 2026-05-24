@@ -8,6 +8,7 @@ import { WorkspaceSettingsForm } from "@/components/workspace/WorkspaceSettingsF
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { PLAN_FEATURES, PLAN_PRICES } from "@/lib/planFeatures";
 
 const TABS = [
   { key: "workspace", label: "Workspace", icon: Globe },
@@ -26,18 +27,11 @@ interface BillingStatus {
 }
 
 const PLAN_INFO = {
-  FREE:    { label: "Free",    icon: Star,      price: "$0",  color: "text-muted-foreground" },
-  STARTER: { label: "Starter", icon: Star,      price: "$5",  color: "text-indigo-500" },
-  SOLO:    { label: "Solo",    icon: Zap,       price: "$29", color: "text-indigo-500" },
-  AGENCY:  { label: "Agency",  icon: Building2, price: "$79", color: "text-indigo-500" },
+  FREE:    { label: "Free",    icon: Star,      color: "text-muted-foreground" },
+  STARTER: { label: "Starter", icon: Star,      color: "text-indigo-500" },
+  SOLO:    { label: "Solo",    icon: Zap,       color: "text-indigo-500" },
+  AGENCY:  { label: "Agency",  icon: Building2, color: "text-indigo-500" },
 } as const;
-
-const PLAN_FEATURES: Record<string, string[]> = {
-  FREE:    ["1 active project", "Manual reports only", "Basic client portal"],
-  STARTER: ["3 active projects", "10 AI reports/month", "Magic link client portal", "Invoice + payment links", "File sharing", "Async messaging"],
-  SOLO:    ["Up to 10 active projects", "Unlimited AI reports", "Branded portal + client invites", "Invoice + payment collection", "Scope change requests & quoting"],
-  AGENCY:  ["Unlimited projects", "Unlimited AI reports", "Custom domain portal", "GitHub integration + DNS verification", "Everything in Solo", "Priority support"],
-};
 
 function daysLeft(date: string): number {
   return Math.max(0, Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
@@ -107,7 +101,7 @@ function PlanTab() {
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {billing?.lsSubscriptionId
-                  ? `${info.price}/month · All ${info.label} features included`
+                  ? `${PLAN_PRICES[displayPlan]}/month · All ${info.label} features included`
                   : trialActive
                   ? `Includes all Starter features · ${remaining} day${remaining !== 1 ? "s" : ""} remaining`
                   : trialExpired

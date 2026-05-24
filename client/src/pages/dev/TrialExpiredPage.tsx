@@ -5,40 +5,20 @@ import { Lock, CheckCircle, ArrowRight, Zap, Star, Building2, Loader2 } from "lu
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-
-const STARTER_FEATURES = [
-  "3 client projects",
-  "10 AI reports / month",
-  "Magic link client portal",
-  "Invoice + payment links",
-  "File uploads & sharing",
-  "Async client messaging",
-];
+import { PLAN_FEATURES, PLAN_PRICES } from "@/lib/planFeatures";
 
 const OTHER_PLANS = [
   {
     key: "SOLO" as const,
     name: "Solo",
-    price: "$29",
     icon: Zap,
-    features: [
-      "Up to 10 client projects",
-      "Unlimited AI reports",
-      "GitHub webhook integration",
-      "Scope change requests & quoting",
-    ],
+    features: PLAN_FEATURES.SOLO.slice(0, 4),
   },
   {
     key: "AGENCY" as const,
     name: "Agency",
-    price: "$79",
     icon: Building2,
-    features: [
-      "Unlimited projects",
-      "Unlimited AI reports",
-      "Custom domain client portal",
-      "Priority support",
-    ],
+    features: PLAN_FEATURES.AGENCY.slice(0, 4),
   },
 ];
 
@@ -117,7 +97,7 @@ export function TrialExpiredPage() {
           </div>
 
           <ul className="space-y-2 mb-6">
-            {STARTER_FEATURES.map((f) => (
+            {PLAN_FEATURES.STARTER.map((f) => (
               <li key={f} className="flex items-center gap-2.5 text-sm text-white/70">
                 <CheckCircle className="h-3.5 w-3.5 text-emerald-400 flex-shrink-0" />
                 {f}
@@ -135,7 +115,7 @@ export function TrialExpiredPage() {
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                Continue with Starter — $5/month
+                Continue with Starter — {PLAN_PRICES.STARTER}/month
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
