@@ -94,15 +94,29 @@ export function AppShell({ children }: AppShellProps) {
           <div className="mx-3 mt-3 mb-1 px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/15">
             <div className="flex items-center justify-between mb-0.5">
               <p className="text-[10px] font-medium text-primary/60 uppercase tracking-wider">Workspace</p>
-              <span className={cn(
-                "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full",
-                workspace.plan === "AGENCY" ? "bg-violet-500/20 text-violet-500" :
-                workspace.plan === "SOLO" ? "bg-primary/20 text-primary" :
-                workspace.plan === "STARTER" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" :
-                "bg-muted text-muted-foreground"
-              )}>
-                {workspace.plan}
-              </span>
+              {(() => {
+                const isOnTrial = !workspace.lsSubscriptionId && !!workspace.trialEndsAt;
+                const trialActive = isOnTrial && new Date(workspace.trialEndsAt!) > new Date();
+                const label = isOnTrial
+                  ? trialActive ? "Trial" : "Expired"
+                  : workspace.plan === "AGENCY" ? "Agency"
+                  : workspace.plan === "SOLO" ? "Solo"
+                  : workspace.plan === "STARTER" ? "Starter"
+                  : "Free";
+                return (
+                  <span className={cn(
+                    "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full",
+                    isOnTrial && trialActive ? "bg-amber-500/20 text-amber-600 dark:text-amber-400" :
+                    isOnTrial && !trialActive ? "bg-destructive/20 text-destructive" :
+                    workspace.plan === "AGENCY" ? "bg-violet-500/20 text-violet-500" :
+                    workspace.plan === "SOLO" ? "bg-primary/20 text-primary" :
+                    workspace.plan === "STARTER" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" :
+                    "bg-muted text-muted-foreground"
+                  )}>
+                    {label}
+                  </span>
+                );
+              })()}
             </div>
             <p className="text-xs font-semibold truncate">{workspace.agencyName || workspace.name}</p>
             <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">

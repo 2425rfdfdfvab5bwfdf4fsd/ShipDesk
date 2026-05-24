@@ -139,7 +139,7 @@ router.post("/lemonsqueezy", (req: Request, res: Response) => {
   ) {
     const handleSubscription = async () => {
       const workspaceId = customData.workspaceId;
-      const plan = customData.plan as "SOLO" | "AGENCY" | undefined;
+      const plan = customData.plan as "STARTER" | "SOLO" | "AGENCY" | undefined;
       if (!workspaceId) return { received: true, skipped: "no_workspace_id" };
 
       const subscriptionId = payload.data.id;
@@ -155,7 +155,7 @@ router.post("/lemonsqueezy", (req: Request, res: Response) => {
       await db.workspace.update({
         where: { id: workspaceId },
         data: {
-          plan: plan || "SOLO",
+          plan: plan || "STARTER",
           lsSubscriptionId: subscriptionId,
           lsSubscriptionStatus: status,
           ...(customerId ? { lsCustomerId: customerId } : {}),
@@ -189,8 +189,11 @@ router.post("/lemonsqueezy", (req: Request, res: Response) => {
         where: { id: workspaceId },
         data: {
           lsSubscriptionStatus: status,
-          // Only reset plan to FREE if subscription is fully expired/cancelled
-          ...(eventName === "subscription_expired" ? { plan: "FREE" } : {}),
+          // On full expiry: clear the subscription ID so TrialGate activates,
+          // and keep plan as STARTER so they see "pay to continue Starter"
+          ...(eventName === "subscription_expired"
+            ? { plan: "STARTER", lsSubscriptionId: null }
+            : {}),
         },
       });
       return { received: true };
