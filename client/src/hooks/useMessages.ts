@@ -27,6 +27,16 @@ export function useSendMessage() {
   });
 }
 
+export function useUnreadMessageCounts() {
+  return useQuery<Record<string, number>>({
+    queryKey: ["unread-message-counts"],
+    queryFn: () =>
+      api.get("/api/projects/unread-message-counts").then((r) => r.data),
+    refetchInterval: 15000,
+    refetchIntervalInBackground: false,
+  });
+}
+
 export function useMarkMessagesRead() {
   const qc = useQueryClient();
   return useMutation({

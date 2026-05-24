@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { GitBranch, DollarSign, Activity, Pause, CheckCircle, ArrowUpRight } from "lucide-react";
+import { GitBranch, DollarSign, Activity, Pause, CheckCircle, ArrowUpRight, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Project } from "@/types";
 import { formatRelative } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { formatRelative } from "@/lib/utils";
 interface ProjectCardProps {
   project: Project;
   unpaidInvoiceCount?: number;
+  unreadMessageCount?: number;
 }
 
 const STATUS_CONFIG = {
@@ -16,7 +17,7 @@ const STATUS_CONFIG = {
   COMPLETED: { label: "Completed", variant: "secondary" as const, icon: CheckCircle },
 };
 
-export function ProjectCard({ project, unpaidInvoiceCount = 0 }: ProjectCardProps) {
+export function ProjectCard({ project, unpaidInvoiceCount = 0, unreadMessageCount = 0 }: ProjectCardProps) {
   const statusCfg = STATUS_CONFIG[project.status];
   const StatusIcon = statusCfg.icon;
 
@@ -58,6 +59,12 @@ export function ProjectCard({ project, unpaidInvoiceCount = 0 }: ProjectCardProp
           </div>
 
           <div className="flex items-center gap-1.5">
+            {unreadMessageCount > 0 && (
+              <Badge variant="info" className="gap-1 text-xs">
+                <MessageSquare className="h-3 w-3" />
+                {unreadMessageCount}
+              </Badge>
+            )}
             {unpaidInvoiceCount > 0 && (
               <Badge variant="warning" className="gap-1 text-xs">
                 <DollarSign className="h-3 w-3" />

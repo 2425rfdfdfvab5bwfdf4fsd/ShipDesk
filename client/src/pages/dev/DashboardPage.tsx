@@ -14,6 +14,7 @@ import { useProjects, useCreateProject } from "@/hooks/useProjects";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useScopeChanges } from "@/hooks/useScopeChanges";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useUnreadMessageCounts } from "@/hooks/useMessages";
 import { toast } from "@/hooks/use-toast";
 
 function StatCard({
@@ -57,6 +58,7 @@ export function DashboardPage() {
   const { data: allProjects } = useProjects();
   const { data: invoicesData } = useInvoices();
   const { data: scopeChanges } = useScopeChanges();
+  const { data: unreadCounts } = useUnreadMessageCounts();
   const createProject = useCreateProject();
 
   const unpaidByProject = (invoicesData?.invoices || []).reduce<Record<string, number>>(
@@ -242,6 +244,7 @@ export function DashboardPage() {
                   key={project.id}
                   project={project}
                   unpaidInvoiceCount={unpaidByProject[project.id] || 0}
+                  unreadMessageCount={unreadCounts?.[project.id] || 0}
                 />
               ))}
             </div>

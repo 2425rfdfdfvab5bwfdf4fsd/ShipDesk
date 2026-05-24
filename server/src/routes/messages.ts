@@ -22,6 +22,30 @@ async function getWorkspace(userId: string) {
   return ws;
 }
 
+router.get("/unread-message-counts", requireAuth, async (req: AuthRequest, res, next) => {
+  try {
+    const ws = await getWorkspace(req.userId!);
+
+    const counts = await db.message.groupBy({
+      by: ["projectId"],
+      where: {
+        senderType: "CLIENT",
+        readByDeveloperAt: null,
+        project: { workspaceId: ws.id },
+      },
+      _count: { id: true },
+    });
+
+    const result: Record<string, number> = {};
+    for (const row of counts) {
+      result[row.projectId] = row._count.id;
+    }
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/:projectId/messages", requireAuth, async (req: AuthRequest, res, next) => {
   try {
     const ws = await getWorkspace(req.userId!);
