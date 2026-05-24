@@ -68,6 +68,8 @@ router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
     const taken = await db.workspace.findUnique({ where: { slug } });
     if (taken) throw new AppError("Slug already taken", 409, "SLUG_TAKEN");
 
+    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
     const workspace = await db.workspace.create({
       data: {
         ownerId: req.userId!,
@@ -76,6 +78,7 @@ router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
         agencyName: body.agencyName || null,
         logoUrl: body.logoUrl || null,
         primaryColor: body.primaryColor || "#6366F1",
+        trialEndsAt,
       },
     });
 

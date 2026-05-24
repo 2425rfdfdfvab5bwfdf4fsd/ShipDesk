@@ -23,6 +23,7 @@ import { InvoicesPage } from "./pages/dev/InvoicesPage";
 import { ScopeChangesPage } from "./pages/dev/ScopeChangesPage";
 import { SettingsPage } from "./pages/dev/SettingsPage";
 import { BillingPage } from "./pages/dev/BillingPage";
+import { TrialExpiredPage } from "./pages/dev/TrialExpiredPage";
 
 import { ClientPortalHomePage } from "./pages/client/ClientPortalHomePage";
 import { ClientProjectPage } from "./pages/client/ClientProjectPage";
@@ -106,6 +107,33 @@ function TokenSync() {
   return null;
 }
 
+interface BillingStatus {
+  plan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
+  trialEndsAt: string | null;
+}
+
+function TrialGate({ children }: { children: React.ReactNode }) {
+  const { isSignedIn } = useAuth();
+  const { data: billing } = useQuery<BillingStatus>({
+    queryKey: ["billing-status"],
+    queryFn: () => api.get("/api/billing/status").then((r) => r.data),
+    enabled: !!isSignedIn,
+    staleTime: 60_000,
+  });
+
+  if (
+    isSignedIn &&
+    billing &&
+    billing.plan === "FREE" &&
+    billing.trialEndsAt != null &&
+    new Date(billing.trialEndsAt) < new Date()
+  ) {
+    return <TrialExpiredPage />;
+  }
+
+  return <>{children}</>;
+}
+
 function DevApp() {
   const { isLoaded, isSignedIn } = useAuth();
   const [location, navigate] = useLocation();
@@ -148,26 +176,26 @@ function DevApp() {
           </div>
         </Route>
         <Route path="/onboarding" component={OnboardingPage} />
-        <Route path="/dashboard">
-          <AppShell><DashboardPage /></AppShell>
-        </Route>
-        <Route path="/projects/:id">
-          <AppShell><ProjectDetailPage /></AppShell>
-        </Route>
-        <Route path="/invoices">
-          <AppShell><InvoicesPage /></AppShell>
-        </Route>
-        <Route path="/scope-changes">
-          <AppShell><ScopeChangesPage /></AppShell>
-        </Route>
-        <Route path="/settings">
-          <AppShell><SettingsPage /></AppShell>
-        </Route>
-        <Route path="/settings/workspace">
-          <AppShell><SettingsPage /></AppShell>
-        </Route>
         <Route path="/billing">
           <AppShell><BillingPage /></AppShell>
+        </Route>
+        <Route path="/dashboard">
+          <TrialGate><AppShell><DashboardPage /></AppShell></TrialGate>
+        </Route>
+        <Route path="/projects/:id">
+          <TrialGate><AppShell><ProjectDetailPage /></AppShell></TrialGate>
+        </Route>
+        <Route path="/invoices">
+          <TrialGate><AppShell><InvoicesPage /></AppShell></TrialGate>
+        </Route>
+        <Route path="/scope-changes">
+          <TrialGate><AppShell><ScopeChangesPage /></AppShell></TrialGate>
+        </Route>
+        <Route path="/settings">
+          <TrialGate><AppShell><SettingsPage /></AppShell></TrialGate>
+        </Route>
+        <Route path="/settings/workspace">
+          <TrialGate><AppShell><SettingsPage /></AppShell></TrialGate>
         </Route>
         <Route component={NotFoundPage} />
       </Switch>

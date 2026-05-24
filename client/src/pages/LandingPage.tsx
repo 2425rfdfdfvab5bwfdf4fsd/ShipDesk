@@ -600,24 +600,24 @@ export function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href={`/sign-up?plan=${plan.name.toUpperCase()}`}>
-                  <Button
-                    data-testid={`button-pricing-${plan.name.toLowerCase()}`}
-                    className={`w-full h-11 ${
-                      plan.highlight
-                        ? "bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25"
-                        : "bg-white/10 hover:bg-white/15 text-white border border-white/15"
-                    }`}
-                  >
-                    {plan.cta}
-                  </Button>
-                </Link>
               </motion.div>
             ))}
           </div>
-          <p className="text-center text-xs text-white/30 mt-6">
-            All plans include a 14-day free trial. No credit card required to start.
-          </p>
+          {/* Single CTA below all plans */}
+          <div className="flex flex-col items-center mt-10 gap-3">
+            <Link href="/sign-up">
+              <Button
+                data-testid="button-start-free-trial"
+                size="lg"
+                className="gap-2 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25 px-8 h-12 text-base"
+              >
+                Start your free trial <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <p className="text-xs text-white/30">
+              14-day free trial · No credit card required · Cancel any time
+            </p>
+          </div>
         </div>
       </section>
 
