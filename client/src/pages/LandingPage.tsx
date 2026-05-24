@@ -148,8 +148,8 @@ function MockDashboard() {
         <div className="w-3 h-3 rounded-full bg-red-500/80" />
         <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
         <div className="w-3 h-3 rounded-full bg-green-500/80" />
-        <div className="flex-1 mx-4">
-          <div className="bg-white/5 border border-white/10 rounded-md px-3 py-1 text-xs text-white/40 font-mono w-52">
+        <div className="flex-1 mx-2 sm:mx-4 min-w-0">
+          <div className="bg-white/5 border border-white/10 rounded-md px-2 sm:px-3 py-1 text-[10px] sm:text-xs text-white/40 font-mono truncate max-w-[120px] sm:max-w-[200px]">
             shipdesk-delta.vercel.app/portal/acme
           </div>
         </div>
@@ -157,8 +157,8 @@ function MockDashboard() {
           <Bell className="w-3 h-3 text-indigo-400" />
         </div>
       </div>
-      <div className="flex min-h-[280px]">
-        <div className="w-48 border-r border-white/10 bg-[#0f1117] p-3 hidden sm:block flex-shrink-0">
+      <div className="flex min-h-[240px] sm:min-h-[280px]">
+        <div className="w-40 sm:w-48 border-r border-white/10 bg-[#0f1117] p-3 hidden sm:block flex-shrink-0">
           <div className="flex items-center gap-2 mb-5 px-1">
             <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
               <span className="text-white text-xs font-bold">A</span>
@@ -187,15 +187,15 @@ function MockDashboard() {
           ))}
         </div>
         <div className="flex-1 p-4 bg-[#0f1117] space-y-3">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {[
               { label: "Active Projects", value: "4", color: "text-white" },
               { label: "Unpaid Invoices", value: "2", color: "text-amber-400" },
               { label: "Pending Scope", value: "1", color: "text-orange-400" },
             ].map((stat) => (
-              <div key={stat.label} className="bg-white/5 border border-white/10 rounded-lg p-2">
-                <p className="text-white/40 text-[10px] mb-1">{stat.label}</p>
-                <p className={`text-base font-bold ${stat.color}`}>{stat.value}</p>
+              <div key={stat.label} className="bg-white/5 border border-white/10 rounded-lg p-1.5 sm:p-2">
+                <p className="text-white/40 text-[9px] sm:text-[10px] mb-1 leading-tight">{stat.label}</p>
+                <p className={`text-sm sm:text-base font-bold ${stat.color}`}>{stat.value}</p>
               </div>
             ))}
           </div>
@@ -206,15 +206,15 @@ function MockDashboard() {
               { name: "Mobile App v2", repo: "acme/mobile", badge: "Active", dot: "bg-emerald-500" },
               { name: "Admin Dashboard", repo: "acme/admin", badge: "Paused", dot: "bg-amber-500" },
             ].map((p) => (
-              <div key={p.name} className="bg-white/5 border border-white/10 rounded-lg p-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div key={p.name} className="bg-white/5 border border-white/10 rounded-lg p-2 sm:p-2.5 flex items-center justify-between gap-2 min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
                   <div className={`w-1.5 h-1.5 rounded-full ${p.dot} flex-shrink-0`} />
-                  <div>
-                    <div className="text-white/80 text-xs font-medium">{p.name}</div>
-                    <div className="text-white/30 text-[10px] font-mono">{p.repo}</div>
+                  <div className="min-w-0">
+                    <div className="text-white/80 text-xs font-medium truncate">{p.name}</div>
+                    <div className="text-white/30 text-[10px] font-mono truncate">{p.repo}</div>
                   </div>
                 </div>
-                <span className="text-[10px] text-white/40 font-medium">{p.badge}</span>
+                <span className="text-[10px] text-white/40 font-medium flex-shrink-0">{p.badge}</span>
               </div>
             ))}
           </div>
@@ -336,7 +336,7 @@ export function LandingPage() {
               <Sparkles className="h-3.5 w-3.5" />
               Powered by Google Gemini AI + GitHub
             </div>
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] mb-6">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] mb-6">
               Stop writing
               <br />
               <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-blue-400 bg-clip-text text-transparent">
@@ -637,8 +637,8 @@ export function LandingPage() {
             <p className="text-white/50 mb-8 max-w-lg mx-auto">
               Join hundreds of freelance developers who've automated their client communication with ShipDesk.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-sm mx-auto sm:max-w-none sm:inline-flex sm:gap-3 mb-8">
-              <Link href="/sign-up">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
+              <Link href="/sign-up" className="w-full sm:w-auto">
                 <Button
                   size="lg"
                   className="w-full sm:w-auto gap-2 px-8 h-12 bg-indigo-500 hover:bg-indigo-400 text-base shadow-xl shadow-indigo-500/25"
@@ -646,7 +646,7 @@ export function LandingPage() {
                   Start free trial <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Link href="/sign-in">
+              <Link href="/sign-in" className="w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="lg"
