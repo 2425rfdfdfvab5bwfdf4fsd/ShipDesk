@@ -46,7 +46,7 @@ export function buildMagicLinkUrl(slug: string, token: string): string {
       .replace(/\/$/, "");
     return `https://${slug}.${base}/auth/magic?token=${token}`;
   }
-  const base = (process.env.FRONTEND_URL || "http://localhost:5000").replace(/\/$/, "");
+  const base = (process.env.FRONTEND_URL || "https://shipdesk-nine.vercel.app").replace(/\/$/, "");
   return `${base}/portal/${slug}/auth/magic?token=${token}`;
 }
 
@@ -63,6 +63,6 @@ export function buildPortalUrl(slug: string, path: string): string {
       .replace(/\/$/, "");
     return `https://${slug}.${base}/${path}`;
   }
-  const base = (process.env.FRONTEND_URL || "http://localhost:5000").replace(/\/$/, "");
+  const base = (process.env.FRONTEND_URL || "https://shipdesk-nine.vercel.app").replace(/\/$/, "");
   return `${base}/portal/${slug}/${path}`;
 }

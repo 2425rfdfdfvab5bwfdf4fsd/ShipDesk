@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 const SITE_NAME = "ShipDesk";
-const BASE_URL = "https://shipdesk-delta.vercel.app";
+const BASE_URL = "https://shipdesk-nine.vercel.app";
 const DEFAULT_DESCRIPTION =
   "ShipDesk connects to GitHub and uses AI to write your weekly client status reports. Branded client portals, invoicing, file sharing, and messaging for freelance developers.";
 

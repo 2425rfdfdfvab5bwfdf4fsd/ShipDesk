@@ -13,4 +13,4 @@ Disallow: /sign-in
 Disallow: /sign-up
 Disallow: /build-logs
 
-Sitemap: https://shipdesk-delta.vercel.app/sitemap.xml
+Sitemap: https://shipdesk-nine.vercel.app/sitemap.xml

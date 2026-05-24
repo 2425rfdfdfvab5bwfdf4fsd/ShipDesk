@@ -167,7 +167,7 @@ function MockDashboard() {
         <div className="w-3 h-3 rounded-full bg-green-500/80" />
         <div className="flex-1 mx-2 sm:mx-4 min-w-0">
           <div className="bg-white/5 border border-white/10 rounded-md px-2 sm:px-3 py-1 text-[10px] sm:text-xs text-white/40 font-mono truncate max-w-[120px] sm:max-w-[200px]">
-            shipdesk-delta.vercel.app/portal/acme
+            shipdesk-nine.vercel.app/portal/acme
           </div>
         </div>
         <div className="w-5 h-5 rounded bg-indigo-500/20 flex items-center justify-center">
@@ -255,7 +255,7 @@ export function LandingPage() {
     title: "ShipDesk — AI Client Portal for Freelance Developers",
     description:
       "ShipDesk connects to GitHub and uses AI to write your weekly client status reports. Give every client a branded portal with files, invoices, and messaging. Free trial, no card required.",
-    canonical: "https://shipdesk-delta.vercel.app/",
+    canonical: "https://shipdesk-nine.vercel.app/",
     noindex: false,
   });
 
