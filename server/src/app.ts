@@ -18,6 +18,7 @@ import invoicesRouter from "./routes/invoices.js";
 import scopeChangesRouter from "./routes/scopeChanges.js";
 import portalRouter from "./routes/portal.js";
 import webhooksRouter from "./routes/webhooks.js";
+import adminRouter from "./routes/admin.js";
 
 const app = express();
 
@@ -112,6 +113,7 @@ app.use("/api/invoices", invoicesRouter);
 app.use("/api/scope-changes", scopeChangesRouter);
 app.use("/api/portal", portalRouter);
 app.use("/api/files", filesRouter);
+app.use("/api/admin", adminRouter);
 
 const clientDistPath = path.join(__dirname, "../../client/dist");
 const clientDistExists = fs.existsSync(path.join(clientDistPath, "index.html"));
