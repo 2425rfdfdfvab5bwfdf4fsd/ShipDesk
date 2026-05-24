@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { useAuth } from "@clerk/clerk-react";
 import { useSEO } from "@/lib/seo";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -250,6 +251,7 @@ function MockDashboard() {
 
 export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isSignedIn } = useAuth();
 
   useSEO({
     title: "ShipDesk — AI Client Portal for Freelance Developers",
@@ -275,16 +277,26 @@ export function LandingPage() {
             <a href="#testimonials" className="hover:text-white transition-colors">Reviews</a>
           </nav>
           <div className="hidden md:flex items-center gap-2">
-            <Link href="/sign-in">
-              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
-                Sign in
-              </Button>
-            </Link>
-            <Link href="/sign-up">
-              <Button size="sm" className="gap-1.5 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25">
-                Get started <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
+            {isSignedIn ? (
+              <Link href="/dashboard">
+                <Button size="sm" className="gap-1.5 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25">
+                  Go to Dashboard <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/sign-in">
+                  <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
+                    Sign in
+                  </Button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button size="sm" className="gap-1.5 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25">
+                    Get started <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
           <button
             className="md:hidden p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10"
@@ -312,16 +324,26 @@ export function LandingPage() {
                 </a>
               ))}
               <div className="pt-2 flex flex-col gap-2">
-                <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="ghost" size="sm" className="w-full text-white/70 hover:text-white hover:bg-white/10">
-                    Sign in
-                  </Button>
-                </Link>
-                <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
-                  <Button size="sm" className="w-full bg-indigo-500 hover:bg-indigo-400">
-                    Get started free
-                  </Button>
-                </Link>
+                {isSignedIn ? (
+                  <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button size="sm" className="w-full bg-indigo-500 hover:bg-indigo-400">
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full text-white/70 hover:text-white hover:bg-white/10">
+                        Sign in
+                      </Button>
+                    </Link>
+                    <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
+                      <Button size="sm" className="w-full bg-indigo-500 hover:bg-indigo-400">
+                        Get started free
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </motion.div>
           )}
