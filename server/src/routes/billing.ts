@@ -16,7 +16,7 @@ const PLAN_LABELS: Record<string, string> = {
 };
 
 const checkoutSchema = z.object({
-  plan: z.enum(["SOLO", "AGENCY"]),
+  plan: z.enum(["STARTER", "SOLO", "AGENCY"]),
   redirectUrl: z.string().url().optional(),
 });
 

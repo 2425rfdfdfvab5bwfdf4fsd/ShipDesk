@@ -98,6 +98,7 @@ export function AppShell({ children }: AppShellProps) {
                 "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full",
                 workspace.plan === "AGENCY" ? "bg-violet-500/20 text-violet-500" :
                 workspace.plan === "SOLO" ? "bg-primary/20 text-primary" :
+                workspace.plan === "STARTER" ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" :
                 "bg-muted text-muted-foreground"
               )}>
                 {workspace.plan}

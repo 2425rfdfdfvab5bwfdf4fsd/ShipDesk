@@ -41,7 +41,7 @@ export async function createPaymentLink(opts: {
 }
 
 export async function createSubscriptionCheckout(opts: {
-  plan: "SOLO" | "AGENCY";
+  plan: "STARTER" | "SOLO" | "AGENCY";
   workspaceId: string;
   email: string;
   name: string;
@@ -50,13 +50,16 @@ export async function createSubscriptionCheckout(opts: {
   setup();
   const storeId = process.env.LEMONSQUEEZY_STORE_ID || "";
   const variantId =
-    opts.plan === "SOLO"
+    opts.plan === "STARTER"
+      ? process.env.LEMONSQUEEZY_STARTER_VARIANT_ID || ""
+      : opts.plan === "SOLO"
       ? process.env.LEMONSQUEEZY_SOLO_VARIANT_ID || ""
       : process.env.LEMONSQUEEZY_AGENCY_VARIANT_ID || "";
 
   if (!variantId) {
+    const envKey = `LEMONSQUEEZY_${opts.plan}_VARIANT_ID`;
     throw new Error(
-      `Missing env var LEMONSQUEEZY_${opts.plan}_VARIANT_ID — add it to configure the ${opts.plan} subscription.`
+      `Missing env var ${envKey} — add it in Replit Secrets to configure the ${opts.plan} subscription.`
     );
   }
 

@@ -106,6 +106,22 @@ const STATS = [
 
 const PRICING = [
   {
+    name: "Starter",
+    price: "$5",
+    period: "/month",
+    description: "Just getting started? Ship your first client portal today.",
+    features: [
+      "3 active projects",
+      "10 AI reports/month",
+      "Branded client portal",
+      "Invoice + payment links",
+      "File sharing",
+      "Async messaging",
+    ],
+    cta: "Start free trial",
+    highlight: false,
+  },
+  {
     name: "Solo",
     price: "$29",
     period: "/month",
@@ -511,7 +527,7 @@ export function LandingPage() {
               14-day free trial, no credit card required. Cancel any time.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 gap-5">
+          <div className="grid md:grid-cols-3 gap-5">
             {PRICING.map((plan, i) => (
               <motion.div
                 key={plan.name}

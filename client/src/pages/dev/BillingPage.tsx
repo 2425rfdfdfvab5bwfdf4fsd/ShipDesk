@@ -23,6 +23,14 @@ interface BillingStatus {
 
 const PLAN_FEATURES: Record<Plan, string[]> = {
   FREE: ["1 active project", "Manual reports only", "Basic client portal", "Community support"],
+  STARTER: [
+    "3 active projects",
+    "10 AI reports/month",
+    "Branded client portal",
+    "Invoice + payment links",
+    "File sharing",
+    "Async messaging",
+  ],
   SOLO: [
     "Up to 10 active projects",
     "Unlimited AI reports",
@@ -45,6 +53,7 @@ const PLAN_FEATURES: Record<Plan, string[]> = {
 
 const PLAN_PRICES: Record<Plan, string> = {
   FREE: "$0",
+  STARTER: "$5",
   SOLO: "$29",
   AGENCY: "$79",
 };
@@ -64,9 +73,9 @@ function PlanCard({
   onUpgrade,
   isLoading,
 }: {
-  plan: "SOLO" | "AGENCY";
+  plan: "STARTER" | "SOLO" | "AGENCY";
   currentPlan: Plan;
-  onUpgrade: (plan: "SOLO" | "AGENCY") => void;
+  onUpgrade: (plan: "STARTER" | "SOLO" | "AGENCY") => void;
   isLoading: boolean;
 }) {
   const isCurrentPlan = currentPlan === plan;
@@ -96,12 +105,16 @@ function PlanCard({
 
       <div className="mb-5">
         <div className="flex items-center gap-2 mb-1">
-          {plan === "SOLO" ? (
+          {plan === "STARTER" ? (
+            <Star className="h-4 w-4 text-primary" />
+          ) : plan === "SOLO" ? (
             <Zap className="h-4 w-4 text-primary" />
           ) : (
             <Building2 className="h-4 w-4 text-primary" />
           )}
-          <h3 className="font-bold text-base">{plan === "SOLO" ? "Solo" : "Agency"}</h3>
+          <h3 className="font-bold text-base">
+            {plan === "STARTER" ? "Starter" : plan === "SOLO" ? "Solo" : "Agency"}
+          </h3>
         </div>
         <div className="flex items-baseline gap-1 mt-2">
           <span className="text-3xl font-bold">{PLAN_PRICES[plan]}</span>
@@ -148,7 +161,7 @@ export function BillingPage() {
   useSEO({ title: "Billing | ShipDesk" });
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [checkingOut, setCheckingOut] = useState<"SOLO" | "AGENCY" | null>(null);
+  const [checkingOut, setCheckingOut] = useState<"STARTER" | "SOLO" | "AGENCY" | null>(null);
 
   const { data: billing, isLoading, refetch } = useQuery<BillingStatus>({
     queryKey: ["billing-status"],
@@ -165,7 +178,7 @@ export function BillingPage() {
     },
   });
 
-  const handleUpgrade = async (plan: "SOLO" | "AGENCY") => {
+  const handleUpgrade = async (plan: "STARTER" | "SOLO" | "AGENCY") => {
     setCheckingOut(plan);
     try {
       const redirectUrl = `${window.location.origin}/billing?success=true`;
@@ -248,10 +261,18 @@ export function BillingPage() {
       ) : (
         <>
           {/* Plan cards */}
-          {currentPlan === "FREE" && (
+          {(currentPlan === "FREE" || currentPlan !== "FREE") && (
             <div>
-              <h2 className="text-sm font-semibold mb-4">Choose a plan</h2>
-              <div className="grid sm:grid-cols-2 gap-5">
+              <h2 className="text-sm font-semibold mb-4">
+                {currentPlan === "FREE" ? "Choose a plan" : "Switch plan"}
+              </h2>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <PlanCard
+                  plan="STARTER"
+                  currentPlan={currentPlan}
+                  onUpgrade={handleUpgrade}
+                  isLoading={checkingOut === "STARTER"}
+                />
                 <PlanCard
                   plan="SOLO"
                   currentPlan={currentPlan}
@@ -265,29 +286,11 @@ export function BillingPage() {
                   isLoading={checkingOut === "AGENCY"}
                 />
               </div>
-              <p className="text-center text-xs text-muted-foreground mt-4">
-                14-day free trial · No credit card required to start · Cancel any time
-              </p>
-            </div>
-          )}
-
-          {currentPlan !== "FREE" && (
-            <div>
-              <h2 className="text-sm font-semibold mb-4">Switch plan</h2>
-              <div className="grid sm:grid-cols-2 gap-5">
-                <PlanCard
-                  plan="SOLO"
-                  currentPlan={currentPlan}
-                  onUpgrade={handleUpgrade}
-                  isLoading={checkingOut === "SOLO"}
-                />
-                <PlanCard
-                  plan="AGENCY"
-                  currentPlan={currentPlan}
-                  onUpgrade={handleUpgrade}
-                  isLoading={checkingOut === "AGENCY"}
-                />
-              </div>
+              {currentPlan === "FREE" && (
+                <p className="text-center text-xs text-muted-foreground mt-4">
+                  14-day free trial · No credit card required to start · Cancel any time
+                </p>
+              )}
             </div>
           )}
 

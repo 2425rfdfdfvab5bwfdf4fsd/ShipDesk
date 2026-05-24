@@ -1,5 +1,5 @@
 export type Currency = "USD" | "EUR" | "GBP" | "CAD" | "AUD";
-export type Plan = "FREE" | "SOLO" | "AGENCY";
+export type Plan = "FREE" | "STARTER" | "SOLO" | "AGENCY";
 export type UploaderType = "DEVELOPER" | "CLIENT";
 export type SenderType = "DEVELOPER" | "CLIENT";
 export type ProjectStatus = "ACTIVE" | "PAUSED" | "COMPLETED";
