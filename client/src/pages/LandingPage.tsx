@@ -128,7 +128,7 @@ const PRICING = [
     description: "Everything a freelancer needs to look like a studio.",
     features: [
       { label: "Up to 10 client projects" },
-      { label: "Unlimited AI reports (Gemini 1.5 Pro)" },
+      { label: "Unlimited AI reports" },
       { label: "GitHub webhook integration" },
       { label: "Branded portal + client invites" },
       { label: "Invoice + payment collection" },
@@ -145,7 +145,7 @@ const PRICING = [
     description: "Scale your client operations without the overhead.",
     features: [
       { label: "Unlimited projects" },
-      { label: "Unlimited AI reports (Gemini 1.5 Pro)" },
+      { label: "Unlimited AI reports" },
       { label: "Custom domain client portal" },
       { label: "GitHub integration + DNS verification" },
       { label: "Everything in Solo" },
