@@ -2,6 +2,10 @@
 
 AI-native client portal for freelance developers. Connects to GitHub, generates weekly AI status reports, and gives clients a branded portal for files, messages, invoices, and scope change requests.
 
+## Hosting
+
+**Production is deployed on Vercel (frontend) + Railway (backend).** Replit is used only as a development and bug-fixing environment — do not reconfigure for Replit deployment. Do not modify `vercel.json`, `railway.json`, or any deployment-platform config.
+
 ## Architecture
 
 Monorepo with two npm workspaces:
