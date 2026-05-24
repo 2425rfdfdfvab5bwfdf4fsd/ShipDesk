@@ -43,6 +43,7 @@ channel = "stable-25_05"
 
 [userenv.shared]
 PORT = "3000"
+ADMIN_SECRET_KEY = "A3s3MwKYlb8Yi/2QYc7Ec9hoywe+MEhcjR4cjxsR/y4="
 
 [userenv.development]
 NODE_ENV = "development"

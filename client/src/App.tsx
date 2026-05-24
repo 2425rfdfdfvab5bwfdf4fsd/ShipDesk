@@ -9,6 +9,7 @@ import { ClientPortalLayout } from "./components/layout/ClientPortalLayout";
 import { LandingPage } from "./pages/LandingPage";
 import { MagicLinkPage } from "./pages/MagicLinkPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { AdminPage } from "./pages/admin/AdminPage";
 import { BuildLogsDemo } from "./pages/BuildLogsDemo";
 
 import { OnboardingPage } from "./pages/dev/OnboardingPage";
@@ -335,6 +336,11 @@ function CustomDomainPortal() {
 
 export default function App({ clerkEnabled = false }: { clerkEnabled?: boolean }) {
   const workspaceSlug = getWorkspaceSlug();
+
+  // 0. Admin panel — own auth, no Clerk required
+  if (window.location.pathname.startsWith("/admin")) {
+    return <AdminPage />;
+  }
 
   // 1. Known portal subdomain (e.g. acme.portal.shipdesk.io)
   if (workspaceSlug) {
