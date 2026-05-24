@@ -696,12 +696,12 @@ export function LandingPage() {
                 </div>
               </div>
               <div>
-                <p className="font-semibold mb-4 text-white/80">Integrations</p>
+                <p className="font-semibold mb-4 text-white/80">Legal</p>
                 <div className="space-y-2.5 text-white/40">
-                  <span className="block">Google Gemini AI</span>
-                  <span className="block">GitHub API</span>
-                  <span className="block">Clerk Auth</span>
-                  <span className="block">Lemon Squeezy</span>
+                  <a href="/privacy" className="block hover:text-white/70 transition-colors">Privacy Policy</a>
+                  <a href="/terms" className="block hover:text-white/70 transition-colors">Terms of Service</a>
+                  <a href="/cookies" className="block hover:text-white/70 transition-colors">Cookie Policy</a>
+                  <a href="mailto:support@shipdesk.io" className="block hover:text-white/70 transition-colors">Contact Us</a>
                 </div>
               </div>
             </div>
