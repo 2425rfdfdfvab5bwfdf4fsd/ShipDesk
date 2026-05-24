@@ -379,7 +379,7 @@ export function LandingPage() {
           >
             <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-white/20 to-white/5 blur-sm" />
             <div className="absolute -inset-8 bg-indigo-600/10 rounded-3xl blur-2xl" />
-            <div className="relative">
+            <div className="relative hidden md:block">
               <MockDashboard />
             </div>
           </motion.div>
