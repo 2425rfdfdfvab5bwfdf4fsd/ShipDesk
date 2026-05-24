@@ -78,7 +78,6 @@ router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
         agencyName: body.agencyName || null,
         logoUrl: body.logoUrl || null,
         primaryColor: body.primaryColor || "#6366F1",
-        plan: "STARTER",
         trialEndsAt,
       },
     });
