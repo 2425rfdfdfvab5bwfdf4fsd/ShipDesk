@@ -25,6 +25,7 @@ router.get("/status", requireAuth, async (req: AuthRequest, res, next) => {
     const workspace = await db.workspace.findUnique({
       where: { ownerId: req.userId! },
       select: {
+        id: true,
         plan: true,
         lsSubscriptionId: true,
         lsSubscriptionStatus: true,
@@ -33,7 +34,41 @@ router.get("/status", requireAuth, async (req: AuthRequest, res, next) => {
       },
     });
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
-    res.json(workspace);
+
+    const now = new Date();
+    const trialActive =
+      workspace.plan === "STARTER" &&
+      !workspace.lsSubscriptionId &&
+      workspace.trialEndsAt != null &&
+      workspace.trialEndsAt > now;
+
+    const trialExpired =
+      workspace.plan === "STARTER" &&
+      !workspace.lsSubscriptionId &&
+      workspace.trialEndsAt != null &&
+      workspace.trialEndsAt <= now;
+
+    if (trialExpired) {
+      await db.workspace.update({
+        where: { id: workspace.id },
+        data: { plan: "FREE" },
+      });
+      workspace.plan = "FREE";
+    }
+
+    const trialDaysLeft = trialActive && workspace.trialEndsAt
+      ? Math.max(0, Math.ceil((workspace.trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+      : null;
+
+    res.json({
+      plan: workspace.plan,
+      lsSubscriptionId: workspace.lsSubscriptionId,
+      lsSubscriptionStatus: workspace.lsSubscriptionStatus,
+      lsCustomerId: workspace.lsCustomerId,
+      trialEndsAt: workspace.trialEndsAt,
+      isTrialActive: trialActive,
+      trialDaysLeft,
+    });
   } catch (err) {
     next(err);
   }
