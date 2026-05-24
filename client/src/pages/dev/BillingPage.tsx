@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
-type Plan = "FREE" | "SOLO" | "AGENCY";
+type Plan = "FREE" | "STARTER" | "SOLO" | "AGENCY";
 
 interface BillingStatus {
   plan: Plan;
@@ -70,15 +70,17 @@ const STATUS_BADGE: Record<string, { label: string; variant: "success" | "warnin
 function PlanCard({
   plan,
   currentPlan,
+  hasActiveSubscription,
   onUpgrade,
   isLoading,
 }: {
   plan: "STARTER" | "SOLO" | "AGENCY";
   currentPlan: Plan;
+  hasActiveSubscription: boolean;
   onUpgrade: (plan: "STARTER" | "SOLO" | "AGENCY") => void;
   isLoading: boolean;
 }) {
-  const isCurrentPlan = currentPlan === plan;
+  const isPaidCurrentPlan = currentPlan === plan && hasActiveSubscription;
   const isHighlighted = plan === "AGENCY";
   const features = PLAN_FEATURES[plan];
 
@@ -90,14 +92,14 @@ function PlanCard({
           : "bg-muted/30 border border-border"
       }`}
     >
-      {isHighlighted && !isCurrentPlan && (
+      {isHighlighted && !isPaidCurrentPlan && (
         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
           <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
             <Star className="h-3 w-3" /> Most popular
           </span>
         </div>
       )}
-      {isCurrentPlan && (
+      {isPaidCurrentPlan && (
         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
           <Badge variant="success" className="text-xs px-3 py-1">Current plan</Badge>
         </div>
@@ -134,21 +136,21 @@ function PlanCard({
       <Button
         data-testid={`button-subscribe-${plan.toLowerCase()}`}
         className={`w-full h-10 ${
-          isHighlighted && !isCurrentPlan
+          isHighlighted && !isPaidCurrentPlan
             ? "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
             : ""
         }`}
-        variant={isCurrentPlan ? "outline" : isHighlighted ? "default" : "secondary"}
-        disabled={isCurrentPlan || isLoading}
-        onClick={() => !isCurrentPlan && onUpgrade(plan)}
+        variant={isPaidCurrentPlan ? "outline" : isHighlighted ? "default" : "secondary"}
+        disabled={isPaidCurrentPlan || isLoading}
+        onClick={() => !isPaidCurrentPlan && onUpgrade(plan)}
       >
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
-        ) : isCurrentPlan ? (
+        ) : isPaidCurrentPlan ? (
           "Current plan"
         ) : (
           <>
-            {currentPlan === "FREE" ? "Start free trial" : "Switch plan"}
+            {hasActiveSubscription ? "Switch plan" : "Subscribe"}
             <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
           </>
         )}
@@ -200,6 +202,15 @@ export function BillingPage() {
   const currentPlan = billing?.plan ?? "FREE";
   const subStatus = billing?.lsSubscriptionStatus;
   const statusInfo = subStatus ? STATUS_BADGE[subStatus] : null;
+  const isOnTrial = !billing?.lsSubscriptionId && !!billing?.trialEndsAt;
+  const trialActive = isOnTrial && billing?.trialEndsAt != null && new Date(billing.trialEndsAt) > new Date();
+
+  const planLabel: Record<Plan, string> = {
+    FREE: "Free",
+    STARTER: "Starter",
+    SOLO: "Solo",
+    AGENCY: "Agency",
+  };
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-8">
@@ -213,28 +224,27 @@ export function BillingPage() {
         <div className="rounded-xl border bg-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Current plan</p>
-            <div className="flex items-center gap-2.5">
-              <span className="text-lg font-bold">
-                {currentPlan === "FREE" ? "Free" : currentPlan === "SOLO" ? "Solo" : "Agency"}
-              </span>
-              {statusInfo && (
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="text-lg font-bold">{planLabel[currentPlan]}</span>
+              {trialActive && (
+                <Badge variant="secondary">Free Trial</Badge>
+              )}
+              {statusInfo && !isOnTrial && (
                 <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
               )}
-              {currentPlan === "FREE" && (
-                <Badge variant="secondary">Free forever</Badge>
-              )}
             </div>
-            {currentPlan !== "FREE" && (
-              <p className="text-xs text-muted-foreground">
-                {PLAN_PRICES[currentPlan]}/month
-                {billing?.trialEndsAt && new Date(billing.trialEndsAt) > new Date()
-                  ? ` · Trial ends ${new Date(billing.trialEndsAt).toLocaleDateString()}`
-                  : ""}
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              {billing?.lsSubscriptionId
+                ? `${PLAN_PRICES[currentPlan]}/month`
+                : trialActive && billing?.trialEndsAt
+                ? `Trial ends ${new Date(billing.trialEndsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
+                : isOnTrial
+                ? "Trial expired — choose a plan below"
+                : ""}
+            </p>
           </div>
 
-          {currentPlan !== "FREE" && (
+          {billing?.lsSubscriptionId && (
             <Button
               data-testid="button-manage-subscription"
               variant="outline"
@@ -264,31 +274,34 @@ export function BillingPage() {
           {(currentPlan === "FREE" || currentPlan !== "FREE") && (
             <div>
               <h2 className="text-sm font-semibold mb-4">
-                {currentPlan === "FREE" ? "Choose a plan" : "Switch plan"}
+                {billing?.lsSubscriptionId ? "Switch plan" : "Choose a plan"}
               </h2>
               <div className="grid sm:grid-cols-3 gap-4">
                 <PlanCard
                   plan="STARTER"
                   currentPlan={currentPlan}
+                  hasActiveSubscription={!!billing?.lsSubscriptionId}
                   onUpgrade={handleUpgrade}
                   isLoading={checkingOut === "STARTER"}
                 />
                 <PlanCard
                   plan="SOLO"
                   currentPlan={currentPlan}
+                  hasActiveSubscription={!!billing?.lsSubscriptionId}
                   onUpgrade={handleUpgrade}
                   isLoading={checkingOut === "SOLO"}
                 />
                 <PlanCard
                   plan="AGENCY"
                   currentPlan={currentPlan}
+                  hasActiveSubscription={!!billing?.lsSubscriptionId}
                   onUpgrade={handleUpgrade}
                   isLoading={checkingOut === "AGENCY"}
                 />
               </div>
-              {currentPlan === "FREE" && (
+              {isOnTrial && (
                 <p className="text-center text-xs text-muted-foreground mt-4">
-                  14-day free trial · No credit card required to start · Cancel any time
+                  No credit card required during trial · Cancel any time
                 </p>
               )}
             </div>

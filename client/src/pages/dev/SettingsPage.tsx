@@ -1,16 +1,191 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useSEO } from "@/lib/seo";
-import { Github, Palette, Globe, Bell, Shield } from "lucide-react";
+import { Github, Palette, Globe, Shield, CreditCard, CheckCircle, ArrowRight, Star, Zap, Building2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WorkspaceSettingsForm } from "@/components/workspace/WorkspaceSettingsForm";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { api } from "@/lib/api";
 
 const TABS = [
   { key: "workspace", label: "Workspace", icon: Globe },
   { key: "branding", label: "Branding", icon: Palette },
+  { key: "plan", label: "Plan", icon: CreditCard },
   { key: "integrations", label: "Integrations", icon: Github },
 ] as const;
 
 type Tab = typeof TABS[number]["key"];
+
+interface BillingStatus {
+  plan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
+  lsSubscriptionId: string | null;
+  lsSubscriptionStatus: string | null;
+  trialEndsAt: string | null;
+}
+
+const PLAN_INFO = {
+  FREE:    { label: "Free",    icon: Star,      price: "$0",  color: "text-muted-foreground" },
+  STARTER: { label: "Starter", icon: Star,      price: "$5",  color: "text-indigo-500" },
+  SOLO:    { label: "Solo",    icon: Zap,       price: "$29", color: "text-indigo-500" },
+  AGENCY:  { label: "Agency",  icon: Building2, price: "$79", color: "text-indigo-500" },
+} as const;
+
+const PLAN_FEATURES: Record<string, string[]> = {
+  FREE:    ["1 active project", "Manual reports only", "Basic client portal"],
+  STARTER: ["3 active projects", "10 AI reports/month", "Magic link client portal", "Invoice + payment links", "File sharing", "Async messaging"],
+  SOLO:    ["Up to 10 active projects", "Unlimited AI reports", "Branded portal + client invites", "Invoice + payment collection", "Scope change requests & quoting"],
+  AGENCY:  ["Unlimited projects", "Unlimited AI reports", "Custom domain portal", "GitHub integration + DNS verification", "Everything in Solo", "Priority support"],
+};
+
+function daysLeft(date: string): number {
+  return Math.max(0, Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+}
+
+function PlanTab() {
+  const [, navigate] = useLocation();
+  const { data: billing, isLoading } = useQuery<BillingStatus>({
+    queryKey: ["billing-status"],
+    queryFn: () => api.get("/api/billing/status").then((r) => r.data),
+    staleTime: 60_000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const plan = billing?.plan ?? "FREE";
+  const info = PLAN_INFO[plan];
+  const PlanIcon = info.icon;
+  const isOnTrial = !billing?.lsSubscriptionId && !!billing?.trialEndsAt;
+  const trialActive = isOnTrial && new Date(billing!.trialEndsAt!) > new Date();
+  const trialExpired = isOnTrial && !trialActive;
+  const remaining = billing?.trialEndsAt && trialActive ? daysLeft(billing.trialEndsAt) : 0;
+  const features = PLAN_FEATURES[plan] ?? [];
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-sm font-semibold mb-0.5">Current Plan</h2>
+        <p className="text-xs text-muted-foreground">Your active subscription and plan details.</p>
+      </div>
+
+      {/* Plan summary card */}
+      <div className="bg-card border rounded-xl p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <PlanIcon className={cn("h-5 w-5", info.color)} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-base">{info.label}</span>
+                {trialActive && (
+                  <Badge variant="info" data-testid="badge-trial-active">
+                    Free Trial
+                  </Badge>
+                )}
+                {trialExpired && (
+                  <Badge variant="destructive" data-testid="badge-trial-expired">
+                    Trial Expired
+                  </Badge>
+                )}
+                {billing?.lsSubscriptionStatus === "active" && (
+                  <Badge variant="success" data-testid="badge-plan-active">Active</Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {billing?.lsSubscriptionId
+                  ? `${info.price}/month`
+                  : trialActive
+                  ? `${remaining} day${remaining !== 1 ? "s" : ""} left in your free trial`
+                  : trialExpired
+                  ? "Your trial has ended — upgrade to continue"
+                  : "Free plan"}
+              </p>
+            </div>
+          </div>
+
+          <Button
+            data-testid="button-manage-plan"
+            size="sm"
+            onClick={() => navigate("/billing")}
+            className="shrink-0"
+          >
+            {billing?.lsSubscriptionId ? "Manage subscription" : "Upgrade plan"}
+            <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+          </Button>
+        </div>
+
+        {/* Trial progress bar */}
+        {trialActive && billing?.trialEndsAt && (
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Trial period</span>
+              <span>Ends {new Date(billing.trialEndsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>
+            </div>
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all"
+                style={{ width: `${Math.min(100, ((14 - remaining) / 14) * 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {remaining} of 14 days remaining
+            </p>
+          </div>
+        )}
+
+        {/* Features included */}
+        <div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">What's included</p>
+          <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-1.5">
+            {features.map((f) => (
+              <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CheckCircle className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                {f}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* CTA when on trial or expired */}
+      {!billing?.lsSubscriptionId && (
+        <div className={cn(
+          "rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3",
+          trialExpired ? "bg-destructive/5 border-destructive/30" : "bg-primary/5 border-primary/20"
+        )}>
+          <div>
+            <p className="text-sm font-semibold">
+              {trialExpired ? "Your trial has ended" : "Enjoying your trial?"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {trialExpired
+                ? "Upgrade now to regain full access to all your projects and data."
+                : `You have ${remaining} day${remaining !== 1 ? "s" : ""} left. Upgrade any time to keep full access.`}
+            </p>
+          </div>
+          <Button
+            data-testid="button-upgrade-cta"
+            size="sm"
+            variant={trialExpired ? "destructive" : "default"}
+            onClick={() => navigate("/billing")}
+            className="shrink-0"
+          >
+            View plans
+            <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function IntegrationsTab() {
   return (
@@ -94,6 +269,7 @@ export function SettingsPage() {
           return (
             <button
               key={tab.key}
+              data-testid={`tab-settings-${tab.key}`}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
                 "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0",
@@ -111,6 +287,7 @@ export function SettingsPage() {
 
       {activeTab === "workspace" && <WorkspaceSettingsForm showBranding={false} />}
       {activeTab === "branding" && <WorkspaceSettingsForm showBrandingOnly />}
+      {activeTab === "plan" && <PlanTab />}
       {activeTab === "integrations" && <IntegrationsTab />}
     </div>
   );

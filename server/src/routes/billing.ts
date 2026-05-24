@@ -49,7 +49,7 @@ router.post("/checkout", requireAuth, async (req: AuthRequest, res, next) => {
     });
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
 
-    if (workspace.plan === plan) {
+    if (workspace.plan === plan && workspace.lsSubscriptionId) {
       throw new AppError("Already subscribed to this plan", 409, "ALREADY_SUBSCRIBED");
     }
 
@@ -74,7 +74,7 @@ router.get("/portal", requireAuth, async (req: AuthRequest, res, next) => {
       select: { lsSubscriptionId: true, plan: true },
     });
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
-    if (!workspace.lsSubscriptionId || workspace.plan === "FREE") {
+    if (!workspace.lsSubscriptionId) {
       throw new AppError("No active subscription", 400, "NO_SUBSCRIPTION");
     }
 
