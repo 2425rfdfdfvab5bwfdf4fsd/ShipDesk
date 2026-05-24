@@ -5,6 +5,7 @@ const router = Router();
 
 function requireAdmin(req: Request, res: Response, next: NextFunction): void {
   const secret = process.env.ADMIN_SECRET_KEY;
+  const allowedEmail = process.env.ADMIN_EMAIL;
   if (!secret) {
     res.status(503).json({ error: "ADMIN_NOT_CONFIGURED" });
     return;
@@ -13,6 +14,13 @@ function requireAdmin(req: Request, res: Response, next: NextFunction): void {
   if (!key || key !== secret) {
     res.status(401).json({ error: "UNAUTHORIZED" });
     return;
+  }
+  if (allowedEmail) {
+    const email = (req.headers["x-admin-email"] as string | undefined)?.toLowerCase().trim();
+    if (!email || email !== allowedEmail.toLowerCase().trim()) {
+      res.status(403).json({ error: "FORBIDDEN" });
+      return;
+    }
   }
   next();
 }

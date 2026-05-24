@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, FolderKanban, FileText, DollarSign,
   LogOut, Lock, Eye, EyeOff, Shield,
 } from "lucide-react";
-import { getAdminKey, setAdminKey, clearAdminKey } from "@/lib/adminApi";
+import { getAdminKey, getAdminEmail, setAdminCredentials, clearAdminCredentials } from "@/lib/adminApi";
 import { AdminOverviewTab } from "./AdminOverviewTab";
 import { AdminUsersTab } from "./AdminUsersTab";
 import { AdminProjectsTab } from "./AdminProjectsTab";
@@ -24,14 +24,16 @@ const NAV: { id: Tab; label: string; icon: React.ElementType }[] = [
 ];
 
 function AdminLoginScreen({ onLogin }: { onLogin: () => void }) {
+  const [email, setEmail] = useState("");
   const [key, setKey] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!email.trim()) { setError("Enter your email address."); return; }
     if (!key.trim()) { setError("Enter the admin key."); return; }
-    setAdminKey(key.trim());
+    setAdminCredentials(key.trim(), email.trim().toLowerCase());
     onLogin();
   }
 
@@ -45,7 +47,19 @@ function AdminLoginScreen({ onLogin }: { onLogin: () => void }) {
           <h1 className="text-xl font-bold text-white">Admin Panel</h1>
           <p className="text-sm text-white/50 mt-1">ShipDesk internal dashboard</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="relative">
+            <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setError(""); }}
+              placeholder="Admin email address"
+              autoFocus
+              autoComplete="email"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-colors"
+            />
+          </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
             <input
@@ -53,7 +67,7 @@ function AdminLoginScreen({ onLogin }: { onLogin: () => void }) {
               value={key}
               onChange={(e) => { setKey(e.target.value); setError(""); }}
               placeholder="Admin secret key"
-              autoFocus
+              autoComplete="current-password"
               className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-colors"
             />
             <button
@@ -73,7 +87,7 @@ function AdminLoginScreen({ onLogin }: { onLogin: () => void }) {
           </button>
         </form>
         <p className="text-center text-xs text-white/25 mt-6">
-          Set <code className="font-mono bg-white/5 px-1 py-0.5 rounded">ADMIN_SECRET_KEY</code> in your environment to enable access.
+          Access is restricted to authorised accounts only.
         </p>
       </div>
     </div>
@@ -85,7 +99,7 @@ function AdminShell() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   function handleLogout() {
-    clearAdminKey();
+    clearAdminCredentials();
     window.location.reload();
   }
 
@@ -166,7 +180,7 @@ function AdminShell() {
 }
 
 export function AdminPage() {
-  const [authed, setAuthed] = useState(() => !!getAdminKey());
+  const [authed, setAuthed] = useState(() => !!getAdminKey() && !!getAdminEmail());
 
   if (!authed) {
     return <AdminLoginScreen onLogin={() => setAuthed(true)} />;
