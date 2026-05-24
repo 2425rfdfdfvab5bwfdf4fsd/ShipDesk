@@ -205,12 +205,10 @@ export function BillingPage() {
   const isOnTrial = !billing?.lsSubscriptionId && !!billing?.trialEndsAt;
   const trialActive = isOnTrial && billing?.trialEndsAt != null && new Date(billing.trialEndsAt) > new Date();
 
-  const planLabel: Record<Plan, string> = {
-    FREE: "Free",
-    STARTER: "Starter",
-    SOLO: "Solo",
-    AGENCY: "Agency",
-  };
+  // During trial show "Free Trial", otherwise show the real plan name
+  const displayLabel = isOnTrial ? "Free Trial" : { FREE: "Free", STARTER: "Starter", SOLO: "Solo", AGENCY: "Agency" }[currentPlan];
+  // Features shown: always show Starter features during trial
+  const featuresForDisplay = isOnTrial ? PLAN_FEATURES["STARTER"] : PLAN_FEATURES[currentPlan];
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-8">
@@ -225,9 +223,12 @@ export function BillingPage() {
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Current plan</p>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="text-lg font-bold">{planLabel[currentPlan]}</span>
+              <span className="text-lg font-bold">{displayLabel}</span>
               {trialActive && (
-                <Badge variant="secondary">Free Trial</Badge>
+                <Badge variant="secondary">14-Day Trial</Badge>
+              )}
+              {isOnTrial && !trialActive && (
+                <Badge variant="destructive">Expired</Badge>
               )}
               {statusInfo && !isOnTrial && (
                 <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
@@ -237,9 +238,9 @@ export function BillingPage() {
               {billing?.lsSubscriptionId
                 ? `${PLAN_PRICES[currentPlan]}/month`
                 : trialActive && billing?.trialEndsAt
-                ? `Trial ends ${new Date(billing.trialEndsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
+                ? `All Starter features included · Trial ends ${new Date(billing.trialEndsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
                 : isOnTrial
-                ? "Trial expired — choose a plan below"
+                ? "Trial expired — choose a plan below to continue"
                 : ""}
             </p>
           </div>
@@ -309,9 +310,11 @@ export function BillingPage() {
 
           {/* What's included for current plan */}
           <div className="rounded-xl border bg-card p-5">
-            <h2 className="text-sm font-semibold mb-3">What's included in your plan</h2>
+            <h2 className="text-sm font-semibold mb-3">
+              {isOnTrial ? "What's included in your free trial" : "What's included in your plan"}
+            </h2>
             <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
-              {PLAN_FEATURES[currentPlan].map((feature) => (
+              {featuresForDisplay.map((feature) => (
                 <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
                   <CheckCircle className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
                   {feature}

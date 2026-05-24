@@ -60,13 +60,19 @@ function PlanTab() {
   }
 
   const plan = billing?.plan ?? "FREE";
-  const info = PLAN_INFO[plan];
-  const PlanIcon = info.icon;
   const isOnTrial = !billing?.lsSubscriptionId && !!billing?.trialEndsAt;
   const trialActive = isOnTrial && new Date(billing!.trialEndsAt!) > new Date();
   const trialExpired = isOnTrial && !trialActive;
   const remaining = billing?.trialEndsAt && trialActive ? daysLeft(billing.trialEndsAt) : 0;
-  const features = PLAN_FEATURES[plan] ?? [];
+
+  // During trial, always show Starter features regardless of DB plan value
+  const displayPlan = isOnTrial ? "STARTER" : plan;
+  const info = PLAN_INFO[displayPlan];
+  const PlanIcon = info.icon;
+  const features = PLAN_FEATURES[displayPlan] ?? [];
+
+  // The visible plan name: "Free Trial" while on trial, otherwise the real plan name
+  const planName = trialActive ? "Free Trial" : trialExpired ? "Free Trial" : info.label;
 
   return (
     <div className="space-y-5">
@@ -84,15 +90,15 @@ function PlanTab() {
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-base">{info.label}</span>
+                <span className="font-bold text-base">{planName}</span>
                 {trialActive && (
                   <Badge variant="info" data-testid="badge-trial-active">
-                    Free Trial
+                    14-Day Trial
                   </Badge>
                 )}
                 {trialExpired && (
                   <Badge variant="destructive" data-testid="badge-trial-expired">
-                    Trial Expired
+                    Expired
                   </Badge>
                 )}
                 {billing?.lsSubscriptionStatus === "active" && (
@@ -101,9 +107,9 @@ function PlanTab() {
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {billing?.lsSubscriptionId
-                  ? `${info.price}/month`
+                  ? `${info.price}/month · All ${info.label} features included`
                   : trialActive
-                  ? `${remaining} day${remaining !== 1 ? "s" : ""} left in your free trial`
+                  ? `Includes all Starter features · ${remaining} day${remaining !== 1 ? "s" : ""} remaining`
                   : trialExpired
                   ? "Your trial has ended — upgrade to continue"
                   : "Free plan"}
