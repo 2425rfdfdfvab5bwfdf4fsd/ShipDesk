@@ -609,7 +609,7 @@ export function LandingPage() {
                         : "bg-white/10 hover:bg-white/15 text-white border border-white/15"
                     }`}
                   >
-                    Start free trial
+                    {plan.name === "Starter" ? "Start free trial" : "Get started"}
                   </Button>
                 </Link>
               </motion.div>
