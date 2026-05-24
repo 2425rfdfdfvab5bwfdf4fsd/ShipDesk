@@ -170,8 +170,9 @@ export function BillingPage() {
 
   // During trial show "Free Trial", otherwise show the real plan name
   const displayLabel = isOnTrial ? "Free Trial" : { FREE: "Free", STARTER: "Starter", SOLO: "Solo", AGENCY: "Agency" }[currentPlan];
-  // Features shown: always show Starter features during trial
-  const featuresForDisplay = isOnTrial ? PLAN_FEATURES["STARTER"] : PLAN_FEATURES[currentPlan];
+  // Without an active paid subscription always show Starter features (what the user gets on the entry plan)
+  const hasActiveSub = !!billing?.lsSubscriptionId;
+  const featuresForDisplay = hasActiveSub ? PLAN_FEATURES[currentPlan] : PLAN_FEATURES["STARTER"];
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-8">
