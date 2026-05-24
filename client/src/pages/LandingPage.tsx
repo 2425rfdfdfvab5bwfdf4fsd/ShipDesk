@@ -321,12 +321,23 @@ export function LandingPage() {
                 </Button>
               </Link>
             ) : (
-              <Link href="/sign-in">
-                <button className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/[0.06]">
-                  <LogIn className="h-3.5 w-3.5" />
-                  Sign in
-                </button>
-              </Link>
+              <>
+                <Link href="/sign-in">
+                  <button className="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/[0.06]">
+                    <LogIn className="h-3.5 w-3.5" />
+                    Sign in
+                  </button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25 h-9 px-4 text-sm font-semibold"
+                  >
+                    Start free trial
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </>
             )}
           </div>
 
@@ -710,21 +721,6 @@ export function LandingPage() {
                 </Link>
               </motion.div>
             ))}
-          </div>
-          {/* Single CTA below all plans */}
-          <div className="flex flex-col items-center mt-10 gap-3">
-            <Link href="/sign-up">
-              <Button
-                data-testid="button-start-free-trial"
-                size="lg"
-                className="gap-2 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25 px-8 h-12 text-base"
-              >
-                Start your free trial <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <p className="text-xs text-white/30">
-              14-day free trial · No credit card required · Cancel any time
-            </p>
           </div>
         </div>
       </section>
