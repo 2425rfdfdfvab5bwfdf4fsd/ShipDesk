@@ -27,7 +27,7 @@ import { QuoteForm } from "@/components/scope/QuoteForm";
 import { MessageThread } from "@/components/messages/MessageThread";
 import { FileList } from "@/components/files/FileList";
 import { useProject, useUpdateProject, useDeleteProject } from "@/hooks/useProjects";
-import { useGitHubRepos, useConnectRepo, useDisconnectRepo, useGitHubStatus, useReregisterWebhook } from "@/hooks/useGitHub";
+import { useGitHubRepos, useConnectRepo, useDisconnectRepo, useGitHubStatus, useReregisterWebhook, useWeekActivity } from "@/hooks/useGitHub";
 import { useReport, useReports, useUpdateReport, useDeleteReport, useSyncGitHubCommits } from "@/hooks/useReports";
 import { useInvoices, useMarkInvoicePaid, useDeleteInvoice } from "@/hooks/useInvoices";
 import { useScopeChanges, useSubmitQuote, useMarkScopeChangePaid } from "@/hooks/useScopeChanges";
@@ -184,6 +184,7 @@ export function ProjectDetailPage() {
   const updateReport = useUpdateReport();
   const deleteReport = useDeleteReport();
   const syncCommits = useSyncGitHubCommits();
+  const { data: weekActivity, refetch: refetchWeekActivity } = useWeekActivity(id);
   const { data: projectClients, isLoading: clientsLoading } = useProjectClients(id);
   const inviteClient = useInviteClient();
   const revokeClient = useRevokeClientAccess();
@@ -526,8 +527,12 @@ export function ProjectDetailPage() {
                       data-testid="button-sync-github"
                       onClick={async () => {
                         try {
-                          const result = await syncCommits.mutateAsync(id) as { synced: number; message: string };
-                          toast({ title: result.synced > 0 ? `Synced ${result.synced} commit(s)` : "Already up to date", description: result.message });
+                          const result = await syncCommits.mutateAsync(id) as { synced: number; branches?: number; message: string };
+                          await refetchWeekActivity();
+                          const title = result.synced > 0
+                            ? `Synced ${result.synced} commit${result.synced !== 1 ? "s" : ""}${result.branches && result.branches > 1 ? ` across ${result.branches} branches` : ""}`
+                            : "Already up to date";
+                          toast({ title, description: result.message });
                         } catch {
                           toast({ variant: "destructive", title: "Sync failed", description: "Could not fetch commits from GitHub." });
                         }
@@ -541,6 +546,21 @@ export function ProjectDetailPage() {
                 </div>
               }
             />
+            {hasGitHub && weekActivity && (
+              <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground" data-testid="text-week-activity">
+                <span className={weekActivity.commitCount > 0 ? "text-green-600 dark:text-green-400 font-medium" : ""}>
+                  {weekActivity.commitCount > 0
+                    ? `${weekActivity.commitCount} commit${weekActivity.commitCount !== 1 ? "s" : ""} ready for this week`
+                    : "No commits synced this week yet — click Sync to pull from GitHub"}
+                </span>
+                {weekActivity.commitCount > 0 && (
+                  <span className="text-muted-foreground/50">·</span>
+                )}
+                {weekActivity.commitCount > 0 && (
+                  <span>{weekActivity.weekStart} to {weekActivity.weekEnd}</span>
+                )}
+              </div>
+            )}
             {reportsLoading ? (
               <div className="space-y-2.5">
                 {[0, 1, 2].map((i) => <Skeleton key={i} className="h-20 rounded-lg" />)}

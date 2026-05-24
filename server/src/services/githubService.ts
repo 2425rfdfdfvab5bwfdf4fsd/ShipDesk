@@ -119,7 +119,7 @@ export async function getAuthenticatedUser(
   return response.data as { id: number; login: string };
 }
 
-interface GitHubCommit {
+export interface GitHubCommit {
   sha: string;
   commit: {
     message: string;
@@ -132,7 +132,8 @@ export async function fetchCommitsForWeek(
   accessTokenEncrypted: string,
   repoFullName: string,
   since: Date,
-  until: Date
+  until: Date,
+  branch?: string
 ): Promise<GitHubCommit[]> {
   const token = decrypt(accessTokenEncrypted);
   const allCommits: GitHubCommit[] = [];
@@ -144,6 +145,7 @@ export async function fetchCommitsForWeek(
       {
         headers: getHeaders(token),
         params: {
+          ...(branch ? { sha: branch } : {}),
           since: since.toISOString(),
           until: until.toISOString(),
           per_page: 100,
@@ -158,5 +160,77 @@ export async function fetchCommitsForWeek(
     page++;
   }
 
+  return allCommits;
+}
+
+export async function listRepoBranches(
+  accessTokenEncrypted: string,
+  repoFullName: string
+): Promise<string[]> {
+  const token = decrypt(accessTokenEncrypted);
+  try {
+    const response = await axios.get<{ name: string }[]>(
+      `${GITHUB_API}/repos/${repoFullName}/branches`,
+      {
+        headers: getHeaders(token),
+        params: { per_page: 100 },
+      }
+    );
+    return response.data.map((b) => b.name);
+  } catch {
+    return [];
+  }
+}
+
+export interface BranchCommit {
+  sha: string;
+  branch: string;
+  message: string;
+  authorName: string;
+  authorDate: Date;
+  login: string | null;
+}
+
+export async function fetchAllBranchCommits(
+  accessTokenEncrypted: string,
+  repoFullName: string,
+  since: Date,
+  until: Date
+): Promise<BranchCommit[]> {
+  const branches = await listRepoBranches(accessTokenEncrypted, repoFullName);
+  if (branches.length === 0) return [];
+
+  const seenShas = new Set<string>();
+  const allCommits: BranchCommit[] = [];
+
+  for (const branch of branches.slice(0, 30)) {
+    try {
+      const commits = await fetchCommitsForWeek(
+        accessTokenEncrypted,
+        repoFullName,
+        since,
+        until,
+        branch
+      );
+      for (const c of commits) {
+        if (!seenShas.has(c.sha)) {
+          seenShas.add(c.sha);
+          allCommits.push({
+            sha: c.sha,
+            branch,
+            message: c.commit.message,
+            authorName: c.commit.author.name,
+            authorDate: new Date(c.commit.author.date),
+            login: c.author?.login ?? null,
+          });
+        }
+      }
+    } catch {
+      // Skip branches with permission errors or other issues
+    }
+  }
+
+  // Sort chronologically so report events are in the right order
+  allCommits.sort((a, b) => a.authorDate.getTime() - b.authorDate.getTime());
   return allCommits;
 }

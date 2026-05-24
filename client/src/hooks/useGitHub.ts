@@ -1,6 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 
+export interface WeekActivity {
+  commitCount: number;
+  eventCount: number;
+  weekStart: string;
+  weekEnd: string;
+  webhookConfigured: boolean;
+  webhookUrl: string | null;
+}
+
 interface GitHubRepo {
   id: number;
   full_name: string;
@@ -74,5 +83,17 @@ export function useReregisterWebhook() {
     onSuccess: (_data, projectId) => {
       qc.invalidateQueries({ queryKey: ["project", projectId] });
     },
+  });
+}
+
+export function useWeekActivity(projectId: string | undefined) {
+  return useQuery<WeekActivity>({
+    queryKey: ["week-activity", projectId],
+    queryFn: () =>
+      api.get(`/api/github/week-activity/${projectId}`).then((r) => r.data),
+    enabled: !!projectId,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+    retry: false,
   });
 }
