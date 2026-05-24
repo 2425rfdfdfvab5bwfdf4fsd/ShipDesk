@@ -362,18 +362,49 @@ export function LandingPage() {
           </button>
         </div>
 
-        {/* Mobile drawer */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
+      </header>
+
+      {/* Mobile sidebar overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="md:hidden bg-[#0c0e18]/98 backdrop-blur-2xl border-t border-white/[0.08] px-5 pb-6 pt-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+
+            {/* Sidebar panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+              className="md:hidden fixed top-0 right-0 bottom-0 z-50 w-[300px] bg-[#0c0e1a] border-l border-white/[0.08] flex flex-col shadow-2xl"
             >
+              {/* Sidebar header */}
+              <div className="flex items-center justify-between px-5 h-[68px] border-b border-white/[0.07] shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <img src="/favicon.svg" alt="" className="w-5 h-5" />
+                  </div>
+                  <span className="font-bold text-[17px] tracking-tight text-white">ShipDesk</span>
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
               {/* Nav links */}
-              <div className="space-y-0.5 mb-5">
+              <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
                 {[
                   { label: "Features", href: "#features" },
                   { label: "How it works", href: "#how-it-works" },
@@ -384,22 +415,19 @@ export function LandingPage() {
                     key={href}
                     href={href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between py-3 px-3 rounded-xl text-[15px] font-medium text-white/65 hover:text-white hover:bg-white/[0.05] transition-colors"
+                    className="flex items-center justify-between py-3.5 px-3 rounded-xl text-[15px] font-medium text-white/65 hover:text-white hover:bg-white/[0.06] transition-colors"
                   >
                     {label}
                     <ChevronRight className="h-4 w-4 text-white/25" />
                   </a>
                 ))}
-              </div>
+              </nav>
 
-              {/* Divider */}
-              <div className="h-px bg-white/[0.07] mb-5" />
-
-              {/* CTA */}
-              <div className="flex flex-col gap-2.5">
+              {/* Bottom CTA */}
+              <div className="px-4 pb-8 pt-4 border-t border-white/[0.07] space-y-2.5">
                 {isSignedIn ? (
                   <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full h-11 gap-2 bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold">
+                    <Button className="w-full h-12 gap-2 bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold rounded-xl shadow-lg shadow-indigo-500/20">
                       <LayoutDashboard className="h-4 w-4" />
                       Go to Dashboard
                     </Button>
@@ -407,7 +435,7 @@ export function LandingPage() {
                 ) : (
                   <>
                     <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full h-11 gap-2 bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold shadow-lg shadow-indigo-500/20">
+                      <Button className="w-full h-12 gap-2 bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold rounded-xl shadow-lg shadow-indigo-500/25">
                         Start free trial
                         <ArrowRight className="h-4 w-4" />
                       </Button>
@@ -420,16 +448,14 @@ export function LandingPage() {
                     </Link>
                   </>
                 )}
+                <p className="text-center text-xs text-white/25 pt-1">
+                  14-day free trial · No credit card required
+                </p>
               </div>
-
-              {/* Footer note */}
-              <p className="mt-5 text-center text-xs text-white/25">
-                14-day free trial · No credit card required
-              </p>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Hero */}
       <section className="relative pt-16 sm:pt-20 md:pt-24 pb-14 sm:pb-20 px-4 sm:px-6 overflow-hidden">
