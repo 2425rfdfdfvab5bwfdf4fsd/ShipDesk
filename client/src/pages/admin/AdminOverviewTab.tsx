@@ -1,29 +1,69 @@
 import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/lib/adminApi";
-import { Users, Building2, FolderKanban, FileText, DollarSign, Github, MessageSquare, GitMerge, CheckCircle, TrendingUp } from "lucide-react";
+import {
+  Users, FolderKanban, FileText, DollarSign, Github,
+  MessageSquare, GitMerge, Building2, UserCheck, TrendingUp,
+} from "lucide-react";
 
 interface Stats {
   users: number; workspaces: number; projects: number; activeProjects: number;
   reports: number; publishedReports: number; invoices: number; paidInvoices: number;
   totalRevenue: number; clients: number; githubConnections: number;
-  scopeChanges: number; messages: number;
+  scopeChanges: number; messages: number; onboardedWorkspaces: number;
+  planDistribution: { FREE: number; STARTER: number; SOLO: number; AGENCY: number };
 }
 
-const STAT_CARDS = (s: Stats) => [
-  { label: "Total Users", value: s.users, icon: Users, color: "text-indigo-400", bg: "bg-indigo-500/10 border-indigo-500/20" },
-  { label: "Workspaces", value: s.workspaces, icon: Building2, color: "text-violet-400", bg: "bg-violet-500/10 border-violet-500/20" },
-  { label: "GitHub Connected", value: s.githubConnections, icon: Github, color: "text-gray-400", bg: "bg-white/5 border-white/10" },
-  { label: "Clients", value: s.clients, icon: Users, color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
-  { label: "Total Projects", value: s.projects, icon: FolderKanban, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
-  { label: "Active Projects", value: s.activeProjects, icon: TrendingUp, color: "text-green-400", bg: "bg-green-500/10 border-green-500/20" },
-  { label: "Total Reports", value: s.reports, icon: FileText, color: "text-cyan-400", bg: "bg-cyan-500/10 border-cyan-500/20" },
-  { label: "Published Reports", value: s.publishedReports, icon: CheckCircle, color: "text-teal-400", bg: "bg-teal-500/10 border-teal-500/20" },
-  { label: "Total Invoices", value: s.invoices, icon: DollarSign, color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
-  { label: "Paid Invoices", value: s.paidInvoices, icon: CheckCircle, color: "text-orange-400", bg: "bg-orange-500/10 border-orange-500/20" },
-  { label: "Revenue Collected", value: `$${s.totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: DollarSign, color: "text-pink-400", bg: "bg-pink-500/10 border-pink-500/20" },
-  { label: "Scope Changes", value: s.scopeChanges, icon: GitMerge, color: "text-rose-400", bg: "bg-rose-500/10 border-rose-500/20" },
-  { label: "Messages Sent", value: s.messages, icon: MessageSquare, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20" },
-];
+const PLAN_CONFIG = [
+  { key: "FREE",    label: "Free",    color: "bg-white/30",       text: "text-white/60" },
+  { key: "STARTER", label: "Starter", color: "bg-blue-500",       text: "text-blue-400" },
+  { key: "SOLO",    label: "Solo",    color: "bg-indigo-500",     text: "text-indigo-400" },
+  { key: "AGENCY",  label: "Agency",  color: "bg-purple-500",     text: "text-purple-400" },
+] as const;
+
+function pct(n: number, total: number) {
+  if (!total) return 0;
+  return Math.round((n / total) * 100);
+}
+
+function HealthBar({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-white/50">{label}</span>
+        <span className="text-sm font-bold text-white">{value}%</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${Math.min(value, 100)}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function HeroCard({
+  label, value, icon: Icon, color, bg, sub,
+}: {
+  label: string; value: string | number; icon: typeof Users;
+  color: string; bg: string; sub?: string;
+}) {
+  return (
+    <div className={`rounded-2xl border p-5 flex flex-col gap-3 ${bg}`}>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">{label}</span>
+        <div className={`p-2 rounded-lg ${bg} border ${bg.replace("bg-", "border-").replace("/10", "/20")}`}>
+          <Icon className={`h-4 w-4 ${color}`} />
+        </div>
+      </div>
+      <div>
+        <p className={`text-3xl font-bold tracking-tight ${color}`}>{value}</p>
+        {sub && <p className="text-xs text-white/40 mt-0.5">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+function SkeletonCard() {
+  return <div className="rounded-2xl border border-white/10 bg-white/5 h-28 animate-pulse" />;
+}
 
 export function AdminOverviewTab() {
   const { data: stats, isLoading, isError } = useQuery<Stats>({
@@ -34,40 +74,163 @@ export function AdminOverviewTab() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
-        ))}
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 h-40 animate-pulse" />
+        <div className="grid grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+        </div>
       </div>
     );
   }
 
   if (isError || !stats) {
-    return <p className="text-red-400 text-sm">Failed to load stats. Check your admin key and try again.</p>;
+    return (
+      <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
+        <p className="text-red-400 text-sm font-medium">Failed to load stats. Check your auth token and try again.</p>
+      </div>
+    );
   }
 
-  const cards = STAT_CARDS(stats);
+  const { planDistribution: pd, workspaces } = stats;
+  const totalPlans = (pd.FREE ?? 0) + (pd.STARTER ?? 0) + (pd.SOLO ?? 0) + (pd.AGENCY ?? 0);
+  const onboardingRate = pct(stats.onboardedWorkspaces, workspaces);
+  const githubRate = pct(stats.githubConnections, workspaces);
+  const publishRate = pct(stats.publishedReports, stats.reports);
 
   return (
     <div className="space-y-6">
+
+      {/* Page heading */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-1">Platform Overview</h2>
-        <p className="text-sm text-white/50">Live stats across all tenants</p>
+        <h2 className="text-lg font-semibold text-white">Platform Overview</h2>
+        <p className="text-sm text-white/40 mt-0.5">Live metrics across all tenants</p>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div key={card.label} className={`rounded-xl border p-4 ${card.bg}`}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-white/50 font-medium">{card.label}</span>
-                <Icon className={`h-4 w-4 ${card.color}`} />
+
+      {/* ── Hero KPIs ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <HeroCard
+          label="Total Users" value={stats.users.toLocaleString()}
+          icon={Users} color="text-indigo-400" bg="bg-indigo-500/10"
+          sub={`${workspaces} workspace${workspaces !== 1 ? "s" : ""}`}
+        />
+        <HeroCard
+          label="Active Projects" value={stats.activeProjects.toLocaleString()}
+          icon={FolderKanban} color="text-emerald-400" bg="bg-emerald-500/10"
+          sub={`of ${stats.projects} total`}
+        />
+        <HeroCard
+          label="Published Reports" value={stats.publishedReports.toLocaleString()}
+          icon={FileText} color="text-cyan-400" bg="bg-cyan-500/10"
+          sub={`of ${stats.reports} generated`}
+        />
+        <HeroCard
+          label="Revenue Collected"
+          value={`$${stats.totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          icon={DollarSign} color="text-amber-400" bg="bg-amber-500/10"
+          sub={`${stats.paidInvoices} paid invoice${stats.paidInvoices !== 1 ? "s" : ""}`}
+        />
+      </div>
+
+      {/* ── Plan Distribution ── */}
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-white">Plan Distribution</h3>
+            <p className="text-xs text-white/40 mt-0.5">{totalPlans} workspace{totalPlans !== 1 ? "s" : ""} across all tiers</p>
+          </div>
+          <TrendingUp className="h-4 w-4 text-white/20" />
+        </div>
+
+        {/* Segmented bar */}
+        <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
+          {PLAN_CONFIG.map(({ key, color }) => {
+            const count = pd[key] ?? 0;
+            const width = pct(count, totalPlans);
+            if (!width) return null;
+            return (
+              <div
+                key={key}
+                className={`${color} transition-all`}
+                style={{ width: `${width}%` }}
+                title={`${key}: ${count}`}
+              />
+            );
+          })}
+        </div>
+
+        {/* Legend */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {PLAN_CONFIG.map(({ key, label, color, text }) => {
+            const count = pd[key] ?? 0;
+            const p = pct(count, totalPlans);
+            return (
+              <div key={key} className="flex items-center gap-2.5">
+                <div className={`w-2.5 h-2.5 rounded-sm flex-shrink-0 ${color}`} />
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className={`text-sm font-bold ${text}`}>{count}</span>
+                    <span className="text-xs text-white/30">{p}%</span>
+                  </div>
+                  <p className="text-xs text-white/40 leading-none mt-0.5">{label}</p>
+                </div>
               </div>
-              <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
+
+      {/* ── Platform Health ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4 text-emerald-400" />
+            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Onboarding</span>
+          </div>
+          <HealthBar label="Workspaces onboarded" value={onboardingRate} color="bg-emerald-500" />
+          <p className="text-xs text-white/30">{stats.onboardedWorkspaces} of {workspaces} completed setup</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Github className="h-4 w-4 text-white/60" />
+            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">GitHub</span>
+          </div>
+          <HealthBar label="GitHub connected" value={githubRate} color="bg-white/40" />
+          <p className="text-xs text-white/30">{stats.githubConnections} of {workspaces} connected</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-cyan-400" />
+            <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">Reports</span>
+          </div>
+          <HealthBar label="Reports published" value={publishRate} color="bg-cyan-500" />
+          <p className="text-xs text-white/30">{stats.publishedReports} of {stats.reports} published</p>
+        </div>
+      </div>
+
+      {/* ── Secondary metrics ── */}
+      <div>
+        <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-3">Activity</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            { label: "Clients", value: stats.clients, icon: Users },
+            { label: "Messages", value: stats.messages, icon: MessageSquare },
+            { label: "Scope Changes", value: stats.scopeChanges, icon: GitMerge },
+            { label: "Total Invoices", value: stats.invoices, icon: DollarSign },
+            { label: "All Projects", value: stats.projects, icon: FolderKanban },
+            { label: "Workspaces", value: stats.workspaces, icon: Building2 },
+          ].map(({ label, value, icon: Icon }) => (
+            <div key={label} className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <Icon className="h-3.5 w-3.5 text-white/20 mb-2" />
+              <p className="text-lg font-bold text-white">{value.toLocaleString()}</p>
+              <p className="text-[11px] text-white/40 mt-0.5 leading-tight">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }

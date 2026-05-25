@@ -44,6 +44,8 @@ router.get("/stats", ...adminGuard, async (_req, res, next) => {
       githubConnectionCount,
       scopeChangeCount,
       messageCount,
+      onboardedCount,
+      planDistributionRaw,
     ] = await Promise.all([
       db.user.count(),
       db.workspace.count(),
@@ -58,7 +60,14 @@ router.get("/stats", ...adminGuard, async (_req, res, next) => {
       db.gitHubConnection.count(),
       db.scopeChange.count(),
       db.message.count(),
+      db.workspace.count({ where: { onboardingComplete: true } }),
+      db.workspace.groupBy({ by: ["plan"], _count: { _all: true } }),
     ]);
+
+    const planDistribution: Record<string, number> = { FREE: 0, STARTER: 0, SOLO: 0, AGENCY: 0 };
+    for (const row of planDistributionRaw) {
+      planDistribution[row.plan] = row._count._all;
+    }
 
     res.json({
       users: userCount,
@@ -74,6 +83,8 @@ router.get("/stats", ...adminGuard, async (_req, res, next) => {
       githubConnections: githubConnectionCount,
       scopeChanges: scopeChangeCount,
       messages: messageCount,
+      onboardedWorkspaces: onboardedCount,
+      planDistribution,
     });
   } catch (err) {
     next(err);
@@ -86,8 +97,14 @@ router.get("/users", ...adminGuard, async (req, res, next) => {
     const limit = 20;
     const skip = (page - 1) * limit;
     const search = (req.query.search as string) || "";
+    const plan = (req.query.plan as string) || "";
 
-    const where = search
+    const validPlans = ["FREE", "STARTER", "SOLO", "AGENCY"];
+    const planFilter = validPlans.includes(plan)
+      ? { plan: plan as "FREE" | "STARTER" | "SOLO" | "AGENCY" }
+      : {};
+
+    const baseWhere = search
       ? {
           OR: [
             { email: { contains: search, mode: "insensitive" as const } },
@@ -95,6 +112,11 @@ router.get("/users", ...adminGuard, async (req, res, next) => {
           ],
         }
       : {};
+
+    const where =
+      Object.keys(planFilter).length > 0
+        ? { ...baseWhere, workspace: planFilter }
+        : baseWhere;
 
     const [users, total] = await Promise.all([
       db.user.findMany({
@@ -153,9 +175,20 @@ router.get("/reports", ...adminGuard, async (req, res, next) => {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = 20;
     const skip = (page - 1) * limit;
+    const search = (req.query.search as string) || "";
+
+    const where = search
+      ? {
+          OR: [
+            { title: { contains: search, mode: "insensitive" as const } },
+            { project: { name: { contains: search, mode: "insensitive" as const } } },
+          ],
+        }
+      : {};
 
     const [reports, total] = await Promise.all([
       db.report.findMany({
+        where,
         skip,
         take: limit,
         orderBy: { generatedAt: "desc" },
@@ -168,7 +201,7 @@ router.get("/reports", ...adminGuard, async (req, res, next) => {
           },
         },
       }),
-      db.report.count(),
+      db.report.count({ where }),
     ]);
 
     res.json({ reports, total, page, pages: Math.ceil(total / limit) });
