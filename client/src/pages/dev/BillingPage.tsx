@@ -412,16 +412,6 @@ export function BillingPage() {
                     ? `Grant expired · ${adminGrantEndFormatted}`
                     : `${adminGrantDaysLeft} days remaining · Ends ${adminGrantEndFormatted}`}
                 </div>
-                {!adminGrantExpired && (
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        adminGrantDaysLeft <= 7 ? "bg-red-400" : "bg-indigo-500/60"
-                      }`}
-                      style={{ width: `${adminGrantPct}%` }}
-                    />
-                  </div>
-                )}
               </div>
             )}
 

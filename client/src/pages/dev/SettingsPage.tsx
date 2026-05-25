@@ -161,19 +161,6 @@ function PlanTab() {
                   : `Ends ${adminGrantEndFormatted}`}
               </span>
             </div>
-            {!adminGrantExpired && (
-              <>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${adminGrantDaysLeft <= 7 ? "bg-red-400" : "bg-indigo-500/60"}`}
-                    style={{ width: `${Math.max(2, Math.round((adminGrantDaysLeft / GRANT_CYCLE) * 100))}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {adminGrantDaysLeft} days remaining
-                </p>
-              </>
-            )}
           </div>
         )}
 
