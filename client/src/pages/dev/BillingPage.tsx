@@ -45,6 +45,9 @@ function PlanCard({
   isAdminGranted,
   onUpgrade,
   isLoading,
+  lsRenewsAt,
+  lsEndsAt,
+  lsSubscriptionStatus,
 }: {
   plan: "STARTER" | "SOLO" | "AGENCY";
   currentPlan: "STARTER" | "SOLO" | "AGENCY";
@@ -52,12 +55,28 @@ function PlanCard({
   isAdminGranted: boolean;
   onUpgrade: (plan: "STARTER" | "SOLO" | "AGENCY") => void;
   isLoading: boolean;
+  lsRenewsAt: string | null;
+  lsEndsAt: string | null;
+  lsSubscriptionStatus: string | null;
 }) {
   const isCurrentPlan = currentPlan === plan;
   const isPaidCurrentPlan = isCurrentPlan && hasActiveSubscription;
   const isAdminCurrentPlan = isCurrentPlan && isAdminGranted;
   const isHighlighted = plan === "AGENCY";
   const features = PLAN_FEATURES[plan];
+
+  // Renewal / expiry info — only for the active current plan card
+  const isCancelled = lsSubscriptionStatus === "cancelled" || lsSubscriptionStatus === "expired";
+  const dateForProgress = isPaidCurrentPlan ? (isCancelled ? lsEndsAt : lsRenewsAt) : null;
+  const daysRemaining = dateForProgress ? daysLeft(dateForProgress) : null;
+  // Estimate billing period as 30 days for the progress bar
+  const PERIOD = 30;
+  const progressPct = daysRemaining !== null
+    ? Math.max(3, Math.min(100, Math.round((daysRemaining / PERIOD) * 100)))
+    : 0;
+  const renewDateFormatted = dateForProgress
+    ? new Date(dateForProgress).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    : "";
 
   return (
     <div
@@ -103,6 +122,29 @@ function PlanCard({
           <span className="text-3xl font-bold">{PLAN_PRICES[plan]}</span>
           <span className="text-muted-foreground text-sm">/month</span>
         </div>
+
+        {/* Remaining days progress — only on current paid plan */}
+        {isPaidCurrentPlan && daysRemaining !== null && (
+          <div className="mt-3 space-y-1.5">
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  isCancelled && daysRemaining <= 7 ? "bg-red-400" : "bg-primary/60"
+                }`}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <p className={`text-[11px] font-medium ${
+              isCancelled && daysRemaining <= 7
+                ? "text-red-500 dark:text-red-400"
+                : "text-muted-foreground"
+            }`}>
+              {isCancelled
+                ? `Access ends in ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} · ${renewDateFormatted}`
+                : `${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining · renews ${renewDateFormatted}`}
+            </p>
+          </div>
+        )}
       </div>
 
       <ul className="space-y-2 mb-6">
@@ -135,7 +177,7 @@ function PlanCard({
           "Current plan"
         ) : (
           <>
-            {hasActiveSubscription ? "Switch plan" : "Subscribe"}
+            {hasActiveSubscription ? "Switch plan" : plan === "STARTER" ? "Free trial · 14 days" : "Get started"}
             <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
           </>
         )}
@@ -359,6 +401,9 @@ export function BillingPage() {
                   isAdminGranted={isAdminGranted}
                   onUpgrade={handleUpgrade}
                   isLoading={checkingOut === plan}
+                  lsRenewsAt={billing?.lsRenewsAt ?? null}
+                  lsEndsAt={billing?.lsEndsAt ?? null}
+                  lsSubscriptionStatus={billing?.lsSubscriptionStatus ?? null}
                 />
               ))}
             </div>
