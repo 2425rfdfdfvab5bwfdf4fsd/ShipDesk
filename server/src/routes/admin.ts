@@ -31,7 +31,7 @@ async function requireAdminEmail(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const rawAllowed = process.env.ADMIN_EMAIL ?? FALLBACK_ADMIN_EMAIL;
+  const rawAllowed = process.env.ADMIN_EMAIL || FALLBACK_ADMIN_EMAIL;
   const allowedEmail = normalizeEmail(rawAllowed);
   try {
     // Ask Clerk directly for the user's current email — don't trust the DB cache.
