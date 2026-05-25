@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { adminApi } from "@/lib/adminApi";
+import { adminApi, getAdminApiDiagnostics } from "@/lib/adminApi";
+import { AxiosError } from "axios";
 import {
   Users, FolderKanban, FileText, DollarSign, Github,
   MessageSquare, GitMerge, Building2, UserCheck, TrendingUp,
@@ -80,10 +81,11 @@ function SkeletonCard({ tall }: { tall?: boolean }) {
 }
 
 export function AdminOverviewTab() {
-  const { data: stats, isLoading, isError } = useQuery<Stats>({
+  const { data: stats, isLoading, isError, error } = useQuery<Stats, AxiosError>({
     queryKey: ["admin-stats"],
     queryFn: () => adminApi.get("/api/admin/stats").then((r) => r.data),
     staleTime: 60_000,
+    retry: 1,
   });
 
   if (isLoading) {
@@ -101,9 +103,48 @@ export function AdminOverviewTab() {
   }
 
   if (isError || !stats) {
+    const status = (error as AxiosError)?.response?.status;
+    const diag = getAdminApiDiagnostics();
+
+    let headline = "Failed to load stats";
+    let detail = "An unexpected error occurred.";
+    let hint = "";
+
+    if (!status) {
+      headline = "Cannot reach the backend server";
+      detail = "The request never got a response — this is usually a network error or CORS block.";
+      hint = diag.viteApiBaseUrl === "(not set)"
+        ? "VITE_API_BASE_URL is not set in this build. Add it to Vercel environment variables and redeploy."
+        : `Backend URL in this build: ${diag.baseUrl}. Make sure Railway is running and that URL is correct.`;
+    } else if (status === 401) {
+      headline = "Authentication failed (401)";
+      detail = "The server rejected the Clerk token. This usually means CLERK_SECRET_KEY on Railway doesn't match the frontend's publishable key.";
+      hint = "Double-check that CLERK_SECRET_KEY in Railway and VITE_CLERK_PUBLISHABLE_KEY in Vercel are from the same Clerk instance.";
+    } else if (status === 403) {
+      headline = "Access denied (403)";
+      detail = "You're authenticated but your account email doesn't match the ADMIN_EMAIL set on Railway.";
+      hint = `Make sure ADMIN_EMAIL on Railway is exactly: saifkhan13483@gmail.com`;
+    } else if (status === 404) {
+      headline = "API endpoint not found (404)";
+      detail = "The backend responded but couldn't find /api/admin/stats.";
+      hint = `Backend URL in this build: ${diag.baseUrl}. Verify the Railway deployment is up to date.`;
+    } else {
+      headline = `Server error (${status})`;
+      detail = "The server returned an error. Check Railway logs for details.";
+    }
+
     return (
-      <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
-        <p className="text-red-400 text-sm font-medium">Failed to load stats. Check your auth token and try again.</p>
+      <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 space-y-3">
+        <p className="text-red-400 text-sm font-semibold">{headline}</p>
+        <p className="text-white/50 text-xs">{detail}</p>
+        {hint && (
+          <p className="text-white/40 text-xs font-mono bg-white/5 rounded-lg px-3 py-2 border border-white/10 break-all">
+            {hint}
+          </p>
+        )}
+        <p className="text-white/25 text-[11px]">
+          Build target: {diag.baseUrl || "(same origin — VITE_API_BASE_URL not set)"}
+        </p>
       </div>
     );
   }
