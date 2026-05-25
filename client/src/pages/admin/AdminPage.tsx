@@ -1,7 +1,7 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useLocation } from "wouter";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard, Users, FolderKanban, FileText, DollarSign,
   LogOut, Loader2, ShieldOff, RefreshCw, ArrowLeft,
@@ -45,18 +45,19 @@ function NavBadge({ count }: { count?: number }) {
   );
 }
 
-function AdminShell() {
-  const { getToken, signOut } = useAuth();
-  const { user } = useUser();
-  const [tab, setTab] = useState<Tab>("overview");
+// ── Inner shell — lives INSIDE <QueryClientProvider> so queries use adminQueryClient ──
+function AdminShellInner({
+  tab, setTab, user, signOut,
+}: {
+  tab: Tab;
+  setTab: (t: Tab) => void;
+  user: ReturnType<typeof useUser>["user"];
+  signOut: () => void;
+}) {
+  const qc = useQueryClient();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  useEffect(() => {
-    setAdminTokenGetter(getToken);
-    return () => setAdminTokenGetter(async () => null);
-  }, [getToken]);
-
+  // Stats query — runs here, INSIDE the QueryClientProvider, token already set
   const { data: stats } = useQuery<Stats>({
     queryKey: ["admin-stats"],
     queryFn: () => adminApi.get("/api/admin/stats").then((r) => r.data),
@@ -71,8 +72,7 @@ function AdminShell() {
   };
 
   const handleRefresh = () => {
-    adminQueryClient.invalidateQueries();
-    setLastRefresh(new Date());
+    qc.invalidateQueries();
   };
 
   const SidebarContent = () => (
@@ -96,7 +96,6 @@ function AdminShell() {
       </nav>
 
       <div className="p-3 border-t border-white/[0.07] space-y-1">
-        {/* User info */}
         {user && (
           <div className="flex items-center gap-2.5 px-3 py-2 mb-1">
             {user.imageUrl ? (
@@ -116,7 +115,6 @@ function AdminShell() {
         <button
           onClick={handleRefresh}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-white/35 hover:text-white/60 hover:bg-white/[0.04] transition-colors"
-          title={`Last refreshed: ${lastRefresh.toLocaleTimeString()}`}
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Refresh data
@@ -134,65 +132,91 @@ function AdminShell() {
   );
 
   return (
-    <QueryClientProvider client={adminQueryClient}>
-      <div className="min-h-screen bg-[#06080f] text-white flex">
+    <div className="min-h-screen bg-[#06080f] text-white flex">
 
-        {/* Desktop sidebar */}
-        <aside className="w-56 border-r border-white/[0.07] flex-col flex-shrink-0 hidden lg:flex">
-          <div className="h-14 flex items-center gap-2.5 px-4 border-b border-white/[0.07]">
-            <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-              <LayoutDashboard className="h-3.5 w-3.5 text-indigo-400" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="font-bold text-sm block leading-none text-white">ShipDesk</span>
-              <span className="text-[10px] text-indigo-400 font-semibold tracking-wide">ADMIN</span>
-            </div>
+      {/* Desktop sidebar */}
+      <aside className="w-56 border-r border-white/[0.07] flex-col flex-shrink-0 hidden lg:flex">
+        <div className="h-14 flex items-center gap-2.5 px-4 border-b border-white/[0.07]">
+          <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+            <LayoutDashboard className="h-3.5 w-3.5 text-indigo-400" />
           </div>
-          {/* Back to main app */}
-          <a
-            href="/dashboard"
-            className="mx-3 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-white/40 hover:text-white/70 hover:bg-white/[0.05] transition-colors border border-white/[0.06]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5 flex-shrink-0" />
-            Back to app
-          </a>
-          <SidebarContent />
-        </aside>
-
-        {/* Mobile top bar */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-[#06080f]/95 border-b border-white/[0.07] backdrop-blur-xl flex items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-              <LayoutDashboard className="h-3 w-3 text-indigo-400" />
-            </div>
-            <span className="font-bold text-sm">ShipDesk <span className="text-indigo-400">Admin</span></span>
+          <div className="flex-1 min-w-0">
+            <span className="font-bold text-sm block leading-none text-white">ShipDesk</span>
+            <span className="text-[10px] text-indigo-400 font-semibold tracking-wide">ADMIN</span>
           </div>
-          <button onClick={() => setMobileNavOpen(!mobileNavOpen)} className="p-2 text-white/50 hover:text-white transition-colors">
-            <LayoutDashboard className="h-5 w-5" />
-          </button>
         </div>
+        {/* Back to main app */}
+        <a
+          href="/dashboard"
+          className="mx-3 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-white/40 hover:text-white/70 hover:bg-white/[0.05] transition-colors border border-white/[0.06]"
+        >
+          <ArrowLeft className="h-3.5 w-3.5 flex-shrink-0" />
+          Back to app
+        </a>
+        <SidebarContent />
+      </aside>
 
-        {/* Mobile nav drawer */}
-        {mobileNavOpen && (
-          <div className="lg:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)}>
-            <div className="absolute left-0 top-14 bottom-0 w-56 bg-[#0d0f18] border-r border-white/[0.07] flex flex-col" onClick={(e) => e.stopPropagation()}>
-              <SidebarContent />
-            </div>
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-[#06080f]/95 border-b border-white/[0.07] backdrop-blur-xl flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+            <LayoutDashboard className="h-3 w-3 text-indigo-400" />
           </div>
-        )}
-
-        {/* Main content */}
-        <main className="flex-1 min-w-0 overflow-auto pt-14 lg:pt-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-            {tab === "overview"  && <AdminOverviewTab />}
-            {tab === "users"     && <AdminUsersTab />}
-            {tab === "projects"  && <AdminProjectsTab />}
-            {tab === "reports"   && <AdminReportsTab />}
-            {tab === "invoices"  && <AdminInvoicesTab />}
-          </div>
-        </main>
-
+          <span className="font-bold text-sm">ShipDesk <span className="text-indigo-400">Admin</span></span>
+        </div>
+        <button onClick={() => setMobileNavOpen(!mobileNavOpen)} className="p-2 text-white/50 hover:text-white transition-colors">
+          <LayoutDashboard className="h-5 w-5" />
+        </button>
       </div>
+
+      {/* Mobile nav drawer */}
+      {mobileNavOpen && (
+        <div className="lg:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)}>
+          <div className="absolute left-0 top-14 bottom-0 w-56 bg-[#0d0f18] border-r border-white/[0.07] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <SidebarContent />
+          </div>
+        </div>
+      )}
+
+      {/* Main content */}
+      <main className="flex-1 min-w-0 overflow-auto pt-14 lg:pt-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+          {tab === "overview"  && <AdminOverviewTab />}
+          {tab === "users"     && <AdminUsersTab />}
+          {tab === "projects"  && <AdminProjectsTab />}
+          {tab === "reports"   && <AdminReportsTab />}
+          {tab === "invoices"  && <AdminInvoicesTab />}
+        </div>
+      </main>
+
+    </div>
+  );
+}
+
+// ── Outer shell — sets the token synchronously, then hands off to inner shell ──
+function AdminShell() {
+  const { getToken, signOut } = useAuth();
+  const { user } = useUser();
+  const [tab, setTab] = useState<Tab>("overview");
+  // Set the token getter SYNCHRONOUSLY at render time so it's available
+  // before any child query fires on mount. useEffect would be too late.
+  setAdminTokenGetter(getToken);
+
+  // Cleanup only when the component unmounts
+  useEffect(() => {
+    return () => {
+      setAdminTokenGetter(async () => null);
+    };
+  }, []);
+
+  return (
+    <QueryClientProvider client={adminQueryClient}>
+      <AdminShellInner
+        tab={tab}
+        setTab={setTab}
+        user={user}
+        signOut={signOut}
+      />
     </QueryClientProvider>
   );
 }
