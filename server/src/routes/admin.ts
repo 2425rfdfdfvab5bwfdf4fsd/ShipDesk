@@ -1,4 +1,5 @@
 import { Router, Response, NextFunction } from "express";
+import { createClerkClient } from "@clerk/backend";
 import { db } from "../lib/prisma.js";
 import { requireAuth, AuthRequest } from "../middleware/auth.js";
 
@@ -8,6 +9,14 @@ const router = Router();
 // This matches the email hardcoded in AdminPage.tsx and AppShell.tsx.
 const FALLBACK_ADMIN_EMAIL = "saifkhan13483@gmail.com";
 
+let _clerkClient: ReturnType<typeof createClerkClient> | null = null;
+function getClerkClient() {
+  if (!_clerkClient) {
+    _clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+  }
+  return _clerkClient;
+}
+
 async function requireAdminEmail(
   req: AuthRequest,
   res: Response,
@@ -15,9 +24,23 @@ async function requireAdminEmail(
 ): Promise<void> {
   const allowedEmail = (process.env.ADMIN_EMAIL ?? FALLBACK_ADMIN_EMAIL).toLowerCase().trim();
   try {
-    const user = await db.user.findUnique({ where: { id: req.userId } });
-    if (!user || user.email.toLowerCase().trim() !== allowedEmail) {
-      res.status(403).json({ error: "FORBIDDEN" });
+    // Ask Clerk directly for the user's current email — don't trust the DB cache.
+    const clerkUser = await getClerkClient().users.getUser(req.clerkUserId!);
+    const primaryAddr = clerkUser.emailAddresses.find(
+      (e) => e.id === clerkUser.primaryEmailAddressId
+    );
+    const userEmail = (
+      primaryAddr?.emailAddress ||
+      clerkUser.emailAddresses[0]?.emailAddress ||
+      ""
+    ).toLowerCase().trim();
+
+    console.log(
+      `[requireAdminEmail] clerkId=${req.clerkUserId} email="${userEmail}" allowed="${allowedEmail}" match=${userEmail === allowedEmail}`
+    );
+
+    if (!userEmail || userEmail !== allowedEmail) {
+      res.status(403).json({ error: "FORBIDDEN", userEmail });
       return;
     }
     next();

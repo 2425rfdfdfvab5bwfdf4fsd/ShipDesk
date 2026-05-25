@@ -121,9 +121,15 @@ export function AdminOverviewTab() {
       detail = "The server rejected the Clerk token. This usually means CLERK_SECRET_KEY on Railway doesn't match the frontend's publishable key.";
       hint = "Double-check that CLERK_SECRET_KEY in Railway and VITE_CLERK_PUBLISHABLE_KEY in Vercel are from the same Clerk instance.";
     } else if (status === 403) {
+      const responseData = (error as AxiosError)?.response?.data as Record<string, string> | undefined;
+      const clerkEmail = responseData?.userEmail;
       headline = "Access denied (403)";
-      detail = "You're authenticated but your account email doesn't match the ADMIN_EMAIL set on Railway.";
-      hint = `Make sure ADMIN_EMAIL on Railway is exactly: saifkhan13483@gmail.com`;
+      detail = clerkEmail
+        ? `Your Clerk account email is "${clerkEmail}" but the server expects "saifkhan13483@gmail.com".`
+        : "You're authenticated but your Clerk email doesn't match the allowed admin email.";
+      hint = clerkEmail
+        ? `To fix: either update ADMIN_EMAIL on Railway to "${clerkEmail}", or ensure you're signed in with saifkhan13483@gmail.com.`
+        : `Make sure you're signed into Clerk with: saifkhan13483@gmail.com`;
     } else if (status === 404) {
       headline = "API endpoint not found (404)";
       detail = "The backend responded but couldn't find /api/admin/stats.";
