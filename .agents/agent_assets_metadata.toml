@@ -12,3 +12,9 @@ id = "SBpAGlnXthBpiVFIdecf-"
 uri = "file://CLERK_SETUP.md"
 type = "text"
 title = "Clerk Setup Guide — ShipDesk"
+
+[[outputs]]
+id = "YZMcpdphLPGdwQiKZnrsI"
+uri = "file://PRICING_AND_FEATURES.md"
+type = "text"
+title = "ShipDesk — Pricing & Platform Features v1.0"
