@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, Users, FolderKanban, FileText, DollarSign,
-  LogOut, Loader2, ShieldOff, RefreshCw,
+  LogOut, Loader2, ShieldOff, RefreshCw, ArrowLeft,
 } from "lucide-react";
 import { setAdminTokenGetter, adminApi } from "@/lib/adminApi";
 import { AdminOverviewTab } from "./AdminOverviewTab";
@@ -143,11 +143,19 @@ function AdminShell() {
             <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
               <LayoutDashboard className="h-3.5 w-3.5 text-indigo-400" />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <span className="font-bold text-sm block leading-none text-white">ShipDesk</span>
               <span className="text-[10px] text-indigo-400 font-semibold tracking-wide">ADMIN</span>
             </div>
           </div>
+          {/* Back to main app */}
+          <a
+            href="/dashboard"
+            className="mx-3 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-white/40 hover:text-white/70 hover:bg-white/[0.05] transition-colors border border-white/[0.06]"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 flex-shrink-0" />
+            Back to app
+          </a>
           <SidebarContent />
         </aside>
 

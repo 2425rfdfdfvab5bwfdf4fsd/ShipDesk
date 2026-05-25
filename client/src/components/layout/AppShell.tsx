@@ -3,11 +3,14 @@ import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import {
   LayoutDashboard, DollarSign, GitMerge, Settings,
-  Menu, X, Sun, Moon, LogOut, MessageSquare, CreditCard, Lock
+  Menu, X, Sun, Moon, LogOut, MessageSquare, CreditCard, Lock, ShieldCheck,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useWorkspace, useUnreadMessageCount } from "@/hooks/useWorkspace";
+
+const ADMIN_EMAIL = "saifkhan13483@gmail.com";
 
 type EffectivePlan = "FREE" | "STARTER" | "SOLO" | "AGENCY";
 
@@ -192,6 +195,20 @@ export function AppShell({ children }: AppShellProps) {
             );
           })}
         </nav>
+
+        {/* Admin panel link — only for admin user */}
+        {user?.primaryEmailAddress?.emailAddress?.toLowerCase() === ADMIN_EMAIL && (
+          <div className="px-3 pb-1">
+            <a
+              href="/admin"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 transition-colors border border-indigo-500/20 w-full"
+            >
+              <ShieldCheck className="h-4 w-4 flex-shrink-0" />
+              <span className="flex-1">Admin Panel</span>
+              <span className="text-[9px] font-bold uppercase bg-indigo-500/20 px-1.5 py-0.5 rounded-full">Admin</span>
+            </a>
+          </div>
+        )}
 
         {/* Bottom: user */}
         <div className="p-3 border-t space-y-0.5">
