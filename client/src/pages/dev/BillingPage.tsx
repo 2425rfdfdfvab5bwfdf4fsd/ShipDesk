@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { PLAN_FEATURES, PLAN_PRICES } from "@/lib/planFeatures";
+import { PlanCard } from "@/components/billing/PlanCard";
 import type { Plan } from "@/types";
 
 function daysLeft(date: string): number {
