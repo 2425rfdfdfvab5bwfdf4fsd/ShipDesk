@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSEO } from "@/lib/seo";
-import { Plus, FolderOpen, DollarSign, GitMerge, TrendingUp, Search, Archive, LayoutGrid, Loader2, Briefcase, User, AlignLeft, Sparkles } from "lucide-react";
+import { Plus, FolderOpen, DollarSign, GitMerge, TrendingUp, Search, Archive, LayoutGrid, Loader2, Briefcase, User, AlignLeft, Sparkles, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,23 +24,33 @@ function StatCard({
   icon: Icon,
   sub,
   accent,
+  locked,
+  lockedPlan,
 }: {
   label: string;
   value: string | number;
   icon: React.ElementType;
   sub?: string;
   accent?: boolean;
+  locked?: boolean;
+  lockedPlan?: string;
 }) {
   return (
-    <div className="bg-card border rounded-xl p-3 flex flex-col gap-2 min-w-0">
+    <div className={`bg-card border rounded-xl p-3 flex flex-col gap-2 min-w-0 ${locked ? "opacity-60" : ""}`}>
       <div className="flex items-center justify-between gap-1">
         <span className="text-[11px] font-medium text-muted-foreground tracking-wide uppercase truncate">{label}</span>
         <div className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 ${accent ? "bg-amber-500/10" : "bg-primary/8"}`}>
-          <Icon className={`h-3.5 w-3.5 ${accent ? "text-amber-500" : "text-primary"}`} />
+          {locked ? <Lock className="h-3.5 w-3.5 text-muted-foreground/50" /> : <Icon className={`h-3.5 w-3.5 ${accent ? "text-amber-500" : "text-primary"}`} />}
         </div>
       </div>
-      <div className="text-xl font-bold leading-none tabular-nums">{value}</div>
-      {sub && <p className="text-[11px] text-muted-foreground leading-tight truncate" title={sub}>{sub}</p>}
+      {locked ? (
+        <div className="text-xs text-muted-foreground/60 font-medium leading-tight">
+          {lockedPlan}+ plan
+        </div>
+      ) : (
+        <div className="text-xl font-bold leading-none tabular-nums">{value}</div>
+      )}
+      {!locked && sub && <p className="text-[11px] text-muted-foreground leading-tight truncate" title={sub}>{sub}</p>}
     </div>
   );
 }
@@ -177,6 +187,8 @@ export function DashboardPage() {
             icon={DollarSign}
             sub={unpaidTotal > 0 ? "Needs attention" : "All clear"}
             accent={unpaidTotal > 0}
+            locked={capabilities ? !capabilities.canUseInvoices : false}
+            lockedPlan="Starter"
           />
           <StatCard
             label="Scope"
@@ -184,6 +196,8 @@ export function DashboardPage() {
             icon={GitMerge}
             sub={pendingScope > 0 ? "Awaiting response" : "None pending"}
             accent={pendingScope > 0}
+            locked={capabilities ? !capabilities.canUseScopeChanges : false}
+            lockedPlan="Solo"
           />
           <StatCard
             label="Portal"

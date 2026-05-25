@@ -3,19 +3,39 @@ import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import {
   LayoutDashboard, DollarSign, GitMerge, Settings,
-  Menu, X, Sun, Moon, LogOut, MessageSquare, CreditCard
+  Menu, X, Sun, Moon, LogOut, MessageSquare, CreditCard, Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useWorkspace, useUnreadMessageCount } from "@/hooks/useWorkspace";
 
+type EffectivePlan = "FREE" | "STARTER" | "SOLO" | "AGENCY";
+
+function getEffectivePlan(workspace: {
+  plan: string;
+  lsSubscriptionId: string | null;
+  trialEndsAt: string | null;
+} | undefined): EffectivePlan {
+  if (!workspace) return "FREE";
+  if (workspace.lsSubscriptionId) return workspace.plan as EffectivePlan;
+  if (workspace.trialEndsAt && new Date(workspace.trialEndsAt) > new Date()) return "STARTER";
+  return "FREE";
+}
+
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/invoices", label: "Invoices", icon: DollarSign },
-  { href: "/scope-changes", label: "Scope Changes", icon: GitMerge },
-  { href: "/billing", label: "Billing", icon: CreditCard },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, minPlan: null },
+  { href: "/invoices", label: "Invoices", icon: DollarSign, minPlan: "STARTER" as EffectivePlan },
+  { href: "/scope-changes", label: "Scope Changes", icon: GitMerge, minPlan: "SOLO" as EffectivePlan },
+  { href: "/billing", label: "Billing", icon: CreditCard, minPlan: null },
+  { href: "/settings", label: "Settings", icon: Settings, minPlan: null },
 ];
+
+const PLAN_ORDER: EffectivePlan[] = ["FREE", "STARTER", "SOLO", "AGENCY"];
+
+function isNavItemLocked(effectivePlan: EffectivePlan, minPlan: EffectivePlan | null): boolean {
+  if (!minPlan) return false;
+  return PLAN_ORDER.indexOf(effectivePlan) < PLAN_ORDER.indexOf(minPlan);
+}
 
 function toggleTheme() {
   const html = document.documentElement;
@@ -36,6 +56,7 @@ export function AppShell({ children }: AppShellProps) {
   const { data: workspace, error: workspaceError, isLoading: workspaceLoading } = useWorkspace();
   const { data: unreadData } = useUnreadMessageCount();
   const unreadCount = unreadData?.count ?? 0;
+  const effectivePlan = getEffectivePlan(workspace);
 
   // Only redirect to onboarding when we know for certain there is no workspace (404).
   // Any other error (e.g. 401 while auth token is still loading on refresh) should
@@ -129,10 +150,13 @@ export function AppShell({ children }: AppShellProps) {
         <nav className="flex-1 p-3 space-y-0.5 mt-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const active = location === item.href ||
+            const locked = isNavItemLocked(effectivePlan, item.minPlan);
+            const active = !locked && (
+              location === item.href ||
               (item.href === "/settings" && location.startsWith("/settings")) ||
               (item.href === "/billing" && location.startsWith("/billing")) ||
-              (item.href !== "/dashboard" && item.href !== "/settings" && item.href !== "/billing" && location.startsWith(item.href));
+              (item.href !== "/dashboard" && item.href !== "/settings" && item.href !== "/billing" && location.startsWith(item.href))
+            );
             const showBadge = item.href === "/dashboard" && unreadCount > 0;
             return (
               <Link
@@ -143,12 +167,17 @@ export function AppShell({ children }: AppShellProps) {
                   "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all",
                   active
                     ? "bg-primary text-primary-foreground shadow-sm"
+                    : locked
+                    ? "text-muted-foreground/50 hover:bg-accent hover:text-muted-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
                 <span className="flex-1">{item.label}</span>
-                {showBadge && (
+                {locked && (
+                  <Lock className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
+                )}
+                {showBadge && !locked && (
                   <span className={cn(
                     "flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] justify-center",
                     active

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useSEO } from "@/lib/seo";
-import { Github, Palette, Globe, Shield, CreditCard, CheckCircle, ArrowRight, Star, Zap, Building2, Loader2 } from "lucide-react";
+import { Github, Palette, Globe, Shield, CreditCard, CheckCircle, ArrowRight, Star, Zap, Building2, Loader2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WorkspaceSettingsForm } from "@/components/workspace/WorkspaceSettingsForm";
 import { Button } from "@/components/ui/button";
@@ -194,6 +194,52 @@ function PlanTab() {
 }
 
 function IntegrationsTab() {
+  const { data: billing } = useQuery<BillingStatus>({
+    queryKey: ["billing-status"],
+    queryFn: () => api.get("/api/billing/status").then((r) => r.data),
+    staleTime: 60_000,
+  });
+
+  const isOnTrial = billing && !billing.lsSubscriptionId && !!billing.trialEndsAt;
+  const trialActive = isOnTrial && new Date(billing!.trialEndsAt!) > new Date();
+  const effectivePlan = billing
+    ? billing.lsSubscriptionId
+      ? billing.plan
+      : trialActive
+      ? "STARTER"
+      : "FREE"
+    : "FREE";
+  const canUseGitHub = effectivePlan === "SOLO" || effectivePlan === "AGENCY";
+
+  const integrations = [
+    {
+      name: "GitHub",
+      icon: Github,
+      description: "Connect your GitHub account to enable AI report generation from commit history, PRs, and releases.",
+      statusLabel: canUseGitHub ? "Connect from Project Settings" : "Requires Solo plan",
+      statusStyle: canUseGitHub
+        ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800"
+        : "bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:text-amber-400",
+      locked: !canUseGitHub,
+    },
+    {
+      name: "Linear",
+      icon: Shield,
+      description: "Pull Linear issue activity into weekly reports alongside GitHub data.",
+      statusLabel: "Coming in v1.1",
+      statusStyle: "bg-muted text-muted-foreground",
+      locked: false,
+    },
+    {
+      name: "Vercel",
+      icon: Globe,
+      description: "Include deployment activity in your reports — show clients when new versions ship.",
+      statusLabel: "Coming in v1.1",
+      statusStyle: "bg-muted text-muted-foreground",
+      locked: false,
+    },
+  ];
+
   return (
     <div className="space-y-5">
       <div>
@@ -201,53 +247,34 @@ function IntegrationsTab() {
         <p className="text-xs text-muted-foreground">Connect third-party services to enhance your reports.</p>
       </div>
 
-      {[
-        {
-          name: "GitHub",
-          icon: Github,
-          description: "Connect your GitHub account to enable AI report generation from commit history, PRs, and releases.",
-          status: "configured",
-          statusLabel: "Connect from Project Settings",
-          statusVariant: "info",
-          action: null,
-        },
-        {
-          name: "Linear",
-          icon: Shield,
-          description: "Pull Linear issue activity into weekly reports alongside GitHub data.",
-          status: "coming_soon",
-          statusLabel: "Coming in v1.1",
-          statusVariant: "secondary",
-          action: null,
-        },
-        {
-          name: "Vercel",
-          icon: Globe,
-          description: "Include deployment activity in your reports — show clients when new versions ship.",
-          status: "coming_soon",
-          statusLabel: "Coming in v1.1",
-          statusVariant: "secondary",
-          action: null,
-        },
-      ].map((integration) => {
+      {integrations.map((integration) => {
         const Icon = integration.icon;
         return (
-          <div key={integration.name} className="bg-card border rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+          <div key={integration.name} className={cn(
+            "bg-card border rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4",
+            integration.locked && "opacity-70"
+          )}>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 relative">
               <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+              {integration.locked && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                  <Lock className="h-2 w-2 text-amber-600 dark:text-amber-400" />
+                </div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <p className="text-sm font-semibold">{integration.name}</p>
-                <span className={cn(
-                  "text-xs px-2 py-0.5 rounded-full font-medium",
-                  integration.status === "configured" ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800" :
-                  "bg-muted text-muted-foreground"
-                )}>
+                <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", integration.statusStyle)}>
                   {integration.statusLabel}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">{integration.description}</p>
+              {integration.locked && (
+                <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs mt-1 text-amber-600 dark:text-amber-400">
+                  <a href="/billing">Upgrade to Solo to unlock →</a>
+                </Button>
+              )}
             </div>
           </div>
         );
