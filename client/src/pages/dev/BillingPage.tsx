@@ -410,7 +410,7 @@ export function BillingPage() {
                   <Timer className="h-3.5 w-3.5 flex-shrink-0" />
                   {adminGrantExpired
                     ? `Grant expired · ${adminGrantEndFormatted}`
-                    : `${adminGrantDaysLeft} of ${GRANT_CYCLE_DAYS} days remaining · Ends ${adminGrantEndFormatted}`}
+                    : `${adminGrantDaysLeft} days remaining · Ends ${adminGrantEndFormatted}`}
                 </div>
                 {!adminGrantExpired && (
                   <div className="h-1.5 rounded-full bg-muted overflow-hidden">

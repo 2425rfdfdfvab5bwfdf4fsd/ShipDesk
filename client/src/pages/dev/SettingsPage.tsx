@@ -170,7 +170,7 @@ function PlanTab() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {adminGrantDaysLeft} of {GRANT_CYCLE} days remaining
+                  {adminGrantDaysLeft} days remaining
                 </p>
               </>
             )}
