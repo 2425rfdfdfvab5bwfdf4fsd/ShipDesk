@@ -52,6 +52,7 @@ model Workspace {
   linearConn      LinearConnection?
   members         WorkspaceMember[]
   teamInvitations TeamInvitation[]
+  teamActivities  TeamActivity[]
 }
 
 model Project {
@@ -403,6 +404,7 @@ model WorkspaceMember {
   workspaceId String
   userId      String
   role        WorkspaceRole   @default(MEMBER)
+  title       String?
   joinedAt    DateTime        @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -427,6 +429,31 @@ model TeamInvitation {
 
   @@unique([workspaceId, email])
   @@index([workspaceId])
+}
+
+model TeamActivity {
+  id          String            @id @default(uuid())
+  workspaceId String
+  actorId     String
+  actorName   String
+  event       TeamActivityEvent
+  targetEmail String?
+  targetName  String?
+  createdAt   DateTime          @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([workspaceId, createdAt(sort: Desc)])
+}
+
+enum TeamActivityEvent {
+  INVITE_SENT
+  INVITE_RESENT
+  INVITE_CANCELLED
+  MEMBER_JOINED
+  MEMBER_REMOVED
+  MEMBER_LEFT
 }
 
 enum TeamInvitationStatus {

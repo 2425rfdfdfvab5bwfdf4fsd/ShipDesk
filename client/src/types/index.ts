@@ -165,6 +165,13 @@ export interface PortalBranding {
 
 export type TeamMemberRole = "OWNER" | "MEMBER";
 export type TeamInvitationStatus = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
+export type TeamActivityEvent =
+  | "INVITE_SENT"
+  | "INVITE_RESENT"
+  | "INVITE_CANCELLED"
+  | "MEMBER_JOINED"
+  | "MEMBER_REMOVED"
+  | "MEMBER_LEFT";
 
 export interface TeamMember {
   id: string;
@@ -173,6 +180,7 @@ export interface TeamMember {
   email: string;
   avatarUrl: string | null;
   role: TeamMemberRole;
+  title: string | null;
   joinedAt: string;
 }
 
@@ -185,11 +193,22 @@ export interface TeamInvitation {
   expiresAt: string;
 }
 
+export interface TeamActivityItem {
+  id: string;
+  actorName: string;
+  event: TeamActivityEvent;
+  targetEmail: string | null;
+  targetName: string | null;
+  createdAt: string;
+}
+
 export interface TeamData {
   owner: (TeamMember & { isOwner?: boolean }) | null;
   members: TeamMember[];
   invitations: TeamInvitation[];
   seatLimit: number;
+  currentUserRole: "OWNER" | "MEMBER" | null;
+  currentMemberId: string | null;
 }
 
 export interface GitHubRepo {

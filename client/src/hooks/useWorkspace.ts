@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import { Workspace, OnboardingStatus, TeamData } from "../types";
+import { Workspace, OnboardingStatus, TeamData, TeamActivityItem } from "../types";
 
 export function useWorkspace() {
   return useQuery<Workspace>({
@@ -111,5 +111,36 @@ export function useJoinTeam() {
   return useMutation({
     mutationFn: (token: string) =>
       api.post("/api/workspace/team/join", { token }).then((r) => r.data),
+  });
+}
+
+export function useGetInviteLink() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (email: string) =>
+      api.post("/api/workspace/team/invite-link", { email }).then((r) => r.data as { joinUrl: string }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["workspace-team"] }),
+  });
+}
+
+export function useLeaveWorkspace() {
+  return useMutation({
+    mutationFn: () => api.delete("/api/workspace/team/leave").then((r) => r.data),
+  });
+}
+
+export function useUpdateMemberTitle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ memberId, title }: { memberId: string; title: string | null }) =>
+      api.patch(`/api/workspace/team/members/${memberId}/title`, { title }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["workspace-team"] }),
+  });
+}
+
+export function useTeamActivity() {
+  return useQuery<TeamActivityItem[]>({
+    queryKey: ["workspace-team-activity"],
+    queryFn: () => api.get("/api/workspace/team/activity").then((r) => r.data),
   });
 }
