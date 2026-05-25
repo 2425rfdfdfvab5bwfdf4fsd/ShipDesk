@@ -122,14 +122,21 @@ export function AdminOverviewTab() {
       hint = "Double-check that CLERK_SECRET_KEY in Railway and VITE_CLERK_PUBLISHABLE_KEY in Vercel are from the same Clerk instance.";
     } else if (status === 403) {
       const responseData = (error as AxiosError)?.response?.data as Record<string, string> | undefined;
-      const clerkEmail = responseData?.userEmail;
+      const clerkEmail = responseData?.userEmail ?? "";
+      const serverAllowed = responseData?.allowedEmail ?? "saifkhan13483@gmail.com";
       headline = "Access denied (403)";
-      detail = clerkEmail
-        ? `Your Clerk account email is "${clerkEmail}" but the server expects "saifkhan13483@gmail.com".`
-        : "You're authenticated but your Clerk email doesn't match the allowed admin email.";
-      hint = clerkEmail
-        ? `To fix: either update ADMIN_EMAIL on Railway to "${clerkEmail}", or ensure you're signed in with saifkhan13483@gmail.com.`
-        : `Make sure you're signed into Clerk with: saifkhan13483@gmail.com`;
+      if (clerkEmail && clerkEmail === serverAllowed) {
+        detail = `Emails match ("${clerkEmail}") but the server still rejected the request — there may be a hidden character in the Railway ADMIN_EMAIL env var. Try deleting and re-typing it in Railway, then redeploy.`;
+        hint = "In Railway: Variables → delete ADMIN_EMAIL → add it again by typing (not pasting) → Redeploy.";
+      } else if (clerkEmail) {
+        detail = `Your Clerk email is "${clerkEmail}" but the server allows "${serverAllowed}".`;
+        hint = clerkEmail !== serverAllowed
+          ? `Update ADMIN_EMAIL on Railway to exactly: ${clerkEmail} — or sign in with ${serverAllowed}.`
+          : "The emails look the same but differ by invisible characters. Re-type ADMIN_EMAIL in Railway and redeploy.";
+      } else {
+        detail = "You're authenticated but your Clerk email doesn't match the allowed admin email.";
+        hint = "Make sure you're signed into Clerk with: saifkhan13483@gmail.com";
+      }
     } else if (status === 404) {
       headline = "API endpoint not found (404)";
       detail = "The backend responded but couldn't find /api/admin/stats.";

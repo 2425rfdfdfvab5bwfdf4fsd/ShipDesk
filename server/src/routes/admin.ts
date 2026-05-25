@@ -17,30 +17,44 @@ function getClerkClient() {
   return _clerkClient;
 }
 
+// Strip BOM, control chars, and any non-ASCII invisible characters that
+// survive a plain .trim() — common in copy-pasted Railway env var values.
+function normalizeEmail(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/[\u0000-\u001f\u007f-\u009f\ufeff\u200b-\u200d\u2060\ufffe]/g, "")
+    .trim();
+}
+
 async function requireAdminEmail(
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const allowedEmail = (process.env.ADMIN_EMAIL ?? FALLBACK_ADMIN_EMAIL).toLowerCase().trim();
+  const rawAllowed = process.env.ADMIN_EMAIL ?? FALLBACK_ADMIN_EMAIL;
+  const allowedEmail = normalizeEmail(rawAllowed);
   try {
     // Ask Clerk directly for the user's current email — don't trust the DB cache.
     const clerkUser = await getClerkClient().users.getUser(req.clerkUserId!);
     const primaryAddr = clerkUser.emailAddresses.find(
       (e) => e.id === clerkUser.primaryEmailAddressId
     );
-    const userEmail = (
+    const rawUserEmail =
       primaryAddr?.emailAddress ||
       clerkUser.emailAddresses[0]?.emailAddress ||
-      ""
-    ).toLowerCase().trim();
+      "";
+    const userEmail = normalizeEmail(rawUserEmail);
 
+    // Log char codes so invisible differences are visible in Railway logs
     console.log(
-      `[requireAdminEmail] clerkId=${req.clerkUserId} email="${userEmail}" allowed="${allowedEmail}" match=${userEmail === allowedEmail}`
+      `[requireAdminEmail] clerkId=${req.clerkUserId}` +
+      ` userEmail="${userEmail}" (len=${userEmail.length})` +
+      ` allowedEmail="${allowedEmail}" (len=${allowedEmail.length})` +
+      ` match=${userEmail === allowedEmail}`
     );
 
     if (!userEmail || userEmail !== allowedEmail) {
-      res.status(403).json({ error: "FORBIDDEN", userEmail });
+      res.status(403).json({ error: "FORBIDDEN", userEmail, allowedEmail });
       return;
     }
     next();
