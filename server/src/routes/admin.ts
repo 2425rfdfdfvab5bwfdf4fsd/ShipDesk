@@ -4,19 +4,19 @@ import { requireAuth, AuthRequest } from "../middleware/auth.js";
 
 const router = Router();
 
+// Fallback so the panel works even if ADMIN_EMAIL isn't set in the environment.
+// This matches the email hardcoded in AdminPage.tsx and AppShell.tsx.
+const FALLBACK_ADMIN_EMAIL = "saifkhan13483@gmail.com";
+
 async function requireAdminEmail(
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const allowedEmail = process.env.ADMIN_EMAIL;
-  if (!allowedEmail) {
-    res.status(503).json({ error: "ADMIN_EMAIL_NOT_CONFIGURED" });
-    return;
-  }
+  const allowedEmail = (process.env.ADMIN_EMAIL ?? FALLBACK_ADMIN_EMAIL).toLowerCase().trim();
   try {
     const user = await db.user.findUnique({ where: { id: req.userId } });
-    if (!user || user.email.toLowerCase().trim() !== allowedEmail.toLowerCase().trim()) {
+    if (!user || user.email.toLowerCase().trim() !== allowedEmail) {
       res.status(403).json({ error: "FORBIDDEN" });
       return;
     }
