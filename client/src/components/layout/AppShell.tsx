@@ -12,6 +12,10 @@ import { useWorkspace, useUnreadMessageCount } from "@/hooks/useWorkspace";
 
 const ADMIN_EMAIL = "saifkhan13483@gmail.com";
 
+function daysLeft(date: string): number {
+  return Math.max(0, Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+}
+
 type EffectivePlan = "FREE" | "STARTER" | "SOLO" | "AGENCY";
 
 function getEffectivePlan(workspace: {
@@ -124,7 +128,7 @@ export function AppShell({ children }: AppShellProps) {
             <div className="flex items-center justify-between mb-0.5">
               <p className="text-[10px] font-medium text-primary/60 uppercase tracking-wider">Workspace</p>
               {(() => {
-                const isOnTrial = !workspace.lsSubscriptionId && !!workspace.trialEndsAt;
+                const isOnTrial = !workspace.lsSubscriptionId && !workspace.adminPlanOverride && !!workspace.trialEndsAt;
                 const trialActive = isOnTrial && new Date(workspace.trialEndsAt!) > new Date();
                 const label = isOnTrial && !trialActive
                   ? "Expired"
@@ -151,6 +155,27 @@ export function AppShell({ children }: AppShellProps) {
             <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
               shipdesk-nine.vercel.app/portal/{workspace.slug}
             </p>
+            {/* Trial countdown — only shown when trial is active */}
+            {!workspace.lsSubscriptionId && !workspace.adminPlanOverride && workspace.trialEndsAt && new Date(workspace.trialEndsAt) > new Date() && (() => {
+              const remaining = daysLeft(workspace.trialEndsAt!);
+              const TOTAL = 14;
+              const pct = Math.max(4, Math.round(((TOTAL - remaining) / TOTAL) * 100));
+              return (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                      {remaining} day{remaining !== 1 ? "s" : ""} left in trial
+                    </span>
+                  </div>
+                  <div className="h-1 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-amber-400"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 

@@ -5,13 +5,18 @@ import { api } from "@/lib/api";
 import { useSEO } from "@/lib/seo";
 import {
   CheckCircle, Zap, Building2, Loader2, ExternalLink,
-  CreditCard, ArrowRight, Star, ShieldCheck
+  CreditCard, ArrowRight, Star, ShieldCheck, Timer
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { PLAN_FEATURES, PLAN_PRICES } from "@/lib/planFeatures";
 import type { Plan } from "@/types";
+
+function daysLeft(date: string): number {
+  return Math.max(0, Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+}
 
 interface BillingStatus {
   plan: Plan;
@@ -187,17 +192,19 @@ export function BillingPage() {
   // Trial only applies to users without a subscription AND without an admin override
   const isOnTrial = !hasActiveSub && !isAdminGranted && !!billing?.trialEndsAt;
   const trialActive = isOnTrial && billing?.trialEndsAt != null && new Date(billing.trialEndsAt) > new Date();
+  const trialDays = trialActive && billing?.trialEndsAt ? daysLeft(billing.trialEndsAt) : 0;
+  // Trial progress: 14-day window, show % elapsed
+  const TRIAL_TOTAL_DAYS = 14;
+  const trialPercent = trialActive ? Math.max(4, Math.round(((TRIAL_TOTAL_DAYS - trialDays) / TRIAL_TOTAL_DAYS) * 100)) : 100;
 
   const subStatus = billing?.lsSubscriptionStatus;
   const statusInfo = subStatus ? STATUS_BADGE[subStatus] : null;
 
-  // Display name: admin override and paid subs show real plan name; trial always shows Starter
   const PLAN_LABELS = { FREE: "Free", STARTER: "Starter", SOLO: "Solo", AGENCY: "Agency" };
   const displayLabel = (isAdminGranted || hasActiveSub)
     ? PLAN_LABELS[currentPlan]
     : PLAN_LABELS[isOnTrial ? "STARTER" : currentPlan];
 
-  // Features shown below: use real plan for admin/paid, Starter for trial
   const featuresForDisplay = (isAdminGranted || hasActiveSub)
     ? PLAN_FEATURES[currentPlan]
     : PLAN_FEATURES["STARTER"];
@@ -208,13 +215,16 @@ export function BillingPage() {
     ? "What's included in your Starter plan"
     : "What's included in your plan";
 
-  // Current plan description line
+  const trialEndFormatted = billing?.trialEndsAt
+    ? new Date(billing.trialEndsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : "";
+
   const planDescription = hasActiveSub
     ? `${PLAN_PRICES[currentPlan]}/month`
     : isAdminGranted
     ? `All ${PLAN_LABELS[currentPlan]} features included · Admin granted access`
-    : trialActive && billing?.trialEndsAt
-    ? `All Starter features included · Trial ends ${new Date(billing.trialEndsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
+    : trialActive
+    ? `All Starter features included · Ends ${trialEndFormatted}`
     : isOnTrial
     ? "Trial expired — choose a plan below to continue"
     : "";
@@ -239,16 +249,37 @@ export function BillingPage() {
                 </Badge>
               )}
               {trialActive && !isAdminGranted && (
-                <Badge variant="secondary">14-Day Trial</Badge>
+                <Badge
+                  variant="secondary"
+                  className="flex items-center gap-1 font-semibold"
+                  data-testid="badge-trial-days"
+                >
+                  <Timer className="h-3 w-3" />
+                  {trialDays} day{trialDays !== 1 ? "s" : ""} left
+                </Badge>
               )}
               {isOnTrial && !trialActive && !isAdminGranted && (
-                <Badge variant="destructive">Expired</Badge>
+                <Badge variant="destructive">Trial expired</Badge>
               )}
               {statusInfo && !isOnTrial && !isAdminGranted && (
                 <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
               )}
             </div>
             <p className="text-xs text-muted-foreground">{planDescription}</p>
+            {/* Trial progress bar */}
+            {trialActive && (
+              <div className="mt-2 max-w-xs">
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-amber-400 transition-all"
+                    style={{ width: `${trialPercent}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {TRIAL_TOTAL_DAYS - trialDays} of {TRIAL_TOTAL_DAYS} days used
+                </p>
+              </div>
+            )}
           </div>
 
           {hasActiveSub && (
