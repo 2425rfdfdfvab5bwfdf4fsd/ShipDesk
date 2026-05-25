@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/lib/adminApi";
-import { Search, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Copy, Check, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 
 interface AdminUser {
@@ -9,6 +9,7 @@ interface AdminUser {
   workspace: {
     id: string; slug: string; name: string; agencyName: string | null;
     onboardingComplete: boolean; plan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
+    adminPlanOverride: boolean;
     lsSubscriptionId: string | null; trialEndsAt: string | null;
     _count: { projects: number; clients: number };
   } | null;
@@ -37,7 +38,15 @@ function CopyButton({ value }: { value: string }) {
   );
 }
 
-function PlanSelector({ userId, currentPlan }: { userId: string; currentPlan: "FREE" | "STARTER" | "SOLO" | "AGENCY" }) {
+function PlanSelector({
+  userId,
+  currentPlan,
+  adminPlanOverride,
+}: {
+  userId: string;
+  currentPlan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
+  adminPlanOverride: boolean;
+}) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
 
@@ -53,8 +62,11 @@ function PlanSelector({ userId, currentPlan }: { userId: string; currentPlan: "F
         data-testid={`button-plan-${userId}`}
         onClick={() => setOpen((o) => !o)}
         disabled={isPending}
-        className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium transition-all border border-transparent hover:border-white/20 ${PLAN_STYLES[currentPlan]} ${isPending ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+        className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium transition-all border hover:border-white/20 ${PLAN_STYLES[currentPlan]} ${adminPlanOverride ? "border-indigo-500/40" : "border-transparent"} ${isPending ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
       >
+        {adminPlanOverride && (
+          <ShieldCheck className="h-3 w-3 text-indigo-400 flex-shrink-0" />
+        )}
         {isPending ? "Saving…" : currentPlan}
         <svg className="h-2.5 w-2.5 opacity-60" viewBox="0 0 10 6" fill="currentColor">
           <path d="M0 0l5 6 5-6H0z" />
@@ -63,18 +75,33 @@ function PlanSelector({ userId, currentPlan }: { userId: string; currentPlan: "F
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full mt-1 z-20 bg-[#0f1117] border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[130px] py-1">
-            {PLANS.map((plan) => (
-              <button
-                key={plan}
-                data-testid={`button-set-plan-${plan}-${userId}`}
-                onClick={() => mutate(plan)}
-                className="w-full text-left px-3 py-2 text-xs font-medium transition-colors hover:bg-white/5 flex items-center justify-between gap-3"
-              >
-                <span className={`inline-block px-1.5 py-0.5 rounded-full ${PLAN_STYLES[plan]}`}>{plan}</span>
-                {plan === currentPlan && <span className="text-white/25 text-[10px]">current</span>}
-              </button>
-            ))}
+          <div className="absolute left-0 top-full mt-1 z-20 bg-[#0f1117] border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[160px] py-1">
+            <div className="px-3 py-1.5 text-[10px] text-white/30 uppercase tracking-wider font-semibold border-b border-white/5 mb-1">
+              Set plan
+            </div>
+            {PLANS.map((plan) => {
+              const willBeAdminOverride = plan === "SOLO" || plan === "AGENCY";
+              return (
+                <button
+                  key={plan}
+                  data-testid={`button-set-plan-${plan}-${userId}`}
+                  onClick={() => mutate(plan)}
+                  className="w-full text-left px-3 py-2 text-xs font-medium transition-colors hover:bg-white/5 flex items-center justify-between gap-3"
+                >
+                  <span className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-full ${PLAN_STYLES[plan]}`}>
+                    {willBeAdminOverride && <ShieldCheck className="h-2.5 w-2.5" />}
+                    {plan}
+                  </span>
+                  {plan === currentPlan && <span className="text-white/25 text-[10px]">current</span>}
+                </button>
+              );
+            })}
+            <div className="px-3 pt-1.5 pb-1 border-t border-white/5 mt-1">
+              <p className="text-[10px] text-white/25 leading-tight">
+                <ShieldCheck className="h-2.5 w-2.5 inline mr-0.5 text-indigo-400/60" />
+                Solo & Agency are admin-granted (no payment required)
+              </p>
+            </div>
           </div>
         </>
       )}
@@ -173,9 +200,11 @@ export function AdminUsersTab() {
                   </td></tr>
                 )
                 : data?.users.map((u) => {
-                  const hasTrial = !!u.workspace?.trialEndsAt;
-                  const trialExpired = hasTrial && new Date(u.workspace!.trialEndsAt!) < new Date();
-                  const hasSubscription = !!u.workspace?.lsSubscriptionId;
+                  const ws = u.workspace;
+                  const hasTrial = !!ws?.trialEndsAt;
+                  const trialExpired = hasTrial && new Date(ws!.trialEndsAt!) < new Date();
+                  const hasSubscription = !!ws?.lsSubscriptionId;
+                  const isAdminOverride = !!ws?.adminPlanOverride;
 
                   return (
                     <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
@@ -198,32 +227,38 @@ export function AdminUsersTab() {
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        {u.workspace ? (
+                        {ws ? (
                           <div>
-                            <div className="text-white/80 text-sm leading-tight">{u.workspace.agencyName || u.workspace.name}</div>
-                            <div className="text-[11px] text-white/35 font-mono mt-0.5">{u.workspace.slug}</div>
+                            <div className="text-white/80 text-sm leading-tight">{ws.agencyName || ws.name}</div>
+                            <div className="text-[11px] text-white/35 font-mono mt-0.5">{ws.slug}</div>
                           </div>
                         ) : <span className="text-white/25 text-xs italic">No workspace</span>}
                       </td>
                       <td className="px-4 py-3.5">
-                        {u.workspace
-                          ? <PlanSelector userId={u.id} currentPlan={u.workspace.plan} />
+                        {ws
+                          ? <PlanSelector userId={u.id} currentPlan={ws.plan} adminPlanOverride={isAdminOverride} />
                           : <span className="text-white/25 text-xs">—</span>}
                       </td>
-                      <td className="px-4 py-3.5 text-white/60 text-sm">{u.workspace?._count.projects ?? "—"}</td>
-                      <td className="px-4 py-3.5 text-white/60 text-sm">{u.workspace?._count.clients ?? "—"}</td>
+                      <td className="px-4 py-3.5 text-white/60 text-sm">{ws?._count.projects ?? "—"}</td>
+                      <td className="px-4 py-3.5 text-white/60 text-sm">{ws?._count.clients ?? "—"}</td>
                       <td className="px-4 py-3.5">
-                        {u.workspace ? (
+                        {ws ? (
                           <div className="flex flex-col gap-1">
-                            <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium w-fit ${u.workspace.onboardingComplete ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
-                              {u.workspace.onboardingComplete ? "Onboarded" : "Pending setup"}
+                            <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium w-fit ${ws.onboardingComplete ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
+                              {ws.onboardingComplete ? "Onboarded" : "Pending setup"}
                             </span>
-                            {hasSubscription && (
+                            {isAdminOverride && (
+                              <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium w-fit bg-indigo-500/15 text-indigo-300">
+                                <ShieldCheck className="h-2.5 w-2.5" />
+                                Admin grant
+                              </span>
+                            )}
+                            {hasSubscription && !isAdminOverride && (
                               <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium w-fit bg-indigo-500/15 text-indigo-300">
                                 Subscribed
                               </span>
                             )}
-                            {hasTrial && !hasSubscription && (
+                            {hasTrial && !hasSubscription && !isAdminOverride && (
                               <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium w-fit ${trialExpired ? "bg-red-500/15 text-red-400" : "bg-cyan-500/15 text-cyan-400"}`}>
                                 {trialExpired ? "Trial expired" : "On trial"}
                               </span>
