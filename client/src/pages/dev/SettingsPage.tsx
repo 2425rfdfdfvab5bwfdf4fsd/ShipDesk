@@ -65,8 +65,8 @@ function PlanTab() {
   const PlanIcon = info.icon;
   const features = PLAN_FEATURES[displayPlan] ?? [];
 
-  // The visible plan name: "Free Trial" while on trial, otherwise the real plan name
-  const planName = trialActive ? "Free Trial" : trialExpired ? "Free Trial" : info.label;
+  // Trial = Starter plan with a time limit; show "Starter" as the plan name
+  const planName = info.label;
 
   return (
     <div className="space-y-5">

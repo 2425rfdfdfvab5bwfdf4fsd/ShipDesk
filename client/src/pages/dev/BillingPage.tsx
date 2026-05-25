@@ -168,8 +168,8 @@ export function BillingPage() {
   const isOnTrial = !billing?.lsSubscriptionId && !!billing?.trialEndsAt;
   const trialActive = isOnTrial && billing?.trialEndsAt != null && new Date(billing.trialEndsAt) > new Date();
 
-  // During trial show "Free Trial", otherwise show the real plan name
-  const displayLabel = isOnTrial ? "Free Trial" : { FREE: "Free", STARTER: "Starter", SOLO: "Solo", AGENCY: "Agency" }[currentPlan];
+  // Trial = Starter plan for 14 days; always show the real plan name
+  const displayLabel = { FREE: "Free", STARTER: "Starter", SOLO: "Solo", AGENCY: "Agency" }[isOnTrial ? "STARTER" : currentPlan];
   // Without an active paid subscription always show Starter features (what the user gets on the entry plan)
   const hasActiveSub = !!billing?.lsSubscriptionId;
   const featuresForDisplay = hasActiveSub ? PLAN_FEATURES[currentPlan] : PLAN_FEATURES["STARTER"];
