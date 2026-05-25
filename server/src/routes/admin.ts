@@ -541,6 +541,35 @@ router.get("/github-events", ...adminGuard, async (req, res, next) => {
   }
 });
 
+// ── Trial date change ─────────────────────────────────────────────────────────
+router.patch("/users/:id/trial", ...adminGuard, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { trialEndsAt } = req.body as { trialEndsAt: string | null };
+
+    const user = await db.user.findUnique({ where: { id }, include: { workspace: true } });
+    if (!user || !user.workspace) {
+      res.status(404).json({ error: "USER_OR_WORKSPACE_NOT_FOUND" });
+      return;
+    }
+
+    const date = trialEndsAt ? new Date(trialEndsAt) : null;
+    if (trialEndsAt && isNaN(date!.getTime())) {
+      res.status(400).json({ error: "INVALID_DATE" });
+      return;
+    }
+
+    const updated = await db.workspace.update({
+      where: { id: user.workspace.id },
+      data: { trialEndsAt: date },
+    });
+
+    res.json({ success: true, workspaceId: updated.id, trialEndsAt: updated.trialEndsAt });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Plan change ───────────────────────────────────────────────────────────────
 router.patch("/users/:id/plan", ...adminGuard, async (req, res, next) => {
   try {

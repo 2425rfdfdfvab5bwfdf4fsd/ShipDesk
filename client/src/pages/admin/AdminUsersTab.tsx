@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/lib/adminApi";
-import { Search, ChevronLeft, ChevronRight, Copy, Check, ShieldCheck } from "lucide-react";
-import { format } from "date-fns";
+import {
+  Search, ChevronLeft, ChevronRight, Copy, Check,
+  ShieldCheck, CalendarDays, Pencil, X, Check as CheckIcon,
+} from "lucide-react";
+import { format, parseISO } from "date-fns";
 
 interface AdminUser {
   id: string; email: string; name: string; createdAt: string; avatarUrl: string | null;
@@ -109,6 +112,96 @@ function PlanSelector({
   );
 }
 
+function TrialDateEditor({
+  userId,
+  trialEndsAt,
+}: {
+  userId: string;
+  trialEndsAt: string | null;
+}) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(
+    trialEndsAt ? format(parseISO(trialEndsAt), "yyyy-MM-dd") : ""
+  );
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus();
+  }, [editing]);
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: (date: string | null) =>
+      adminApi.patch(`/api/admin/users/${userId}/trial`, { trialEndsAt: date }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+      setEditing(false);
+    },
+  });
+
+  const handleSave = () => {
+    if (!value) {
+      mutate(null);
+    } else {
+      mutate(new Date(value).toISOString());
+    }
+  };
+
+  const handleCancel = () => {
+    setValue(trialEndsAt ? format(parseISO(trialEndsAt), "yyyy-MM-dd") : "");
+    setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <button
+        data-testid={`button-edit-trial-${userId}`}
+        onClick={() => setEditing(true)}
+        className="group/trial inline-flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 transition-colors"
+        title="Edit trial end date"
+      >
+        <CalendarDays className="h-3 w-3 flex-shrink-0" />
+        <span className="font-mono">
+          {trialEndsAt
+            ? format(parseISO(trialEndsAt), "MMM d, yyyy")
+            : <span className="italic">no trial</span>
+          }
+        </span>
+        <Pencil className="h-2.5 w-2.5 opacity-0 group-hover/trial:opacity-60 transition-opacity" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        ref={inputRef}
+        type="date"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") handleCancel(); }}
+        className="bg-white/10 border border-white/20 rounded text-[11px] text-white px-1.5 py-0.5 font-mono focus:outline-none focus:border-indigo-400 w-32"
+        data-testid={`input-trial-date-${userId}`}
+      />
+      <button
+        onClick={handleSave}
+        disabled={isPending}
+        className="p-0.5 rounded hover:bg-emerald-500/20 text-emerald-400 disabled:opacity-50"
+        title="Save"
+      >
+        <CheckIcon className="h-3 w-3" />
+      </button>
+      <button
+        onClick={handleCancel}
+        className="p-0.5 rounded hover:bg-white/10 text-white/40"
+        title="Cancel"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
 const PLAN_FILTERS = [
   { value: "", label: "All" },
   { value: "FREE", label: "Free" },
@@ -181,7 +274,7 @@ export function AdminUsersTab() {
           <table className="w-full text-sm">
             <thead className="bg-white/[0.04] border-b border-white/10">
               <tr>
-                {["User", "Workspace", "Plan", "Projects", "Clients", "Status", "Joined"].map((h) => (
+                {["User", "Workspace", "Plan", "Projects", "Clients", "Status & Trial", "Joined"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-white/40 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -243,26 +336,31 @@ export function AdminUsersTab() {
                       <td className="px-4 py-3.5 text-white/60 text-sm">{ws?._count.clients ?? "—"}</td>
                       <td className="px-4 py-3.5">
                         {ws ? (
-                          <div className="flex flex-col gap-1">
-                            <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium w-fit ${ws.onboardingComplete ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
-                              {ws.onboardingComplete ? "Onboarded" : "Pending setup"}
-                            </span>
-                            {isAdminOverride && (
-                              <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium w-fit bg-indigo-500/15 text-indigo-300">
-                                <ShieldCheck className="h-2.5 w-2.5" />
-                                Admin grant
+                          <div className="flex flex-col gap-1.5">
+                            {/* Status badges */}
+                            <div className="flex flex-wrap gap-1">
+                              <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium ${ws.onboardingComplete ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
+                                {ws.onboardingComplete ? "Onboarded" : "Pending setup"}
                               </span>
-                            )}
-                            {hasSubscription && !isAdminOverride && (
-                              <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium w-fit bg-indigo-500/15 text-indigo-300">
-                                Subscribed
-                              </span>
-                            )}
-                            {hasTrial && !hasSubscription && !isAdminOverride && (
-                              <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium w-fit ${trialExpired ? "bg-red-500/15 text-red-400" : "bg-cyan-500/15 text-cyan-400"}`}>
-                                {trialExpired ? "Trial expired" : "On trial"}
-                              </span>
-                            )}
+                              {isAdminOverride && (
+                                <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-indigo-500/15 text-indigo-300">
+                                  <ShieldCheck className="h-2.5 w-2.5" />
+                                  Admin grant
+                                </span>
+                              )}
+                              {hasSubscription && !isAdminOverride && (
+                                <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium bg-indigo-500/15 text-indigo-300">
+                                  Subscribed
+                                </span>
+                              )}
+                              {hasTrial && !hasSubscription && !isAdminOverride && (
+                                <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium ${trialExpired ? "bg-red-500/15 text-red-400" : "bg-cyan-500/15 text-cyan-400"}`}>
+                                  {trialExpired ? "Trial expired" : "On trial"}
+                                </span>
+                              )}
+                            </div>
+                            {/* Trial date editor */}
+                            <TrialDateEditor userId={u.id} trialEndsAt={ws.trialEndsAt} />
                           </div>
                         ) : "—"}
                       </td>
