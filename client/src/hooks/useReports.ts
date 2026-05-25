@@ -2,6 +2,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { Report, ReportMeta, ReportContent } from "../types";
 
+export type ReportTone = "formal" | "friendly" | "brief";
+
+export interface GenerateReportOptions {
+  dateFrom?: string;
+  dateTo?: string;
+  tone?: ReportTone;
+  customContext?: string;
+}
+
 export function useReports(projectId?: string, status?: string) {
   return useQuery<{ reports: ReportMeta[]; total: number }>({
     queryKey: ["reports", projectId, status],
@@ -23,9 +32,9 @@ export function useReport(id: string) {
 export function useGenerateReport() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (projectId: string) =>
-      api.post(`/api/reports/generate/${projectId}`).then((r) => r.data),
-    onSuccess: (_data, projectId) => {
+    mutationFn: ({ projectId, options }: { projectId: string; options?: GenerateReportOptions }) =>
+      api.post(`/api/reports/generate/${projectId}`, options ?? {}).then((r) => r.data),
+    onSuccess: (_data, { projectId }) => {
       qc.invalidateQueries({ queryKey: ["reports", projectId] });
       qc.invalidateQueries({ queryKey: ["reports"] });
     },

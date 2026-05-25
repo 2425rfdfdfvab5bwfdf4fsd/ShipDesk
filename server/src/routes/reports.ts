@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "../lib/prisma.js";
 import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
-import { generateWeeklyReport, ReportContent } from "../services/geminiService.js";
+import { generateWeeklyReport, ReportContent, ReportTone } from "../services/geminiService.js";
 import { notifyClientsOfPublishedReport } from "../services/reportScheduler.js";
 import { getEffectivePlan, planHasFeature, PLAN_MONTHLY_AI_REPORTS } from "../lib/planLimits.js";
 
@@ -144,7 +144,21 @@ router.post(
         throw new AppError("Daily rate limit exceeded", 429, "RATE_LIMIT_EXCEEDED");
       }
 
-      const { start, end } = getWeekBounds();
+      const body = generateReportSchema.parse(req.body);
+      const tone = (body.tone ?? "formal") as ReportTone;
+      const customContext = body.customContext?.trim() || null;
+
+      let start: Date, end: Date;
+      if (body.dateFrom && body.dateTo) {
+        start = new Date(body.dateFrom + "T00:00:00.000Z");
+        end = new Date(body.dateTo + "T23:59:59.999Z");
+        if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
+          throw new AppError("Invalid date range", 400, "INVALID_DATE_RANGE");
+        }
+      } else {
+        ({ start, end } = getWeekBounds());
+      }
+
       const totalEventCount = await db.gitHubEvent.count({
         where: { projectId: project.id, receivedAt: { gte: start, lte: end } },
       });
@@ -155,12 +169,14 @@ router.post(
       });
       const events = rawEvents.reverse();
       const truncationNote = totalEventCount > 200
-        ? `summarizing from the 200 most recent of ${totalEventCount} events this week`
+        ? `summarizing from the 200 most recent of ${totalEventCount} events this period`
         : undefined;
 
       const weekStart = start.toISOString().split("T")[0];
       const weekEndShort = end.toISOString().split("T")[0];
-      const title = `This Week in ${project.name} — ${weekStart} to ${weekEndShort}`;
+
+      const toneLabel = tone === "formal" ? "" : tone === "friendly" ? " (Friendly)" : " (Brief)";
+      const title = `${project.name} Update — ${weekStart} to ${weekEndShort}${toneLabel}`;
 
       const content = await generateWeeklyReport({
         projectName: project.name,
@@ -171,6 +187,8 @@ router.post(
         githubEvents: events,
         developerName: ws.agencyName || ws.name,
         truncationNote,
+        tone,
+        customContext,
       });
 
       const report = await db.report.create({
@@ -191,6 +209,13 @@ router.post(
     }
   }
 );
+
+const generateReportSchema = z.object({
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  tone: z.enum(["formal", "friendly", "brief"]).optional(),
+  customContext: z.string().max(2000).optional(),
+});
 
 const updateReportSchema = z.object({
   content: z.object({

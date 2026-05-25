@@ -1,12 +1,26 @@
 import { GoogleGenAI } from "@google/genai";
 import { GitHubEvent } from "@prisma/client";
 
+export type ReportTone = "formal" | "friendly" | "brief";
+
+export interface ReportStats {
+  pushEvents: number;
+  totalCommits: number;
+  prsOpened: number;
+  prsMerged: number;
+  prsClosed: number;
+  releases: number;
+}
+
 export interface ReportContent {
   summary: string | null;
   highlights: string[] | null;
   nextSteps: string[] | null;
   rawMarkdown: string;
   generationWarning: string | null;
+  tone?: ReportTone;
+  stats?: ReportStats;
+  customContext?: string | null;
 }
 
 function getClient(): GoogleGenAI {
@@ -54,9 +68,9 @@ function getAuthorName(commit: CommitInfo, pusher?: string): string | undefined 
   return undefined;
 }
 
-function buildEventSummaries(events: GitHubEvent[]): { lines: string[]; stats: Record<string, number> } {
+function buildEventSummaries(events: GitHubEvent[]): { lines: string[]; stats: ReportStats } {
   const lines: string[] = [];
-  const stats: Record<string, number> = {
+  const stats: ReportStats = {
     pushEvents: 0,
     totalCommits: 0,
     prsOpened: 0,
@@ -67,8 +81,6 @@ function buildEventSummaries(events: GitHubEvent[]): { lines: string[]; stats: R
 
   for (const e of events) {
     const payload = e.payload as Record<string, unknown>;
-    // Use the actual event date (receivedAt) for the display timestamp.
-    // For API-synced events this is the commit date; for webhooks it's delivery time.
     const ts = new Date(e.receivedAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 
     if (e.eventType === "push") {
@@ -76,22 +88,18 @@ function buildEventSummaries(events: GitHubEvent[]): { lines: string[]; stats: R
       const branch = ((payload.ref as string) || "").replace("refs/heads/", "") || "unknown branch";
       const pusher = (payload.pusher as { name?: string } | undefined)?.name;
 
-      // GitHub puts 'distinct: boolean' on each commit object (not as a top-level array).
-      // Only count commits where distinct !== false (i.e. new commits, not re-pushes).
       const distinctCommits = commits.filter((c) => c.distinct !== false);
       const commitCount = distinctCommits.length || commits.length;
 
       stats.pushEvents++;
       stats.totalCommits += commitCount;
 
-      // Show the first 10 commit messages with short SHA and author
       const commitMessages = commits
         .slice(0, 10)
         .map((c) => {
           const shortId = c.id ? c.id.slice(0, 7) : "";
           const authorName = getAuthorName(c, pusher);
           const authorTag = authorName ? ` [${authorName}]` : "";
-          // Use only the first line of the commit message
           const firstLine = c.message.split("\n")[0].trim();
           const dateTag = c.timestamp ? ` (${new Date(c.timestamp).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })})` : "";
           return `    • ${shortId ? `[${shortId}] ` : ""}${firstLine}${authorTag}${dateTag}`;
@@ -149,16 +157,13 @@ function buildEventSummaries(events: GitHubEvent[]): { lines: string[]; stats: R
 }
 
 function extractJsonFromText(raw: string): string {
-  // 1. Strip markdown code fences
   let text = raw
     .replace(/^```(?:json)?\s*\r?\n?/im, "")
     .replace(/\r?\n?```\s*$/im, "")
     .trim();
 
-  // 2. If the result looks like JSON already, return it
   if (text.startsWith("{")) return text;
 
-  // 3. Try to find a JSON object anywhere in the text
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start !== -1 && end > start) {
@@ -166,6 +171,68 @@ function extractJsonFromText(raw: string): string {
   }
 
   return text;
+}
+
+function getToneInstructions(tone: ReportTone): { persona: string; languageRules: string; formatHint: string } {
+  switch (tone) {
+    case "friendly":
+      return {
+        persona: "You are a friendly, approachable developer writing a casual but professional update to a client you have a great working relationship with.",
+        languageRules: `- Write in a warm, conversational tone. Contractions are encouraged (we've, it's, you'll).
+- Show genuine enthusiasm for what was accomplished.
+- Use "we" naturally. Keep it human — like a Slack message from a trusted team member.
+- Avoid stiff corporate language. Still be clear and specific about what was done.`,
+        formatHint: "Keep the update friendly and scannable. Use short paragraphs. A touch of personality is welcome.",
+      };
+    case "brief":
+      return {
+        persona: "You are writing a very concise executive-style update. The client is busy — get to the point fast.",
+        languageRules: `- Maximum 120 words for the rawMarkdown body.
+- Use 3–5 bullet points for the main work. No long paragraphs.
+- Skip filler phrases like "We're excited to share" or "As always, we remain committed".
+- One sentence intro, bullet list of work done, one sentence on what's next (if anything).`,
+        formatHint: `The rawMarkdown must follow this tight format:
+[greeting]
+
+Quick update on **[projectName]** for [weekStart]–[weekEnd].
+
+**Done:**
+- [bullet 1]
+- [bullet 2]
+- [bullet 3]
+
+**Up next:** [1 sentence or "Nothing planned yet."]
+
+[sender]`,
+      };
+    case "formal":
+    default:
+      return {
+        persona: "You are a professional technical project manager writing a client-facing weekly status update.",
+        languageRules: `- Write for a non-technical business owner. No jargon.
+- Avoid: "commit", "branch", "repo", "merge", "push", "PR", "refactor", "deploy pipeline".
+- Use "we" for the dev team. Keep it warm, professional, and concise.
+- Group related commits under one description rather than listing them individually.`,
+        formatHint: `rawMarkdown format — use exactly this structure:
+[greeting]
+
+Here is your weekly status update for **[projectName]**, covering [weekStart] to [weekEnd].
+
+## Summary
+
+[2-3 sentence summary of the week]
+
+## What We Did This Week
+
+[Group work into 2-5 thematic sections. Each section has a bold heading and 1-2 sentences of description.]
+
+## What's Next
+
+[1-3 items, or omit this section if nothing is clearly planned]
+
+[sender]`,
+      };
+  }
 }
 
 function buildPrompt(opts: {
@@ -176,45 +243,50 @@ function buildPrompt(opts: {
   weekStart: string;
   weekEnd: string;
   activityBlock: string;
+  tone: ReportTone;
+  customContext?: string | null;
 }): string {
-  const { greeting, sender, projectName, projectContext, weekStart, weekEnd, activityBlock } = opts;
+  const { greeting, sender, projectName, projectContext, weekStart, weekEnd, activityBlock, tone, customContext } = opts;
+  const toneConfig = getToneInstructions(tone);
 
-  return `You are a professional technical project manager writing a client-facing weekly status update.
+  const customContextBlock = customContext?.trim()
+    ? `\n<developer_notes>\nThe developer has added these additional notes about this period (things GitHub may not capture, like client calls, planning sessions, or manual work):\n${customContext.trim()}\n</developer_notes>\n`
+    : "";
+
+  return `${toneConfig.persona}
 
 <project>
 Name: ${projectName}
 ${projectContext}
-Week: ${weekStart} to ${weekEnd}
+Period: ${weekStart} to ${weekEnd}
 Developer / Agency: ${sender}
 </project>
 
 <github_activity>
 ${activityBlock}
 </github_activity>
-
+${customContextBlock}
 <task>
-Translate the GitHub activity above into a polished, client-friendly status report.
+Translate the GitHub activity${customContext?.trim() ? " and developer notes" : ""} above into a polished, client-friendly status report.
 
 ACCURACY (most important):
-- Only describe work that is directly evidenced by the commit messages above. Never invent, assume, or pad.
+- Only describe work that is directly evidenced by the commit messages or developer notes above. Never invent, assume, or pad.
 - If a commit message is specific (e.g. "fix: login page crash on mobile"), describe that specific fix.
 - If commit messages are vague (e.g. "update code"), describe them honestly as general improvements.
 - Merged PRs = completed work. Open/unmerged PRs = in-progress.
-- For nextSteps: include only items clearly inferable from WIP/TODO commit messages or open PRs. If nothing is inferable, use an empty array [].
+- Developer notes take priority and should be woven into the narrative naturally.
+- For nextSteps: include only items clearly inferable from WIP/TODO commit messages, open PRs, or developer notes. If nothing is inferable, use [].
 
-LANGUAGE:
-- Write for a non-technical business owner. No jargon.
-- Avoid: "commit", "branch", "repo", "merge", "push", "PR", "refactor", "deploy pipeline".
-- Use "we" for the dev team. Keep it warm, professional, and concise.
-- Group related commits under one description rather than listing them individually.
+LANGUAGE RULES:
+${toneConfig.languageRules}
 
 OUTPUT: Return a JSON object with exactly these four fields:
 
 {
-  "summary": "2-3 sentences. Specific overview of what was accomplished. Name actual features/fixes.",
+  "summary": "2-3 sentences. Specific overview of what was accomplished.",
   "highlights": ["specific accomplishment 1", "specific accomplishment 2"],
   "nextSteps": ["planned next action 1"],
-  "rawMarkdown": "Full Markdown status report (see format below)"
+  "rawMarkdown": "Full Markdown status report"
 }
 
 highlights rules:
@@ -222,24 +294,7 @@ highlights rules:
 - Good: "Fixed the checkout page crashing on mobile devices"
 - Bad: "Worked on improvements"
 
-rawMarkdown format — use exactly this structure:
-${greeting}
-
-Here is your weekly status update for **${projectName}**, covering ${weekStart} to ${weekEnd}.
-
-## Summary
-
-[2-3 sentence summary of the week]
-
-## What We Did This Week
-
-[Group work into 2-5 thematic sections. Each section has a bold heading and 1-2 sentences of description. Be specific about features and fixes based on the actual commits.]
-
-## What's Next
-
-[1-3 items, or omit this section if nothing is clearly planned]
-
-${sender}
+${toneConfig.formatHint.replace("[greeting]", greeting).replace("[projectName]", projectName).replace("[weekStart]", weekStart).replace("[weekEnd]", weekEnd).replace("[sender]", sender)}
 </task>`;
 }
 
@@ -269,21 +324,25 @@ export async function generateWeeklyReport(opts: {
   githubEvents: GitHubEvent[];
   developerName?: string;
   truncationNote?: string;
+  tone?: ReportTone;
+  customContext?: string | null;
 }): Promise<ReportContent> {
+  const tone: ReportTone = opts.tone ?? "formal";
   const weekStart = opts.weekStartDate.toISOString().split("T")[0];
   const weekEnd = opts.weekEndDate.toISOString().split("T")[0];
   const sender = opts.developerName || "Your Development Team";
   const greeting = opts.clientName?.trim() ? `Hi ${opts.clientName.trim()},` : "Hi,";
 
-  // Skip AI when there is no activity — avoids hallucinated filler.
-  if (opts.githubEvents.length === 0) {
+  const hasActivity = opts.githubEvents.length > 0 || opts.customContext?.trim();
+
+  if (!hasActivity) {
     const rawMarkdown = `${greeting}
 
-Here is your weekly status update for **${opts.projectName}**, covering ${weekStart} to ${weekEnd}.
+Here is your update for **${opts.projectName}**, covering ${weekStart} to ${weekEnd}.
 
 ## Summary
 
-No development activity was recorded in the GitHub repository this week.
+No development activity was recorded in the GitHub repository this period.
 
 ## What We Did This Week
 
@@ -292,11 +351,14 @@ No commits, pull requests, or releases were pushed to the repository during this
 ${sender}`;
 
     return {
-      summary: `No development activity was recorded for ${opts.projectName} this week (${weekStart} to ${weekEnd}).`,
+      summary: `No development activity was recorded for ${opts.projectName} this period (${weekStart} to ${weekEnd}).`,
       highlights: [],
       nextSteps: [],
       rawMarkdown,
       generationWarning: null,
+      tone,
+      stats: { pushEvents: 0, totalCommits: 0, prsOpened: 0, prsMerged: 0, prsClosed: 0, releases: 0 },
+      customContext: opts.customContext || null,
     };
   }
 
@@ -305,18 +367,18 @@ ${sender}`;
 
   const activityBlock = [
     opts.truncationNote ? `Note: ${opts.truncationNote}\n` : "",
-    `Statistics for the week:`,
-    `  Pushes: ${stats.pushEvents}`,
-    `  Commits: ${stats.totalCommits}`,
-    `  Pull requests opened: ${stats.prsOpened}`,
-    `  Pull requests merged: ${stats.prsMerged}`,
-    `  Pull requests closed without merge: ${stats.prsClosed}`,
-    `  Releases: ${stats.releases}`,
+    opts.githubEvents.length > 0 ? `Statistics for the period:` : "",
+    opts.githubEvents.length > 0 ? `  Pushes: ${stats.pushEvents}` : "",
+    opts.githubEvents.length > 0 ? `  Commits: ${stats.totalCommits}` : "",
+    opts.githubEvents.length > 0 ? `  Pull requests opened: ${stats.prsOpened}` : "",
+    opts.githubEvents.length > 0 ? `  Pull requests merged: ${stats.prsMerged}` : "",
+    opts.githubEvents.length > 0 ? `  Pull requests closed without merge: ${stats.prsClosed}` : "",
+    opts.githubEvents.length > 0 ? `  Releases: ${stats.releases}` : "",
     ``,
-    `Chronological activity log:`,
+    eventLines.length > 0 ? `Chronological activity log:` : "(No GitHub commits this period — see developer notes above)",
     eventLines.join("\n\n"),
   ]
-    .filter(Boolean)
+    .filter((l) => l !== undefined && l !== "")
     .join("\n");
 
   const projectContext = opts.projectDescription?.trim()
@@ -331,6 +393,8 @@ ${sender}`;
     weekStart,
     weekEnd,
     activityBlock,
+    tone,
+    customContext: opts.customContext,
   });
 
   const timeout = setTimeout(() => {
@@ -338,12 +402,10 @@ ${sender}`;
   }, 90_000);
 
   try {
-    // First attempt
     let raw = "";
     try {
-      raw = await callGemini(ai, prompt, 0.2);
+      raw = await callGemini(ai, prompt, tone === "brief" ? 0.1 : 0.2);
     } catch (firstErr) {
-      // Retry once at lower temperature without responseMimeType as fallback
       console.warn("Gemini first attempt failed, retrying:", firstErr);
       const result = await ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -364,7 +426,6 @@ ${sender}`;
         rawMarkdown?: string;
       };
 
-      // Validate that rawMarkdown contains the expected greeting
       const markdown = parsed.rawMarkdown || text;
       const hasGreeting = markdown.includes(greeting.replace(",", ""));
 
@@ -380,9 +441,11 @@ ${sender}`;
           ? markdown
           : `${greeting}\n\n${markdown.replace(/^Hi[^,\n]*,?\n*/i, "")}`,
         generationWarning: null,
+        tone,
+        stats,
+        customContext: opts.customContext || null,
       };
     } catch {
-      // JSON parse failed — use the raw text as a markdown fallback
       const fallback = text.startsWith(greeting.split(",")[0]) ? text : `${greeting}\n\n${text}\n\n${sender}`;
       return {
         summary: null,
@@ -390,6 +453,9 @@ ${sender}`;
         nextSteps: null,
         rawMarkdown: fallback,
         generationWarning: "Report content was generated but could not be fully structured.",
+        tone,
+        stats,
+        customContext: opts.customContext || null,
       };
     }
   } catch (err) {

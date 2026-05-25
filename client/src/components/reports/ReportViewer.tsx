@@ -1,11 +1,29 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, AlertTriangle, Edit2, Eye, Save, Loader2, Trash2 } from "lucide-react";
+import { CheckCircle, AlertTriangle, Edit2, Eye, Save, Loader2, Trash2, Copy, Check, GitCommit, GitMerge, Tag, FileText, MessageSquare, Minimize2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Report } from "@/types";
+
+interface ReportContent {
+  summary?: string | null;
+  highlights?: string[] | null;
+  nextSteps?: string[] | null;
+  rawMarkdown?: string;
+  generationWarning?: string | null;
+  tone?: "formal" | "friendly" | "brief";
+  stats?: {
+    pushEvents: number;
+    totalCommits: number;
+    prsOpened: number;
+    prsMerged: number;
+    prsClosed: number;
+    releases: number;
+  };
+  customContext?: string | null;
+}
 
 interface ReportViewerProps {
   report: Report;
@@ -17,23 +35,69 @@ interface ReportViewerProps {
   canEdit?: boolean;
 }
 
+const TONE_LABELS: Record<string, { label: string; icon: typeof FileText }> = {
+  formal:   { label: "Formal",   icon: FileText },
+  friendly: { label: "Friendly", icon: MessageSquare },
+  brief:    { label: "Brief",    icon: Minimize2 },
+};
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const el = document.createElement("textarea");
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="gap-1.5 h-8 text-xs text-muted-foreground hover:text-foreground"
+      onClick={handleCopy}
+      title="Copy report to clipboard"
+      data-testid="button-copy-report"
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? "Copied!" : "Copy"}
+    </Button>
+  );
+}
+
+function StatPill({ icon: Icon, label, value, color }: { icon: typeof GitCommit; label: string; value: number; color: string }) {
+  if (value === 0) return null;
+  return (
+    <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${color}`}>
+      <Icon className="h-3 w-3" />
+      <span className="font-medium">{value}</span>
+      <span className="text-[10px] opacity-70">{label}</span>
+    </div>
+  );
+}
+
 export function ReportViewer({ report, clientName, onPublish, onEdit, onDelete, isPublishing, canEdit = false }: ReportViewerProps) {
   const [editMode, setEditMode] = useState(false);
 
   const content = typeof report.content === "object" && report.content !== null
-    ? report.content as {
-        summary?: string | null;
-        highlights?: string[] | null;
-        nextSteps?: string[] | null;
-        rawMarkdown?: string;
-        generationWarning?: string | null;
-      }
+    ? report.content as ReportContent
     : null;
 
   const rawMarkdown = content?.rawMarkdown || (typeof report.content === "string" ? report.content : "");
 
   const displayMarkdown = clientName
-    ? rawMarkdown.replace(/^Hi,(\r?\n)/m, `Hi ${clientName},\$1`)
+    ? rawMarkdown.replace(/^Hi,(\r?\n)/m, `Hi ${clientName},$1`)
     : rawMarkdown;
 
   const [editedMarkdown, setEditedMarkdown] = useState(rawMarkdown);
@@ -42,6 +106,12 @@ export function ReportViewer({ report, clientName, onPublish, onEdit, onDelete, 
     onEdit?.(report.id, editedMarkdown);
     setEditMode(false);
   };
+
+  const stats = content?.stats;
+  const tone = content?.tone;
+  const toneConfig = tone ? TONE_LABELS[tone] : null;
+
+  const hasStats = stats && (stats.totalCommits > 0 || stats.prsMerged > 0 || stats.releases > 0);
 
   return (
     <motion.div
@@ -55,12 +125,22 @@ export function ReportViewer({ report, clientName, onPublish, onEdit, onDelete, 
           <h3 className="font-semibold text-base sm:text-lg leading-tight break-words pr-1">
             {report.title}
           </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {report.status === "PUBLISHED" ? "Published" : "Draft"} ·{" "}
-            {report.generatedBy === "MANUAL" ? "Manual" : "Scheduled"}
-          </p>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <p className="text-sm text-muted-foreground">
+              {report.status === "PUBLISHED" ? "Published" : "Draft"} ·{" "}
+              {report.generatedBy === "MANUAL" ? "Manual" : "Scheduled"}
+            </p>
+            {toneConfig && (
+              <Badge variant="secondary" className="gap-1 text-[10px] px-1.5 py-0.5">
+                <toneConfig.icon className="h-2.5 w-2.5" />
+                {toneConfig.label}
+              </Badge>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <CopyButton text={displayMarkdown} />
+
           {canEdit && (
             <Button
               variant="outline"
@@ -134,10 +214,22 @@ export function ReportViewer({ report, clientName, onPublish, onEdit, onDelete, 
         </div>
       )}
 
+      {/* Activity stats bar */}
+      {hasStats && !editMode && (
+        <div className="flex flex-wrap gap-2">
+          <StatPill icon={GitCommit} label="commits" value={stats!.totalCommits} color="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-400" />
+          <StatPill icon={GitMerge} label="PRs merged" value={stats!.prsMerged} color="border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-400" />
+          <StatPill icon={Tag} label="release" value={stats!.releases} color="border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-400" />
+          {stats!.prsOpened > 0 && (
+            <StatPill icon={GitMerge} label="PRs open" value={stats!.prsOpened} color="border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-400" />
+          )}
+        </div>
+      )}
+
       {/* Summary */}
       {content?.summary && !editMode && (
         <div className="bg-muted/40 rounded-lg p-3 sm:p-4">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1.5">Summary</p>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1.5">AI Summary</p>
           <p className="text-sm leading-relaxed break-words">{content.summary}</p>
         </div>
       )}
@@ -169,6 +261,17 @@ export function ReportViewer({ report, clientName, onPublish, onEdit, onDelete, 
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Custom context note */}
+      {content?.customContext && !editMode && (
+        <div className="flex gap-2 p-3 bg-muted/30 border border-border rounded-lg text-xs text-muted-foreground">
+          <FileText className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-foreground mb-0.5">Developer notes included</p>
+            <p className="break-words">{content.customContext}</p>
+          </div>
         </div>
       )}
 
