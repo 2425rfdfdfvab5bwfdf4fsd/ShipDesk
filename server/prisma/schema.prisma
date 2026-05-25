@@ -38,6 +38,7 @@ model Workspace {
   customDomain         String?  @unique
   onboardingComplete   Boolean  @default(false)
   plan                 Plan     @default(FREE)
+  adminPlanOverride    Boolean  @default(false)
   lsSubscriptionId     String?
   lsSubscriptionStatus String?
   lsCustomerId         String?

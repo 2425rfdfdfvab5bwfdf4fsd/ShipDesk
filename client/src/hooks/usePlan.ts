@@ -6,6 +6,7 @@ type Plan = "FREE" | "STARTER" | "SOLO" | "AGENCY";
 
 interface BillingStatus {
   plan: Plan;
+  adminPlanOverride: boolean;
   lsSubscriptionId: string | null;
   lsSubscriptionStatus: string | null;
   trialEndsAt: string | null;
@@ -41,7 +42,11 @@ const MONTHLY_AI_REPORTS: Record<Plan, number> = {
 };
 
 function getEffectivePlan(billing: BillingStatus): Plan {
+  // Admin override always wins
+  if (billing.adminPlanOverride) return billing.plan;
+  // Paid subscription
   if (billing.lsSubscriptionId) return billing.plan;
+  // Only Starter gets a free trial — Solo/Agency must be paid
   if (billing.trialEndsAt && new Date(billing.trialEndsAt) > new Date()) return "STARTER";
   return "FREE";
 }
@@ -52,7 +57,7 @@ function buildCapabilities(billing: BillingStatus): PlanCapabilities {
   const starterOrAbove = effectivePlan !== "FREE";
   const soloOrAbove = effectivePlan === "SOLO" || effectivePlan === "AGENCY";
 
-  const agencyOnly = effectivePlan === "AGENCY" && !!billing.lsSubscriptionId;
+  const agencyOnly = effectivePlan === "AGENCY" && (!!billing.lsSubscriptionId || billing.adminPlanOverride);
 
   return {
     plan: billing.plan,

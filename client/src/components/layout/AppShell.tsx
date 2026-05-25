@@ -16,13 +16,16 @@ type EffectivePlan = "FREE" | "STARTER" | "SOLO" | "AGENCY";
 
 function getEffectivePlan(workspace: {
   plan: string;
+  adminPlanOverride?: boolean;
   lsSubscriptionId: string | null;
   trialEndsAt: string | null;
 } | undefined): EffectivePlan {
   if (!workspace) return "FREE";
-  // Admin-set plans always take precedence over trial/subscription state
-  if (workspace.plan === "SOLO" || workspace.plan === "AGENCY") return workspace.plan;
+  // Admin override always wins
+  if (workspace.adminPlanOverride) return workspace.plan as EffectivePlan;
+  // Paid subscription
   if (workspace.lsSubscriptionId) return workspace.plan as EffectivePlan;
+  // Only Starter gets a free trial
   if (workspace.trialEndsAt && new Date(workspace.trialEndsAt) > new Date()) return "STARTER";
   return "FREE";
 }

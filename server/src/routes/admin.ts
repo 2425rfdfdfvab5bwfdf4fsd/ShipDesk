@@ -559,12 +559,19 @@ router.patch("/users/:id/plan", ...adminGuard, async (req, res, next) => {
       return;
     }
 
+    // STARTER/FREE: clear the override so normal trial/subscription logic applies
+    // SOLO/AGENCY: set override so features work without requiring a paid subscription
+    const adminPlanOverride = plan === "SOLO" || plan === "AGENCY";
+
     const updated = await db.workspace.update({
       where: { id: user.workspace.id },
-      data: { plan: plan as "FREE" | "STARTER" | "SOLO" | "AGENCY" },
+      data: {
+        plan: plan as "FREE" | "STARTER" | "SOLO" | "AGENCY",
+        adminPlanOverride,
+      },
     });
 
-    res.json({ success: true, workspaceId: updated.id, plan: updated.plan });
+    res.json({ success: true, workspaceId: updated.id, plan: updated.plan, adminPlanOverride: updated.adminPlanOverride });
   } catch (err) {
     next(err);
   }

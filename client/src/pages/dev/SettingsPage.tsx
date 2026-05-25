@@ -23,6 +23,7 @@ type Tab = typeof TABS[number]["key"];
 
 interface BillingStatus {
   plan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
+  adminPlanOverride: boolean;
   lsSubscriptionId: string | null;
   lsSubscriptionStatus: string | null;
   trialEndsAt: string | null;
@@ -55,17 +56,19 @@ function PlanTab() {
   }
 
   const rawPlan = billing?.plan;
-  const isOnTrial = !billing?.lsSubscriptionId && !!billing?.trialEndsAt;
+  const isAdminOverride = !!billing?.adminPlanOverride;
+  const isOnTrial = !billing?.lsSubscriptionId && !isAdminOverride && !!billing?.trialEndsAt;
   const trialActive = isOnTrial && new Date(billing!.trialEndsAt!) > new Date();
   const trialExpired = isOnTrial && !trialActive;
   const remaining = billing?.trialEndsAt && trialActive ? daysLeft(billing.trialEndsAt) : 0;
 
-  // Admin-set plans (SOLO/AGENCY) always take precedence.
-  // During trial with no override, fall back to Starter; never show "Free".
+  // Admin override or paid subscription → use actual plan
+  // On trial → always Starter only (no free Solo/Agency)
+  // Otherwise fall back to Starter as the minimum display
   const displayPlan: "STARTER" | "SOLO" | "AGENCY" =
-    rawPlan === "SOLO" || rawPlan === "AGENCY"
+    isAdminOverride && (rawPlan === "SOLO" || rawPlan === "AGENCY")
       ? rawPlan
-      : isOnTrial || !rawPlan || rawPlan === "FREE"
+      : !rawPlan || rawPlan === "FREE"
       ? "STARTER"
       : (rawPlan as "STARTER" | "SOLO" | "AGENCY");
   const info = PLAN_INFO[displayPlan];
@@ -207,10 +210,11 @@ function IntegrationsTab() {
     staleTime: 60_000,
   });
 
-  const isOnTrial = billing && !billing.lsSubscriptionId && !!billing.trialEndsAt;
+  const isAdminOverride = !!billing?.adminPlanOverride;
+  const isOnTrial = billing && !billing.lsSubscriptionId && !isAdminOverride && !!billing.trialEndsAt;
   const trialActive = isOnTrial && new Date(billing!.trialEndsAt!) > new Date();
   const effectivePlan = billing
-    ? billing.plan === "SOLO" || billing.plan === "AGENCY"
+    ? isAdminOverride
       ? billing.plan
       : billing.lsSubscriptionId
       ? billing.plan

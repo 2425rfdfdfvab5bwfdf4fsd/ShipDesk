@@ -22,6 +22,7 @@ router.get("/status", requireAuth, async (req: AuthRequest, res, next) => {
       where: { id: req.workspaceId },
       select: {
         plan: true,
+        adminPlanOverride: true,
         lsSubscriptionId: true,
         lsSubscriptionStatus: true,
         lsCustomerId: true,

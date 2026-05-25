@@ -22,9 +22,8 @@ function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
-function getEffectivePlan(plan: string, lsSub: string | null, trialEndsAt: Date | null): string {
-  // Admin-set plans always take precedence over subscription/trial state
-  if (plan === "SOLO" || plan === "AGENCY") return plan;
+function getEffectivePlan(plan: string, lsSub: string | null, trialEndsAt: Date | null, adminOverride = false): string {
+  if (adminOverride) return plan;
   if (lsSub) return plan;
   if (trialEndsAt && new Date(trialEndsAt) > new Date()) return "STARTER";
   return "FREE";
@@ -143,8 +142,8 @@ router.post("/invite", requireAuth, async (req: AuthRequest, res, next) => {
       throw new AppError("Only the workspace owner can invite members", 403, "FORBIDDEN");
     }
 
-    const effectivePlan = getEffectivePlan(workspace.plan, workspace.lsSubscriptionId, workspace.trialEndsAt);
-    if (effectivePlan !== "AGENCY" || !workspace.lsSubscriptionId) {
+    const effectivePlan = getEffectivePlan(workspace.plan, workspace.lsSubscriptionId, workspace.trialEndsAt, workspace.adminPlanOverride);
+    if (effectivePlan !== "AGENCY" || (!workspace.lsSubscriptionId && !workspace.adminPlanOverride)) {
       throw new AppError("Team seats require the Agency plan", 403, "PLAN_REQUIRED");
     }
 
@@ -220,8 +219,8 @@ router.post("/invite-link", requireAuth, async (req: AuthRequest, res, next) => 
       throw new AppError("Only the workspace owner can generate invite links", 403, "FORBIDDEN");
     }
 
-    const effectivePlan = getEffectivePlan(workspace.plan, workspace.lsSubscriptionId, workspace.trialEndsAt);
-    if (effectivePlan !== "AGENCY" || !workspace.lsSubscriptionId) {
+    const effectivePlan = getEffectivePlan(workspace.plan, workspace.lsSubscriptionId, workspace.trialEndsAt, workspace.adminPlanOverride);
+    if (effectivePlan !== "AGENCY" || (!workspace.lsSubscriptionId && !workspace.adminPlanOverride)) {
       throw new AppError("Team seats require the Agency plan", 403, "PLAN_REQUIRED");
     }
 

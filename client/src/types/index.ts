@@ -36,6 +36,7 @@ export interface Workspace {
   primaryColor: string;
   onboardingComplete: boolean;
   plan: Plan;
+  adminPlanOverride: boolean;
   lsSubscriptionId: string | null;
   lsSubscriptionStatus: string | null;
   lsCustomerId: string | null;

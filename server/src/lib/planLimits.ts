@@ -36,17 +36,20 @@ export function planHasFeature(plan: Plan, feature: Feature): boolean {
 
 export function getEffectivePlan(workspace: {
   plan: Plan;
+  adminPlanOverride?: boolean;
   lsSubscriptionId: string | null;
   lsSubscriptionStatus: string | null;
   trialEndsAt: Date | null;
 }): Plan {
-  // Admin-set plans always take precedence over subscription/trial state
-  if (workspace.plan === "SOLO" || workspace.plan === "AGENCY") {
+  // Admin override always wins — used to manually grant plans without a subscription
+  if (workspace.adminPlanOverride) {
     return workspace.plan;
   }
+  // Paid subscription
   if (workspace.lsSubscriptionId) {
     return workspace.plan;
   }
+  // Only STARTER gets a free trial — Solo/Agency must be paid
   if (workspace.trialEndsAt && workspace.trialEndsAt > new Date()) {
     return "STARTER";
   }
