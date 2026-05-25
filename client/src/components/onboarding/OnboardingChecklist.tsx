@@ -7,7 +7,7 @@ import { useOnboardingStatus, useCompleteOnboarding } from "@/hooks/useWorkspace
 import { usePlan } from "@/hooks/usePlan";
 import { cn } from "@/lib/utils";
 
-type RequiredPlan = "STARTER" | "SOLO" | null;
+type RequiredPlan = "SOLO" | null;
 
 const STEPS: {
   key: "hasGitHubConnected" | "hasClientInvited" | "hasReportPublished" | "hasInvoiceCreated";
@@ -33,8 +33,8 @@ const STEPS: {
     description: "Send a magic link to give a client portal access",
     icon: Users,
     href: "/dashboard",
-    requiredPlan: "STARTER",
-    planLabel: "Starter",
+    requiredPlan: null,
+    planLabel: "",
   },
   {
     key: "hasReportPublished",
@@ -42,8 +42,8 @@ const STEPS: {
     description: "Create your first AI-generated weekly update",
     icon: FileText,
     href: "/dashboard",
-    requiredPlan: "STARTER",
-    planLabel: "Starter",
+    requiredPlan: null,
+    planLabel: "",
   },
   {
     key: "hasInvoiceCreated",
@@ -51,8 +51,8 @@ const STEPS: {
     description: "Send a payment request to a client",
     icon: DollarSign,
     href: "/invoices",
-    requiredPlan: "STARTER",
-    planLabel: "Starter",
+    requiredPlan: null,
+    planLabel: "",
   },
 ];
 
@@ -110,7 +110,7 @@ export function OnboardingChecklist() {
   const prevAllComplete = useRef(false);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const effectivePlan = capabilities?.effectivePlan ?? "FREE";
+  const effectivePlan = capabilities?.effectivePlan ?? "STARTER";
 
   const allComplete = STEPS.every((s) => status?.[s.key]);
 

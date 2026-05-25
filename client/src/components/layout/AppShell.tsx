@@ -24,7 +24,7 @@ function getEffectivePlan(workspace: {
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, minPlan: null },
-  { href: "/invoices", label: "Invoices", icon: DollarSign, minPlan: "STARTER" as EffectivePlan },
+  { href: "/invoices", label: "Invoices", icon: DollarSign, minPlan: null },
   { href: "/scope-changes", label: "Scope Changes", icon: GitMerge, minPlan: "SOLO" as EffectivePlan },
   { href: "/billing", label: "Billing", icon: CreditCard, minPlan: null },
   { href: "/settings", label: "Settings", icon: Settings, minPlan: null },

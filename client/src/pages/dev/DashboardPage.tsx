@@ -187,8 +187,6 @@ export function DashboardPage() {
             icon={DollarSign}
             sub={unpaidTotal > 0 ? "Needs attention" : "All clear"}
             accent={unpaidTotal > 0}
-            locked={capabilities ? !capabilities.canUseInvoices : false}
-            lockedPlan="Starter"
           />
           <StatCard
             label="Scope"
