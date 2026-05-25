@@ -153,23 +153,30 @@ function PlanTab() {
           </div>
         )}
 
-        {/* Subscription renewal / expiry countdown */}
+        {/* Billing cycle progress — for paid subscribers */}
         {billing?.lsSubscriptionId && (() => {
           const isCancelled = billing.lsSubscriptionStatus === "cancelled" || billing.lsSubscriptionStatus === "expired";
           const dateToShow = isCancelled ? billing.lsEndsAt : billing.lsRenewsAt;
           if (!dateToShow) return null;
           const days = daysLeft(dateToShow);
+          const CYCLE = 30;
           const formatted = new Date(dateToShow).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
           const isUrgent = isCancelled && days <= 7;
+          const pct = Math.max(2, Math.round((days / CYCLE) * 100));
           return (
-            <div className={cn(
-              "flex items-center gap-2 text-xs font-medium rounded-lg px-3 py-2",
-              isUrgent ? "bg-red-500/10 text-red-600 dark:text-red-400" : "bg-muted/60 text-muted-foreground"
-            )}>
-              <Timer className="h-3.5 w-3.5 flex-shrink-0" />
-              {isCancelled
-                ? `Access ends in ${days} day${days !== 1 ? "s" : ""} · ${formatted}`
-                : `Renews in ${days} day${days !== 1 ? "s" : ""} · ${formatted}`}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{isCancelled ? "Access ends" : "Billing cycle"}</span>
+                <span className={isUrgent ? "text-red-500" : ""}>
+                  {days} of {CYCLE} days remaining · {formatted}
+                </span>
+              </div>
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${isUrgent ? "bg-red-400" : "bg-primary/60"}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
             </div>
           );
         })()}

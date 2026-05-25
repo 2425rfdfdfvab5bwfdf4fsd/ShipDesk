@@ -42,16 +42,24 @@ function PlanCard({
   plan,
   currentPlan,
   hasActiveSubscription,
+  hasTrialStarted,
   isAdminGranted,
   onUpgrade,
   isLoading,
+  lsRenewsAt,
+  lsEndsAt,
+  lsSubscriptionStatus,
 }: {
   plan: "STARTER" | "SOLO" | "AGENCY";
   currentPlan: "STARTER" | "SOLO" | "AGENCY";
   hasActiveSubscription: boolean;
+  hasTrialStarted: boolean;
   isAdminGranted: boolean;
   onUpgrade: (plan: "STARTER" | "SOLO" | "AGENCY") => void;
   isLoading: boolean;
+  lsRenewsAt: string | null;
+  lsEndsAt: string | null;
+  lsSubscriptionStatus: string | null;
 }) {
   const isCurrentPlan = currentPlan === plan;
   const isPaidCurrentPlan = isCurrentPlan && hasActiveSubscription;
@@ -59,9 +67,27 @@ function PlanCard({
   const isHighlighted = plan === "AGENCY";
   const features = PLAN_FEATURES[plan];
 
+  // Billing cycle progress for the current paid plan
+  const isCancelled = lsSubscriptionStatus === "cancelled" || lsSubscriptionStatus === "expired";
+  const cycleDate = isPaidCurrentPlan ? (isCancelled ? lsEndsAt : lsRenewsAt) : null;
+  const cycleDaysLeft = cycleDate ? daysLeft(cycleDate) : null;
+  const CYCLE_DAYS = 30;
+  const cyclePct = cycleDaysLeft !== null
+    ? Math.max(2, Math.round((cycleDaysLeft / CYCLE_DAYS) * 100))
+    : 0;
+
+  // Button label
+  const buttonLabel = () => {
+    if (plan === "STARTER" && !hasActiveSubscription && !hasTrialStarted) {
+      return <><Timer className="h-3.5 w-3.5 mr-1.5" />Start free trial · 14 days</>;
+    }
+    if (hasActiveSubscription) return <>Switch plan<ArrowRight className="h-3.5 w-3.5 ml-1.5" /></>;
+    return <>Get started<ArrowRight className="h-3.5 w-3.5 ml-1.5" /></>;
+  };
+
   return (
     <div
-      className={`relative rounded-2xl p-6 ${
+      className={`relative rounded-2xl p-6 flex flex-col ${
         isHighlighted
           ? "bg-primary/10 border-2 border-primary/40 shadow-xl shadow-primary/10"
           : "bg-muted/30 border border-border"
@@ -86,7 +112,7 @@ function PlanCard({
         </div>
       )}
 
-      <div className="mb-5">
+      <div className="mb-4">
         <div className="flex items-center gap-2 mb-1">
           {plan === "STARTER" ? (
             <Star className="h-4 w-4 text-primary" />
@@ -103,9 +129,12 @@ function PlanCard({
           <span className="text-3xl font-bold">{PLAN_PRICES[plan]}</span>
           <span className="text-muted-foreground text-sm">/month</span>
         </div>
+        {plan === "STARTER" && !hasActiveSubscription && !hasTrialStarted && (
+          <p className="text-[11px] text-primary/70 mt-1 font-medium">First 14 days free</p>
+        )}
       </div>
 
-      <ul className="space-y-2 mb-6">
+      <ul className="space-y-2 mb-5 flex-1">
         {features.map((feature) => (
           <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
             <CheckCircle className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
@@ -113,6 +142,26 @@ function PlanCard({
           </li>
         ))}
       </ul>
+
+      {/* Billing cycle progress — only for the current active paid plan */}
+      {isPaidCurrentPlan && cycleDaysLeft !== null && (
+        <div className="mb-4 space-y-1.5">
+          <div className="flex justify-between text-[11px] text-muted-foreground">
+            <span>{isCancelled ? "Access ends" : "Billing cycle"}</span>
+            <span className={isCancelled && cycleDaysLeft <= 7 ? "text-red-500" : ""}>
+              {cycleDaysLeft} of {CYCLE_DAYS} days remaining
+            </span>
+          </div>
+          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${
+                isCancelled && cycleDaysLeft <= 7 ? "bg-red-400" : "bg-primary/60"
+              }`}
+              style={{ width: `${cyclePct}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       <Button
         data-testid={`button-subscribe-${plan.toLowerCase()}`}
@@ -134,10 +183,7 @@ function PlanCard({
         ) : isPaidCurrentPlan ? (
           "Current plan"
         ) : (
-          <>
-            {hasActiveSubscription ? "Switch plan" : "Subscribe"}
-            <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-          </>
+          buttonLabel()
         )}
       </Button>
     </div>
@@ -356,9 +402,13 @@ export function BillingPage() {
                   plan={plan}
                   currentPlan={currentPlan}
                   hasActiveSubscription={hasActiveSub}
+                  hasTrialStarted={!!billing?.trialEndsAt}
                   isAdminGranted={isAdminGranted}
                   onUpgrade={handleUpgrade}
                   isLoading={checkingOut === plan}
+                  lsRenewsAt={billing?.lsRenewsAt ?? null}
+                  lsEndsAt={billing?.lsEndsAt ?? null}
+                  lsSubscriptionStatus={billing?.lsSubscriptionStatus ?? null}
                 />
               ))}
             </div>
