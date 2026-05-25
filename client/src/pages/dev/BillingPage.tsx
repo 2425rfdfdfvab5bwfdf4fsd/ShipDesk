@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useSEO } from "@/lib/seo";
 import {
@@ -79,7 +79,7 @@ function PlanCard({
   // Button label
   const buttonLabel = () => {
     if (plan === "STARTER" && !hasActiveSubscription && !hasTrialStarted) {
-      return <><Timer className="h-3.5 w-3.5 mr-1.5" />Start free trial · 14 days</>;
+      return <><Timer className="h-3.5 w-3.5 mr-1.5" />Try free for 14 days</>;
     }
     if (hasActiveSubscription) return <>Switch plan<ArrowRight className="h-3.5 w-3.5 ml-1.5" /></>;
     return <>Get started<ArrowRight className="h-3.5 w-3.5 ml-1.5" /></>;
@@ -194,9 +194,10 @@ export function BillingPage() {
   useSEO({ title: "Billing | ShipDesk" });
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [checkingOut, setCheckingOut] = useState<"STARTER" | "SOLO" | "AGENCY" | null>(null);
 
-  const { data: billing, isLoading, refetch } = useQuery<BillingStatus>({
+  const { data: billing, isLoading } = useQuery<BillingStatus>({
     queryKey: ["billing-status"],
     queryFn: () => api.get("/api/billing/status").then((r) => r.data),
   });
@@ -212,6 +213,24 @@ export function BillingPage() {
   });
 
   const handleUpgrade = async (plan: "STARTER" | "SOLO" | "AGENCY") => {
+    // If Starter and no trial has started yet, activate the free trial instead of going to checkout
+    if (plan === "STARTER" && !billing?.lsSubscriptionId && !billing?.trialEndsAt) {
+      setCheckingOut("STARTER");
+      try {
+        await api.post("/api/billing/start-trial");
+        await queryClient.invalidateQueries({ queryKey: ["billing-status"] });
+        navigate("/dashboard");
+      } catch {
+        toast({
+          title: "Could not start trial",
+          description: "Please try again or contact support.",
+          variant: "destructive",
+        });
+        setCheckingOut(null);
+      }
+      return;
+    }
+
     setCheckingOut(plan);
     try {
       const redirectUrl = `${window.location.origin}/billing?success=true`;

@@ -330,7 +330,7 @@ export function LandingPage() {
                     size="sm"
                     className="gap-1.5 bg-indigo-500 hover:bg-indigo-400 shadow-lg shadow-indigo-500/25 h-9 px-4 text-sm font-semibold"
                   >
-                    Start free trial
+                    Try free for 14 days
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
@@ -433,7 +433,7 @@ export function LandingPage() {
                   <>
                     <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
                       <Button className="w-full h-12 gap-2 bg-indigo-500 hover:bg-indigo-400 text-sm font-semibold rounded-xl shadow-lg shadow-indigo-500/25">
-                        Start free trial
+                        Try free for 14 days
                         <ArrowRight className="h-4 w-4" />
                       </Button>
                     </Link>
@@ -713,7 +713,7 @@ export function LandingPage() {
                         : "bg-white/10 hover:bg-white/15 text-white border border-white/15"
                     }`}
                   >
-                    {plan.name === "Starter" ? "Start free trial" : "Get started"}
+                    {plan.name === "Starter" ? "Try free for 14 days" : "Get started"}
                   </Button>
                 </Link>
               </motion.div>
@@ -797,7 +797,7 @@ export function LandingPage() {
                   size="lg"
                   className="w-full sm:w-auto gap-2 px-8 h-12 bg-indigo-500 hover:bg-indigo-400 text-base shadow-xl shadow-indigo-500/25"
                 >
-                  Start free trial <ArrowRight className="h-4 w-4" />
+                  Try free for 14 days <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link href="/sign-in" className="w-full sm:w-auto">

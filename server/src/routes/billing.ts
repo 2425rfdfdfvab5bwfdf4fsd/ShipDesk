@@ -78,6 +78,37 @@ router.post("/checkout", requireAuth, async (req: AuthRequest, res, next) => {
   }
 });
 
+router.post("/start-trial", requireAuth, async (req: AuthRequest, res, next) => {
+  try {
+    if (!req.workspaceId) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+    const workspace = await db.workspace.findUnique({
+      where: { id: req.workspaceId },
+      select: { trialEndsAt: true, lsSubscriptionId: true },
+    });
+    if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+
+    if (workspace.lsSubscriptionId) {
+      throw new AppError("Already subscribed", 400, "ALREADY_SUBSCRIBED");
+    }
+
+    // Idempotent: if trial is already set, return it as-is
+    if (workspace.trialEndsAt) {
+      res.json({ trialEndsAt: workspace.trialEndsAt, alreadyStarted: true });
+      return;
+    }
+
+    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    await db.workspace.update({
+      where: { id: req.workspaceId },
+      data: { trialEndsAt },
+    });
+
+    res.json({ trialEndsAt, alreadyStarted: false });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/portal", requireAuth, async (req: AuthRequest, res, next) => {
   try {
     const workspace = await db.workspace.findUnique({
