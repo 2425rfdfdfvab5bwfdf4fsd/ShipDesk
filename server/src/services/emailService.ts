@@ -1,9 +1,9 @@
 import { BrevoClient } from "@getbrevo/brevo";
 
 function getClient(): BrevoClient | null {
-  const key = process.env.BREVO_API_KEY;
+  const key = process.env.BREVO_API_KEY || process.env.RESEND_API_KEY;
   if (!key) {
-    console.warn("[emailService] BREVO_API_KEY is not set — email sending is disabled");
+    console.warn("[emailService] BREVO_API_KEY/RESEND_API_KEY is not set — email sending is disabled");
     return null;
   }
   return new BrevoClient({ apiKey: key });
