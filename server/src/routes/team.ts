@@ -23,6 +23,8 @@ function hashToken(token: string): string {
 }
 
 function getEffectivePlan(plan: string, lsSub: string | null, trialEndsAt: Date | null): string {
+  // Admin-set plans always take precedence over subscription/trial state
+  if (plan === "SOLO" || plan === "AGENCY") return plan;
   if (lsSub) return plan;
   if (trialEndsAt && new Date(trialEndsAt) > new Date()) return "STARTER";
   return "FREE";

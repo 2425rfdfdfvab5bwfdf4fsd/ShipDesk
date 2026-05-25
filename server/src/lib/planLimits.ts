@@ -40,6 +40,10 @@ export function getEffectivePlan(workspace: {
   lsSubscriptionStatus: string | null;
   trialEndsAt: Date | null;
 }): Plan {
+  // Admin-set plans always take precedence over subscription/trial state
+  if (workspace.plan === "SOLO" || workspace.plan === "AGENCY") {
+    return workspace.plan;
+  }
   if (workspace.lsSubscriptionId) {
     return workspace.plan;
   }
