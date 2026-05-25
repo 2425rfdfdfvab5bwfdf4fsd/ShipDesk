@@ -4,6 +4,7 @@ import { db } from "../lib/prisma.js";
 import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
 import { generateUploadSignature, deleteAsset } from "../services/cloudinaryService.js";
+import { getEffectivePlan, planHasFeature } from "../lib/planLimits.js";
 
 const router = Router({ mergeParams: true });
 
@@ -24,6 +25,11 @@ async function getWorkspace(userId: string) {
 router.get("/upload-signature", requireAuth, async (req: AuthRequest, res, next) => {
   try {
     const ws = await getWorkspace(req.userId!);
+    const effectivePlan = getEffectivePlan(ws);
+    if (!planHasFeature(effectivePlan, "files")) {
+      throw new AppError("File uploads require the Starter plan or higher", 403, "PLAN_FEATURE_REQUIRED");
+    }
+
     const projectId = req.query.projectId as string;
     if (!projectId) throw new AppError("projectId required", 400, "VALIDATION_ERROR");
 
@@ -60,6 +66,11 @@ router.get("/:projectId/files", requireAuth, async (req: AuthRequest, res, next)
 router.post("/:projectId/files", requireAuth, async (req: AuthRequest, res, next) => {
   try {
     const ws = await getWorkspace(req.userId!);
+    const effectivePlan = getEffectivePlan(ws);
+    if (!planHasFeature(effectivePlan, "files")) {
+      throw new AppError("File uploads require the Starter plan or higher", 403, "PLAN_FEATURE_REQUIRED");
+    }
+
     const project = await db.project.findFirst({
       where: { id: req.params.projectId, workspaceId: ws.id },
     });

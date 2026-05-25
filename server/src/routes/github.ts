@@ -9,6 +9,7 @@ import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
 import { encrypt, decrypt } from "../lib/crypto.js";
 import * as githubService from "../services/githubService.js";
+import { getEffectivePlan, planHasFeature } from "../lib/planLimits.js";
 
 const router = Router();
 
@@ -180,6 +181,11 @@ router.post("/connect-repo", requireAuth, async (req: AuthRequest, res, next) =>
       where: { ownerId: req.userId! },
     });
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+
+    const effectivePlan = getEffectivePlan(workspace);
+    if (!planHasFeature(effectivePlan, "github")) {
+      throw new AppError("GitHub integration requires the Solo plan or higher", 403, "PLAN_FEATURE_REQUIRED");
+    }
 
     const body = connectRepoSchema.parse(req.body);
 

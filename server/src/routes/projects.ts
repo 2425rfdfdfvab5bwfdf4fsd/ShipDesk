@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "../lib/prisma.js";
 import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
+import { getEffectivePlan, PLAN_PROJECT_LIMITS } from "../lib/planLimits.js";
 
 const router = Router();
 
@@ -58,12 +59,15 @@ router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
     const ws = await getWorkspace(req.userId!);
     const body = createProjectSchema.parse(req.body);
 
+    const effectivePlan = getEffectivePlan(ws);
+    const projectLimit = PLAN_PROJECT_LIMITS[effectivePlan];
+
     const activeCount = await db.project.count({
       where: { workspaceId: ws.id, status: { not: "COMPLETED" } },
     });
-    if (activeCount >= 50) {
+    if (activeCount >= projectLimit) {
       throw new AppError(
-        "Active project limit reached",
+        "Active project limit reached for your plan",
         422,
         "ACTIVE_PROJECT_LIMIT_REACHED"
       );

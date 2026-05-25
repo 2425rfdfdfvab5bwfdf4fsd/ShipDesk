@@ -5,6 +5,7 @@ import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
 import { generateWeeklyReport, ReportContent } from "../services/geminiService.js";
 import { notifyClientsOfPublishedReport } from "../services/reportScheduler.js";
+import { getEffectivePlan, planHasFeature, PLAN_MONTHLY_AI_REPORTS } from "../lib/planLimits.js";
 
 const router = Router();
 
@@ -88,10 +89,37 @@ router.post(
   async (req: AuthRequest, res, next) => {
     try {
       const ws = await getWorkspace(req.userId!);
+      const effectivePlan = getEffectivePlan(ws);
+
+      if (!planHasFeature(effectivePlan, "ai_reports")) {
+        throw new AppError("AI reports require the Starter plan or higher", 403, "PLAN_FEATURE_REQUIRED");
+      }
+
       const project = await assertProjectAccess(req.params.projectId, ws.id);
 
       if (!project.githubRepoId) {
         throw new AppError("No GitHub repo linked", 400, "NO_GITHUB_REPO");
+      }
+
+      const monthlyLimit = PLAN_MONTHLY_AI_REPORTS[effectivePlan];
+      if (isFinite(monthlyLimit)) {
+        const monthStart = new Date();
+        monthStart.setUTCDate(1);
+        monthStart.setUTCHours(0, 0, 0, 0);
+        const monthlyCount = await db.report.count({
+          where: {
+            project: { workspaceId: ws.id },
+            generatedBy: "AI",
+            generatedAt: { gte: monthStart },
+          },
+        });
+        if (monthlyCount >= monthlyLimit) {
+          throw new AppError(
+            `Monthly AI report limit of ${monthlyLimit} reached for your plan`,
+            429,
+            "MONTHLY_AI_REPORT_LIMIT_REACHED"
+          );
+        }
       }
 
       const today = new Date().toISOString().split("T")[0];
@@ -113,10 +141,7 @@ router.post(
       });
 
       if (log.count > 10) {
-        const midnight = new Date();
-        midnight.setUTCDate(midnight.getUTCDate() + 1);
-        midnight.setUTCHours(0, 0, 0, 0);
-        throw new AppError("Rate limit exceeded", 429, "RATE_LIMIT_EXCEEDED");
+        throw new AppError("Daily rate limit exceeded", 429, "RATE_LIMIT_EXCEEDED");
       }
 
       const { start, end } = getWeekBounds();

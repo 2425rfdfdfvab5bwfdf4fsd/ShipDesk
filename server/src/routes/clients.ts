@@ -7,6 +7,7 @@ import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
 import { sendMagicLink } from "../services/emailService.js";
 import { buildMagicLinkUrl } from "../lib/portalUrl.js";
+import { getEffectivePlan, planHasFeature } from "../lib/planLimits.js";
 
 const router = Router({ mergeParams: true });
 
@@ -63,6 +64,11 @@ const inviteSchema = z.object({ email: z.string().email() });
 router.post("/:projectId/invite", requireAuth, async (req: AuthRequest, res, next) => {
   try {
     const ws = await getWorkspace(req.userId!);
+    const effectivePlan = getEffectivePlan(ws);
+    if (!planHasFeature(effectivePlan, "client_invites")) {
+      throw new AppError("Client invites require the Starter plan or higher", 403, "PLAN_FEATURE_REQUIRED");
+    }
+
     const project = await db.project.findFirst({
       where: { id: req.params.projectId, workspaceId: ws.id },
     });

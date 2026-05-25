@@ -15,6 +15,7 @@ import { useInvoices } from "@/hooks/useInvoices";
 import { useScopeChanges } from "@/hooks/useScopeChanges";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useUnreadMessageCounts } from "@/hooks/useMessages";
+import { usePlan } from "@/hooks/usePlan";
 import { toast } from "@/hooks/use-toast";
 
 function StatCard({
@@ -59,6 +60,7 @@ export function DashboardPage() {
   const { data: invoicesData } = useInvoices();
   const { data: scopeChanges } = useScopeChanges();
   const { data: unreadCounts } = useUnreadMessageCounts();
+  const { capabilities } = usePlan();
   const createProject = useCreateProject();
 
   const unpaidByProject = (invoicesData?.invoices || []).reduce<Record<string, number>>(
@@ -94,9 +96,12 @@ export function DashboardPage() {
       const errCode = axiosErr?.response?.data?.error;
       const errMsg = axiosErr?.response?.data?.message;
       console.error("[createProject] failed", { status, errCode, errMsg, err });
+      const planLimit = capabilities?.projectLimit ?? 50;
       const description =
         errCode === "ACTIVE_PROJECT_LIMIT_REACHED"
-          ? "You've reached the 50 active project limit."
+          ? planLimit === Infinity
+            ? "You've reached the active project limit."
+            : `Your ${capabilities?.effectivePlan ?? "current"} plan allows up to ${planLimit} active project${planLimit !== 1 ? "s" : ""}. Upgrade to add more.`
           : errCode === "NOT_FOUND"
           ? "Workspace not found. Please complete onboarding first."
           : errCode === "UNAUTHORIZED" || status === 401
@@ -131,6 +136,11 @@ export function DashboardPage() {
             </h1>
             <p className="text-[11px] text-muted-foreground">
               {activeCount} active project{activeCount !== 1 ? "s" : ""}
+              {capabilities && capabilities.projectLimit !== Infinity && (
+                <span className={`ml-1 ${activeCount >= capabilities.projectLimit ? "text-amber-500 font-medium" : ""}`}>
+                  · {capabilities.projectLimit} max on {capabilities.effectivePlan.charAt(0) + capabilities.effectivePlan.slice(1).toLowerCase()} plan
+                </span>
+              )}
             </p>
           </div>
           <Button

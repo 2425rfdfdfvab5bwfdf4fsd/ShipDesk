@@ -34,6 +34,8 @@ import { useScopeChanges, useSubmitQuote, useMarkScopeChangePaid } from "@/hooks
 import { useMessages, useSendMessage, useMarkMessagesRead } from "@/hooks/useMessages";
 import { useFiles, useCreateFile, useDeleteFile, useUploadSignature } from "@/hooks/useFiles";
 import { useProjectClients, useInviteClient, useRevokeClientAccess } from "@/hooks/useClients";
+import { usePlan } from "@/hooks/usePlan";
+import { PlanGate } from "@/components/ui/PlanGate";
 import { toast } from "@/hooks/use-toast";
 import { cn, formatDate } from "@/lib/utils";
 import type { ScopeChange } from "@/types";
@@ -157,6 +159,8 @@ export function ProjectDetailPage() {
   const [editName, setEditName] = useState("");
   const [editClientName, setEditClientName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+
+  const { capabilities } = usePlan();
 
   const { data: project, isLoading } = useProject(id);
   const { data: reportsData, isLoading: reportsLoading } = useReports(id);
@@ -368,41 +372,64 @@ export function ProjectDetailPage() {
 
           {/* Mobile tab bar — 2 rows × 4 columns, always visible */}
           <TabsList className="sm:hidden bg-transparent border-none rounded-none h-auto p-0 grid grid-cols-4 w-full">
-            {TAB_CONFIG.map(({ value, label, icon: Icon }) => (
-              <TabsTrigger
-                key={value}
-                value={value}
-                className="relative rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-col gap-0.5 px-1 py-2 text-[10px] font-medium text-muted-foreground data-[state=active]:text-foreground"
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-                {value === "messages" && unreadMessages > 0 && (
-                  <span className="absolute top-1 right-2 inline-flex items-center justify-center h-3.5 min-w-3.5 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold leading-none">
-                    {unreadMessages > 9 ? "9+" : unreadMessages}
-                  </span>
-                )}
-              </TabsTrigger>
-            ))}
+            {TAB_CONFIG.map(({ value, label, icon: Icon }) => {
+              const isLocked = capabilities && (
+                (["files", "messages", "invoices"].includes(value) && !capabilities.canUseFiles && !capabilities.canUseMessaging && !capabilities.canUseInvoices) ||
+                (value === "files" && !capabilities.canUseFiles) ||
+                (value === "messages" && !capabilities.canUseMessaging) ||
+                (value === "invoices" && !capabilities.canUseInvoices) ||
+                (value === "scope-changes" && !capabilities.canUseScopeChanges)
+              );
+              return (
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className="relative rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-col gap-0.5 px-1 py-2 text-[10px] font-medium text-muted-foreground data-[state=active]:text-foreground"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                  {value === "messages" && unreadMessages > 0 && !isLocked && (
+                    <span className="absolute top-1 right-2 inline-flex items-center justify-center h-3.5 min-w-3.5 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold leading-none">
+                      {unreadMessages > 9 ? "9+" : unreadMessages}
+                    </span>
+                  )}
+                  {isLocked && (
+                    <span className="absolute top-1 right-1 inline-flex items-center justify-center h-3 w-3 rounded-full bg-muted">
+                      <Lock className="h-1.5 w-1.5 text-muted-foreground" />
+                    </span>
+                  )}
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
 
           {/* Desktop tab bar — single scrollable row */}
           <div className="hidden sm:block overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <TabsList className="bg-transparent border-none rounded-none h-auto p-0 gap-0 w-max pl-5 pr-5">
-              {TAB_CONFIG.map(({ value, label, icon: Icon }) => (
-                <TabsTrigger
-                  key={value}
-                  value={value}
-                  className="relative rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1 px-3.5 py-2.5 text-xs font-medium text-muted-foreground data-[state=active]:text-foreground whitespace-nowrap"
-                >
-                  <Icon className="h-3 w-3" />
-                  {label}
-                  {value === "messages" && unreadMessages > 0 && (
-                    <span className="ml-0.5 inline-flex items-center justify-center h-3.5 min-w-3.5 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold leading-none">
-                      {unreadMessages > 9 ? "9+" : unreadMessages}
-                    </span>
-                  )}
-                </TabsTrigger>
-              ))}
+              {TAB_CONFIG.map(({ value, label, icon: Icon }) => {
+                const isLocked = capabilities && (
+                  (value === "files" && !capabilities.canUseFiles) ||
+                  (value === "messages" && !capabilities.canUseMessaging) ||
+                  (value === "invoices" && !capabilities.canUseInvoices) ||
+                  (value === "scope-changes" && !capabilities.canUseScopeChanges)
+                );
+                return (
+                  <TabsTrigger
+                    key={value}
+                    value={value}
+                    className="relative rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1 px-3.5 py-2.5 text-xs font-medium text-muted-foreground data-[state=active]:text-foreground whitespace-nowrap"
+                  >
+                    <Icon className="h-3 w-3" />
+                    {label}
+                    {isLocked && <Lock className="h-2.5 w-2.5 text-muted-foreground/50" />}
+                    {value === "messages" && unreadMessages > 0 && !isLocked && (
+                      <span className="ml-0.5 inline-flex items-center justify-center h-3.5 min-w-3.5 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold leading-none">
+                        {unreadMessages > 9 ? "9+" : unreadMessages}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
           </div>
         </div>
@@ -618,21 +645,23 @@ export function ProjectDetailPage() {
 
           {/* ── Files ── */}
           <TabsContent value="files" className="mt-0 p-3 sm:p-5">
-            <SectionHeader
-              title="Files"
-              description="Upload and share documents with your client."
-            />
-            <FileList
-              files={files || []}
-              onUpload={handleUploadFile}
-              onDelete={(fileId) => {
-                deleteFile.mutate({ projectId: id, fileId });
-                toast({ title: "File deleted" });
-              }}
-              uploading={createFile.isPending || uploadProgress !== null}
-              uploadProgress={uploadProgress ?? undefined}
-              isLoading={filesLoading}
-            />
+            <PlanGate allowed={capabilities?.canUseFiles ?? true} requiredPlan="STARTER" featureName="File Uploads & Sharing">
+              <SectionHeader
+                title="Files"
+                description="Upload and share documents with your client."
+              />
+              <FileList
+                files={files || []}
+                onUpload={handleUploadFile}
+                onDelete={(fileId) => {
+                  deleteFile.mutate({ projectId: id, fileId });
+                  toast({ title: "File deleted" });
+                }}
+                uploading={createFile.isPending || uploadProgress !== null}
+                uploadProgress={uploadProgress ?? undefined}
+                isLoading={filesLoading}
+              />
+            </PlanGate>
           </TabsContent>
 
           {/* ── Messages ── */}
@@ -640,63 +669,73 @@ export function ProjectDetailPage() {
             value="messages"
             className="mt-0 h-full"
           >
-            <MessageThread
-              messages={messages}
-              currentSenderType="DEVELOPER"
-              projectName={project?.name}
-              unreadCount={unreadMessages}
-              onSend={async (body) => {
-                await sendMessage.mutateAsync({ projectId: id, body });
-              }}
-              isSending={sendMessage.isPending}
-              isLoading={messagesLoading}
-            />
+            {capabilities && !capabilities.canUseMessaging ? (
+              <div className="p-3 sm:p-5">
+                <PlanGate allowed={false} requiredPlan="STARTER" featureName="Client Messaging" />
+              </div>
+            ) : (
+              <MessageThread
+                messages={messages}
+                currentSenderType="DEVELOPER"
+                projectName={project?.name}
+                unreadCount={unreadMessages}
+                onSend={async (body) => {
+                  await sendMessage.mutateAsync({ projectId: id, body });
+                }}
+                isSending={sendMessage.isPending}
+                isLoading={messagesLoading}
+              />
+            )}
           </TabsContent>
 
           {/* ── Invoices ── */}
           <TabsContent value="invoices" className="mt-0 p-3 sm:p-5">
-            <SectionHeader
-              title="Invoices"
-              description="Track payments and outstanding balances."
-              action={
-                <Button size="sm" className="h-7 gap-1 text-xs px-2.5" onClick={() => setShowInvoiceModal(true)}>
-                  <Plus className="h-3 w-3" /> New
-                </Button>
-              }
-            />
-            {invoices.length === 0 ? (
-              <EmptyState icon={ScrollText} title="No invoices yet" description="Create your first invoice to send to your client." />
-            ) : (
-              <div className="space-y-2.5">
-                {invoices.map((inv) => (
-                  <InvoiceCard
-                    key={inv.id}
-                    invoice={inv}
-                    onMarkPaid={(id) => { markInvoicePaid.mutate(id); toast({ title: "Marked as paid" }); }}
-                    onDelete={(id) => { deleteInvoice.mutate(id); toast({ title: "Invoice deleted" }); }}
-                  />
-                ))}
-              </div>
-            )}
+            <PlanGate allowed={capabilities?.canUseInvoices ?? true} requiredPlan="STARTER" featureName="Invoices & Payments">
+              <SectionHeader
+                title="Invoices"
+                description="Track payments and outstanding balances."
+                action={
+                  <Button size="sm" className="h-7 gap-1 text-xs px-2.5" onClick={() => setShowInvoiceModal(true)}>
+                    <Plus className="h-3 w-3" /> New
+                  </Button>
+                }
+              />
+              {invoices.length === 0 ? (
+                <EmptyState icon={ScrollText} title="No invoices yet" description="Create your first invoice to send to your client." />
+              ) : (
+                <div className="space-y-2.5">
+                  {invoices.map((inv) => (
+                    <InvoiceCard
+                      key={inv.id}
+                      invoice={inv}
+                      onMarkPaid={(id) => { markInvoicePaid.mutate(id); toast({ title: "Marked as paid" }); }}
+                      onDelete={(id) => { deleteInvoice.mutate(id); toast({ title: "Invoice deleted" }); }}
+                    />
+                  ))}
+                </div>
+              )}
+            </PlanGate>
           </TabsContent>
 
           {/* ── Scope Changes ── */}
           <TabsContent value="scope-changes" className="mt-0 p-3 sm:p-5">
-            <SectionHeader title="Scope Changes" description="Client-submitted requests for additional work." />
-            {(scopeChanges || []).length === 0 ? (
-              <EmptyState icon={ArrowRightLeft} title="No scope change requests" description="When clients request additional work, it will appear here." />
-            ) : (
-              <div className="space-y-2.5">
-                {(scopeChanges || []).map((sc) => (
-                  <ScopeChangeCard
-                    key={sc.id}
-                    sc={sc}
-                    onWriteQuote={setQuoteTarget}
-                    onMarkPaid={(id) => { markScopePaid.mutate(id); toast({ title: "Marked as paid" }); }}
-                  />
-                ))}
-              </div>
-            )}
+            <PlanGate allowed={capabilities?.canUseScopeChanges ?? true} requiredPlan="SOLO" featureName="Scope Change Requests & Quoting">
+              <SectionHeader title="Scope Changes" description="Client-submitted requests for additional work." />
+              {(scopeChanges || []).length === 0 ? (
+                <EmptyState icon={ArrowRightLeft} title="No scope change requests" description="When clients request additional work, it will appear here." />
+              ) : (
+                <div className="space-y-2.5">
+                  {(scopeChanges || []).map((sc) => (
+                    <ScopeChangeCard
+                      key={sc.id}
+                      sc={sc}
+                      onWriteQuote={setQuoteTarget}
+                      onMarkPaid={(id) => { markScopePaid.mutate(id); toast({ title: "Marked as paid" }); }}
+                    />
+                  ))}
+                </div>
+              )}
+            </PlanGate>
           </TabsContent>
 
           {/* ── Settings ── */}
@@ -868,7 +907,9 @@ export function ProjectDetailPage() {
                   <p className="text-xs font-semibold">GitHub Repository</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">Connect a repository to enable AI report generation.</p>
                 </div>
-                {hasGitHub ? (
+                {capabilities && !capabilities.canUseGitHub ? (
+                  <PlanGate allowed={false} requiredPlan="SOLO" featureName="GitHub Integration" />
+                ) : hasGitHub ? (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 bg-muted/60 rounded px-2.5 py-2">
                       <Github className="h-3.5 w-3.5 text-muted-foreground shrink-0" />

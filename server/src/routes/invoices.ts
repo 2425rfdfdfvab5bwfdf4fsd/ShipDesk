@@ -5,6 +5,7 @@ import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
 import { createPaymentLink } from "../services/lemonSqueezyService.js";
 import { sendInvoiceNotification } from "../services/emailService.js";
+import { getEffectivePlan, planHasFeature } from "../lib/planLimits.js";
 
 const router = Router();
 
@@ -63,6 +64,11 @@ router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
 router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
   try {
     const ws = await getWorkspace(req.userId!);
+    const effectivePlan = getEffectivePlan(ws);
+    if (!planHasFeature(effectivePlan, "invoices")) {
+      throw new AppError("Invoices require the Starter plan or higher", 403, "PLAN_FEATURE_REQUIRED");
+    }
+
     const body = createInvoiceSchema.parse(req.body);
 
     const project = await db.project.findFirst({

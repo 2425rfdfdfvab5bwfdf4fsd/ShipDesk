@@ -7,6 +7,7 @@ import { AppError } from "../lib/errors.js";
 import { messageLimiter } from "../middleware/rateLimiter.js";
 import { sendMessageNotification } from "../services/emailService.js";
 import { buildPortalUrl } from "../lib/portalUrl.js";
+import { getEffectivePlan, planHasFeature } from "../lib/planLimits.js";
 
 const router = Router({ mergeParams: true });
 
@@ -87,6 +88,11 @@ router.post(
   async (req: AuthRequest, res, next) => {
     try {
       const ws = await getWorkspace(req.userId!);
+      const effectivePlan = getEffectivePlan(ws);
+      if (!planHasFeature(effectivePlan, "messaging")) {
+        throw new AppError("Messaging requires the Starter plan or higher", 403, "PLAN_FEATURE_REQUIRED");
+      }
+
       const project = await db.project.findFirst({
         where: { id: req.params.projectId, workspaceId: ws.id },
         include: { workspace: true },

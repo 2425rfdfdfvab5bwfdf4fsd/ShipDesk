@@ -6,6 +6,7 @@ import { requireAuth, AuthRequest } from "../middleware/auth.js";
 import { AppError } from "../lib/errors.js";
 import { createPaymentLink } from "../services/lemonSqueezyService.js";
 import { sendScopeChangeNotification } from "../services/emailService.js";
+import { getEffectivePlan, planHasFeature } from "../lib/planLimits.js";
 
 const router = Router();
 
@@ -64,6 +65,11 @@ router.get("/:id", requireAuth, async (req: AuthRequest, res, next) => {
 router.patch("/:id/quote", requireAuth, async (req: AuthRequest, res, next) => {
   try {
     const ws = await getWorkspace(req.userId!);
+    const effectivePlan = getEffectivePlan(ws);
+    if (!planHasFeature(effectivePlan, "scope_changes")) {
+      throw new AppError("Scope change quoting requires the Solo plan or higher", 403, "PLAN_FEATURE_REQUIRED");
+    }
+
     const sc = await db.scopeChange.findFirst({
       where: { id: req.params.id, project: { workspaceId: ws.id } },
     });
