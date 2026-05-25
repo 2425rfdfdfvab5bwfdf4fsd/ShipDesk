@@ -27,7 +27,6 @@ interface BillingStatus {
 }
 
 const PLAN_INFO = {
-  FREE:    { label: "Free",    icon: Star,      color: "text-muted-foreground" },
   STARTER: { label: "Starter", icon: Star,      color: "text-indigo-500" },
   SOLO:    { label: "Solo",    icon: Zap,       color: "text-indigo-500" },
   AGENCY:  { label: "Agency",  icon: Building2, color: "text-indigo-500" },
@@ -53,14 +52,16 @@ function PlanTab() {
     );
   }
 
-  const plan = billing?.plan ?? "FREE";
+  const rawPlan = billing?.plan;
   const isOnTrial = !billing?.lsSubscriptionId && !!billing?.trialEndsAt;
   const trialActive = isOnTrial && new Date(billing!.trialEndsAt!) > new Date();
   const trialExpired = isOnTrial && !trialActive;
   const remaining = billing?.trialEndsAt && trialActive ? daysLeft(billing.trialEndsAt) : 0;
 
-  // During trial, always show Starter features regardless of DB plan value
-  const displayPlan = isOnTrial ? "STARTER" : plan;
+  // During trial always show Starter; never show a "Free" plan label — all users are at least Starter
+  const displayPlan: "STARTER" | "SOLO" | "AGENCY" = isOnTrial || !rawPlan || rawPlan === "FREE"
+    ? "STARTER"
+    : rawPlan as "STARTER" | "SOLO" | "AGENCY";
   const info = PLAN_INFO[displayPlan];
   const PlanIcon = info.icon;
   const features = PLAN_FEATURES[displayPlan] ?? [];
@@ -106,7 +107,7 @@ function PlanTab() {
                   ? `Includes all Starter features · ${remaining} day${remaining !== 1 ? "s" : ""} remaining`
                   : trialExpired
                   ? "Your trial has ended — upgrade to continue"
-                  : "Free plan"}
+                  : ""}
               </p>
             </div>
           </div>

@@ -162,7 +162,8 @@ export function BillingPage() {
     }
   };
 
-  const currentPlan = billing?.plan ?? "FREE";
+  const currentPlan: "STARTER" | "SOLO" | "AGENCY" =
+    (billing?.plan === "SOLO" || billing?.plan === "AGENCY") ? billing.plan : "STARTER";
   const subStatus = billing?.lsSubscriptionStatus;
   const statusInfo = subStatus ? STATUS_BADGE[subStatus] : null;
   const isOnTrial = !billing?.lsSubscriptionId && !!billing?.trialEndsAt;

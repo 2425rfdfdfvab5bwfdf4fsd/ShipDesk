@@ -374,11 +374,7 @@ export function ProjectDetailPage() {
           <TabsList className="sm:hidden bg-transparent border-none rounded-none h-auto p-0 grid grid-cols-4 w-full">
             {TAB_CONFIG.map(({ value, label, icon: Icon }) => {
               const isLocked = capabilities && (
-                (["files", "messages", "invoices"].includes(value) && !capabilities.canUseFiles && !capabilities.canUseMessaging && !capabilities.canUseInvoices) ||
-                (value === "files" && !capabilities.canUseFiles) ||
-                (value === "messages" && !capabilities.canUseMessaging) ||
-                (value === "invoices" && !capabilities.canUseInvoices) ||
-                (value === "scope-changes" && !capabilities.canUseScopeChanges)
+                value === "scope-changes" && !capabilities.canUseScopeChanges
               );
               return (
                 <TabsTrigger
@@ -408,10 +404,7 @@ export function ProjectDetailPage() {
             <TabsList className="bg-transparent border-none rounded-none h-auto p-0 gap-0 w-max pl-5 pr-5">
               {TAB_CONFIG.map(({ value, label, icon: Icon }) => {
                 const isLocked = capabilities && (
-                  (value === "files" && !capabilities.canUseFiles) ||
-                  (value === "messages" && !capabilities.canUseMessaging) ||
-                  (value === "invoices" && !capabilities.canUseInvoices) ||
-                  (value === "scope-changes" && !capabilities.canUseScopeChanges)
+                  value === "scope-changes" && !capabilities.canUseScopeChanges
                 );
                 return (
                   <TabsTrigger
@@ -645,23 +638,21 @@ export function ProjectDetailPage() {
 
           {/* ── Files ── */}
           <TabsContent value="files" className="mt-0 p-3 sm:p-5">
-            <PlanGate allowed={capabilities?.canUseFiles ?? true} requiredPlan="STARTER" featureName="File Uploads & Sharing">
-              <SectionHeader
-                title="Files"
-                description="Upload and share documents with your client."
-              />
-              <FileList
-                files={files || []}
-                onUpload={handleUploadFile}
-                onDelete={(fileId) => {
-                  deleteFile.mutate({ projectId: id, fileId });
-                  toast({ title: "File deleted" });
-                }}
-                uploading={createFile.isPending || uploadProgress !== null}
-                uploadProgress={uploadProgress ?? undefined}
-                isLoading={filesLoading}
-              />
-            </PlanGate>
+            <SectionHeader
+              title="Files"
+              description="Upload and share documents with your client."
+            />
+            <FileList
+              files={files || []}
+              onUpload={handleUploadFile}
+              onDelete={(fileId) => {
+                deleteFile.mutate({ projectId: id, fileId });
+                toast({ title: "File deleted" });
+              }}
+              uploading={createFile.isPending || uploadProgress !== null}
+              uploadProgress={uploadProgress ?? undefined}
+              isLoading={filesLoading}
+            />
           </TabsContent>
 
           {/* ── Messages ── */}
@@ -669,52 +660,44 @@ export function ProjectDetailPage() {
             value="messages"
             className="mt-0 h-full"
           >
-            {capabilities && !capabilities.canUseMessaging ? (
-              <div className="p-3 sm:p-5">
-                <PlanGate allowed={false} requiredPlan="STARTER" featureName="Client Messaging" />
-              </div>
-            ) : (
-              <MessageThread
-                messages={messages}
-                currentSenderType="DEVELOPER"
-                projectName={project?.name}
-                unreadCount={unreadMessages}
-                onSend={async (body) => {
-                  await sendMessage.mutateAsync({ projectId: id, body });
-                }}
-                isSending={sendMessage.isPending}
-                isLoading={messagesLoading}
-              />
-            )}
+            <MessageThread
+              messages={messages}
+              currentSenderType="DEVELOPER"
+              projectName={project?.name}
+              unreadCount={unreadMessages}
+              onSend={async (body) => {
+                await sendMessage.mutateAsync({ projectId: id, body });
+              }}
+              isSending={sendMessage.isPending}
+              isLoading={messagesLoading}
+            />
           </TabsContent>
 
           {/* ── Invoices ── */}
           <TabsContent value="invoices" className="mt-0 p-3 sm:p-5">
-            <PlanGate allowed={capabilities?.canUseInvoices ?? true} requiredPlan="STARTER" featureName="Invoices & Payments">
-              <SectionHeader
-                title="Invoices"
-                description="Track payments and outstanding balances."
-                action={
-                  <Button size="sm" className="h-7 gap-1 text-xs px-2.5" onClick={() => setShowInvoiceModal(true)}>
-                    <Plus className="h-3 w-3" /> New
-                  </Button>
-                }
-              />
-              {invoices.length === 0 ? (
-                <EmptyState icon={ScrollText} title="No invoices yet" description="Create your first invoice to send to your client." />
-              ) : (
-                <div className="space-y-2.5">
-                  {invoices.map((inv) => (
-                    <InvoiceCard
-                      key={inv.id}
-                      invoice={inv}
-                      onMarkPaid={(id) => { markInvoicePaid.mutate(id); toast({ title: "Marked as paid" }); }}
-                      onDelete={(id) => { deleteInvoice.mutate(id); toast({ title: "Invoice deleted" }); }}
-                    />
-                  ))}
-                </div>
-              )}
-            </PlanGate>
+            <SectionHeader
+              title="Invoices"
+              description="Track payments and outstanding balances."
+              action={
+                <Button size="sm" className="h-7 gap-1 text-xs px-2.5" onClick={() => setShowInvoiceModal(true)}>
+                  <Plus className="h-3 w-3" /> New
+                </Button>
+              }
+            />
+            {invoices.length === 0 ? (
+              <EmptyState icon={ScrollText} title="No invoices yet" description="Create your first invoice to send to your client." />
+            ) : (
+              <div className="space-y-2.5">
+                {invoices.map((inv) => (
+                  <InvoiceCard
+                    key={inv.id}
+                    invoice={inv}
+                    onMarkPaid={(id) => { markInvoicePaid.mutate(id); toast({ title: "Marked as paid" }); }}
+                    onDelete={(id) => { deleteInvoice.mutate(id); toast({ title: "Invoice deleted" }); }}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* ── Scope Changes ── */}

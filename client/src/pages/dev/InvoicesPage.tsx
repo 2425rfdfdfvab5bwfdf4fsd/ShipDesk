@@ -9,8 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { InvoiceForm } from "@/components/invoices/InvoiceForm";
 import { useInvoices, useMarkInvoicePaid, useDeleteInvoice } from "@/hooks/useInvoices";
 import { useProjects } from "@/hooks/useProjects";
-import { usePlan } from "@/hooks/usePlan";
-import { PlanGate } from "@/components/ui/PlanGate";
 import { toast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -33,7 +31,6 @@ export function InvoicesPage() {
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [showCreate, setShowCreate] = useState(false);
 
-  const { capabilities } = usePlan();
   const { data: projectsData } = useProjects();
   const { data, isLoading } = useInvoices(
     projectFilter === "all" ? undefined : projectFilter,
@@ -44,14 +41,6 @@ export function InvoicesPage() {
 
   const invoices = data?.invoices || [];
   const projects = projectsData || [];
-
-  if (capabilities && !capabilities.canUseInvoices) {
-    return (
-      <div className="p-6 max-w-lg mx-auto mt-8">
-        <PlanGate allowed={false} requiredPlan="STARTER" featureName="Invoices & Payments" />
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-6xl mx-auto">
