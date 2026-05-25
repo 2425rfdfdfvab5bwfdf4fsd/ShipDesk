@@ -1,18 +1,76 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/lib/adminApi";
-import { Search, ChevronLeft, ChevronRight, Github } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
 interface AdminUser {
   id: string; email: string; name: string; createdAt: string;
   workspace: {
-    slug: string; name: string; agencyName: string | null;
-    onboardingComplete: boolean;
+    id: string; slug: string; name: string; agencyName: string | null;
+    onboardingComplete: boolean; plan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
     _count: { projects: number; clients: number };
   } | null;
 }
 interface PagedResponse { users: AdminUser[]; total: number; page: number; pages: number; }
+
+const PLANS = ["FREE", "STARTER", "SOLO", "AGENCY"] as const;
+
+const PLAN_STYLES: Record<string, string> = {
+  FREE:    "bg-white/10 text-white/60",
+  STARTER: "bg-blue-500/15 text-blue-400",
+  SOLO:    "bg-indigo-500/15 text-indigo-400",
+  AGENCY:  "bg-purple-500/15 text-purple-400",
+};
+
+function PlanSelector({ userId, currentPlan }: { userId: string; currentPlan: "FREE" | "STARTER" | "SOLO" | "AGENCY" }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: (plan: string) =>
+      adminApi.patch(`/api/admin/users/${userId}/plan`, { plan }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+      setOpen(false);
+    },
+  });
+
+  return (
+    <div className="relative">
+      <button
+        data-testid={`button-plan-${userId}`}
+        onClick={() => setOpen((o) => !o)}
+        disabled={isPending}
+        className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium transition-all border border-transparent hover:border-white/20 ${PLAN_STYLES[currentPlan]} ${isPending ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+      >
+        {isPending ? "Saving…" : currentPlan}
+        <svg className="h-2.5 w-2.5 opacity-60" viewBox="0 0 10 6" fill="currentColor">
+          <path d="M0 0l5 6 5-6H0z" />
+        </svg>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full mt-1 z-20 bg-[#0f1117] border border-white/10 rounded-lg shadow-xl overflow-hidden min-w-[130px]">
+            {PLANS.map((plan) => (
+              <button
+                key={plan}
+                data-testid={`button-set-plan-${plan}-${userId}`}
+                onClick={() => mutate(plan)}
+                className="w-full text-left px-3 py-2 text-xs font-medium transition-colors hover:bg-white/5 flex items-center justify-between gap-3"
+              >
+                <span className={`inline-block px-1.5 py-0.5 rounded-full ${PLAN_STYLES[plan]}`}>{plan}</span>
+                {plan === currentPlan && <span className="text-white/30 text-[10px]">current</span>}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export function AdminUsersTab() {
   const [page, setPage] = useState(1);
@@ -40,6 +98,7 @@ export function AdminUsersTab() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
             <input
+              data-testid="input-user-search"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search by name or email…"
@@ -57,7 +116,7 @@ export function AdminUsersTab() {
           <table className="w-full text-sm">
             <thead className="bg-white/5 border-b border-white/10">
               <tr>
-                {["Name / Email", "Workspace", "Projects", "Clients", "Onboarded", "Joined"].map((h) => (
+                {["Name / Email", "Workspace", "Plan", "Projects", "Clients", "Onboarded", "Joined"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-white/50 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -65,7 +124,7 @@ export function AdminUsersTab() {
             <tbody className="divide-y divide-white/5">
               {isLoading
                 ? Array.from({ length: 10 }).map((_, i) => (
-                    <tr key={i}><td colSpan={6} className="px-4 py-3"><div className="h-4 bg-white/5 rounded animate-pulse" /></td></tr>
+                    <tr key={i}><td colSpan={7} className="px-4 py-3"><div className="h-4 bg-white/5 rounded animate-pulse" /></td></tr>
                   ))
                 : data?.users.map((u) => (
                     <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
@@ -80,6 +139,11 @@ export function AdminUsersTab() {
                             <div className="text-xs text-white/40 font-mono">{u.workspace.slug}</div>
                           </div>
                         ) : <span className="text-white/30 text-xs italic">No workspace</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        {u.workspace
+                          ? <PlanSelector userId={u.id} currentPlan={u.workspace.plan} />
+                          : <span className="text-white/30 text-xs">—</span>}
                       </td>
                       <td className="px-4 py-3 text-white/70">{u.workspace?._count.projects ?? "—"}</td>
                       <td className="px-4 py-3 text-white/70">{u.workspace?._count.clients ?? "—"}</td>

@@ -210,4 +210,32 @@ router.get("/invoices", ...adminGuard, async (req, res, next) => {
   }
 });
 
+router.patch("/users/:id/plan", ...adminGuard, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { plan } = req.body as { plan: string };
+
+    const validPlans = ["FREE", "STARTER", "SOLO", "AGENCY"];
+    if (!validPlans.includes(plan)) {
+      res.status(400).json({ error: "INVALID_PLAN", validPlans });
+      return;
+    }
+
+    const user = await db.user.findUnique({ where: { id }, include: { workspace: true } });
+    if (!user || !user.workspace) {
+      res.status(404).json({ error: "USER_OR_WORKSPACE_NOT_FOUND" });
+      return;
+    }
+
+    const updated = await db.workspace.update({
+      where: { id: user.workspace.id },
+      data: { plan: plan as "FREE" | "STARTER" | "SOLO" | "AGENCY" },
+    });
+
+    res.json({ success: true, workspaceId: updated.id, plan: updated.plan });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
