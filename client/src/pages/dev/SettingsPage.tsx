@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useSEO } from "@/lib/seo";
-import { Github, Palette, Globe, Shield, CreditCard, CheckCircle, ArrowRight, Star, Zap, Building2, Loader2, Lock, Users } from "lucide-react";
+import { Github, Palette, Globe, Shield, CreditCard, CheckCircle, ArrowRight, Star, Zap, Building2, Loader2, Lock, Users, Timer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WorkspaceSettingsForm } from "@/components/workspace/WorkspaceSettingsForm";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,8 @@ interface BillingStatus {
   lsSubscriptionId: string | null;
   lsSubscriptionStatus: string | null;
   trialEndsAt: string | null;
+  lsRenewsAt: string | null;
+  lsEndsAt: string | null;
 }
 
 const PLAN_INFO = {
@@ -150,6 +152,27 @@ function PlanTab() {
             </p>
           </div>
         )}
+
+        {/* Subscription renewal / expiry countdown */}
+        {billing?.lsSubscriptionId && (() => {
+          const isCancelled = billing.lsSubscriptionStatus === "cancelled" || billing.lsSubscriptionStatus === "expired";
+          const dateToShow = isCancelled ? billing.lsEndsAt : billing.lsRenewsAt;
+          if (!dateToShow) return null;
+          const days = daysLeft(dateToShow);
+          const formatted = new Date(dateToShow).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+          const isUrgent = isCancelled && days <= 7;
+          return (
+            <div className={cn(
+              "flex items-center gap-2 text-xs font-medium rounded-lg px-3 py-2",
+              isUrgent ? "bg-red-500/10 text-red-600 dark:text-red-400" : "bg-muted/60 text-muted-foreground"
+            )}>
+              <Timer className="h-3.5 w-3.5 flex-shrink-0" />
+              {isCancelled
+                ? `Access ends in ${days} day${days !== 1 ? "s" : ""} · ${formatted}`
+                : `Renews in ${days} day${days !== 1 ? "s" : ""} · ${formatted}`}
+            </div>
+          );
+        })()}
 
         {/* Features included */}
         <div>
