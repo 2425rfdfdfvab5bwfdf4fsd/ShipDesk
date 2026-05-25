@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard, Users, FolderKanban, FileText, DollarSign,
-  LogOut, Loader2, ShieldOff, RefreshCw, ArrowLeft,
+  LogOut, Loader2, ShieldOff, RefreshCw, ArrowLeft, GitMerge, Activity,
 } from "lucide-react";
 import { setAdminTokenGetter, adminApi } from "@/lib/adminApi";
 import { AdminOverviewTab } from "./AdminOverviewTab";
@@ -12,11 +12,13 @@ import { AdminUsersTab } from "./AdminUsersTab";
 import { AdminProjectsTab } from "./AdminProjectsTab";
 import { AdminReportsTab } from "./AdminReportsTab";
 import { AdminInvoicesTab } from "./AdminInvoicesTab";
+import { AdminScopeChangesTab } from "./AdminScopeChangesTab";
+import { AdminActivityTab } from "./AdminActivityTab";
 
 const ALLOWED_EMAIL = "saifkhan13483@gmail.com";
 const adminQueryClient = new QueryClient();
 
-type Tab = "overview" | "users" | "projects" | "reports" | "invoices";
+type Tab = "overview" | "users" | "projects" | "reports" | "invoices" | "scope-changes" | "activity";
 
 interface NavItem {
   id: Tab;
@@ -25,21 +27,23 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { id: "overview",  label: "Overview",  icon: LayoutDashboard },
-  { id: "users",     label: "Users",     icon: Users },
-  { id: "projects",  label: "Projects",  icon: FolderKanban },
-  { id: "reports",   label: "Reports",   icon: FileText },
-  { id: "invoices",  label: "Invoices",  icon: DollarSign },
+  { id: "overview",      label: "Overview",      icon: LayoutDashboard },
+  { id: "activity",      label: "Activity Feed",  icon: Activity },
+  { id: "users",         label: "Users",          icon: Users },
+  { id: "projects",      label: "Projects",       icon: FolderKanban },
+  { id: "reports",       label: "Reports",        icon: FileText },
+  { id: "invoices",      label: "Invoices",       icon: DollarSign },
+  { id: "scope-changes", label: "Scope Changes",  icon: GitMerge },
 ];
 
 interface Stats {
-  users: number; projects: number; reports: number; invoices: number;
+  users: number; projects: number; reports: number; invoices: number; scopeChanges: number;
 }
 
 function NavBadge({ count }: { count?: number }) {
   if (!count) return null;
   return (
-    <span className="ml-auto text-[10px] font-semibold bg-white/10 text-white/50 rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+    <span className="ml-auto text-[10px] font-semibold bg-white/10 text-white/50 rounded-full px-1.5 py-0.5 min-w-[20px] text-center tabular-nums">
       {count > 999 ? "999+" : count}
     </span>
   );
@@ -57,7 +61,7 @@ function AdminShellInner({
   const qc = useQueryClient();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  // Stats query — runs here, INSIDE the QueryClientProvider, token already set
+  // Stats for nav badges — runs here, INSIDE QueryClientProvider, token already set
   const { data: stats } = useQuery<Stats>({
     queryKey: ["admin-stats"],
     queryFn: () => adminApi.get("/api/admin/stats").then((r) => r.data),
@@ -65,19 +69,18 @@ function AdminShellInner({
   });
 
   const COUNTS: Partial<Record<Tab, number>> = {
-    users: stats?.users,
-    projects: stats?.projects,
-    reports: stats?.reports,
-    invoices: stats?.invoices,
+    users:         stats?.users,
+    projects:      stats?.projects,
+    reports:       stats?.reports,
+    invoices:      stats?.invoices,
+    "scope-changes": stats?.scopeChanges,
   };
 
-  const handleRefresh = () => {
-    qc.invalidateQueries();
-  };
+  const handleRefresh = () => qc.invalidateQueries();
 
   const SidebarContent = () => (
     <>
-      <nav className="flex-1 p-3 space-y-0.5">
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
         {NAV.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -181,11 +184,13 @@ function AdminShellInner({
       {/* Main content */}
       <main className="flex-1 min-w-0 overflow-auto pt-14 lg:pt-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          {tab === "overview"  && <AdminOverviewTab />}
-          {tab === "users"     && <AdminUsersTab />}
-          {tab === "projects"  && <AdminProjectsTab />}
-          {tab === "reports"   && <AdminReportsTab />}
-          {tab === "invoices"  && <AdminInvoicesTab />}
+          {tab === "overview"      && <AdminOverviewTab />}
+          {tab === "activity"      && <AdminActivityTab />}
+          {tab === "users"         && <AdminUsersTab />}
+          {tab === "projects"      && <AdminProjectsTab />}
+          {tab === "reports"       && <AdminReportsTab />}
+          {tab === "invoices"      && <AdminInvoicesTab />}
+          {tab === "scope-changes" && <AdminScopeChangesTab />}
         </div>
       </main>
 
@@ -198,25 +203,19 @@ function AdminShell() {
   const { getToken, signOut } = useAuth();
   const { user } = useUser();
   const [tab, setTab] = useState<Tab>("overview");
+
   // Set the token getter SYNCHRONOUSLY at render time so it's available
   // before any child query fires on mount. useEffect would be too late.
   setAdminTokenGetter(getToken);
 
   // Cleanup only when the component unmounts
   useEffect(() => {
-    return () => {
-      setAdminTokenGetter(async () => null);
-    };
+    return () => { setAdminTokenGetter(async () => null); };
   }, []);
 
   return (
     <QueryClientProvider client={adminQueryClient}>
-      <AdminShellInner
-        tab={tab}
-        setTab={setTab}
-        user={user}
-        signOut={signOut}
-      />
+      <AdminShellInner tab={tab} setTab={setTab} user={user} signOut={signOut} />
     </QueryClientProvider>
   );
 }
