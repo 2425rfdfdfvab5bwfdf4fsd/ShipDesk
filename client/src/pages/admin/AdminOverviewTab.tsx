@@ -128,6 +128,16 @@ export function AdminOverviewTab() {
       headline = "API endpoint not found (404)";
       detail = "The backend responded but couldn't find /api/admin/stats.";
       hint = `Backend URL in this build: ${diag.baseUrl}. Verify the Railway deployment is up to date.`;
+    } else if (status === 503) {
+      const errCode = ((error as AxiosError)?.response?.data as Record<string, string>)?.error;
+      if (errCode === "ADMIN_EMAIL_NOT_CONFIGURED") {
+        headline = "ADMIN_EMAIL not configured on the server (503)";
+        detail = "The backend started without the ADMIN_EMAIL environment variable — it was likely added to Railway after the last deployment.";
+        hint = "Go to Railway → your service → Settings → Redeploy (or push a new commit). The new container will pick up ADMIN_EMAIL and this will work.";
+      } else {
+        headline = "Server error (503)";
+        detail = "The server returned a 503. Check Railway logs for details.";
+      }
     } else {
       headline = `Server error (${status})`;
       detail = "The server returned an error. Check Railway logs for details.";

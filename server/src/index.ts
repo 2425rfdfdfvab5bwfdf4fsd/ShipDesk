@@ -47,8 +47,11 @@ async function start(): Promise<void> {
     console.log(`ShipDesk server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
     console.log(
-      `Env vars present: DATABASE_URL=${!!process.env.DATABASE_URL} CLERK_SECRET_KEY=${!!process.env.CLERK_SECRET_KEY} SESSION_SECRET=${!!process.env.SESSION_SECRET}`,
+      `Env vars present: DATABASE_URL=${!!process.env.DATABASE_URL} CLERK_SECRET_KEY=${!!process.env.CLERK_SECRET_KEY} SESSION_SECRET=${!!process.env.SESSION_SECRET} ADMIN_EMAIL=${!!process.env.ADMIN_EMAIL}`,
     );
+    if (!process.env.ADMIN_EMAIL) {
+      console.warn("WARNING: ADMIN_EMAIL is not set — all /api/admin/* routes will return 503 until this is configured.");
+    }
 
     if (process.env.NODE_ENV === "production") {
       startScheduler();
