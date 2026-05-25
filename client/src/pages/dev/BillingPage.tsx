@@ -21,6 +21,7 @@ function daysLeft(date: string): number {
 interface BillingStatus {
   plan: Plan;
   adminPlanOverride: boolean;
+  adminGrantExpiresAt: string | null;
   lsSubscriptionId: string | null;
   lsSubscriptionStatus: string | null;
   lsCustomerId: string | null;
@@ -260,9 +261,21 @@ export function BillingPage() {
   const isOnTrial = !hasActiveSub && !isAdminGranted && !!billing?.trialEndsAt;
   const trialActive = isOnTrial && billing?.trialEndsAt != null && new Date(billing.trialEndsAt) > new Date();
   const trialDays = trialActive && billing?.trialEndsAt ? daysLeft(billing.trialEndsAt) : 0;
-  // Trial progress: 14-day window, show % elapsed
   const TRIAL_TOTAL_DAYS = 14;
   const trialPercent = trialActive ? Math.max(4, Math.round(((TRIAL_TOTAL_DAYS - trialDays) / TRIAL_TOTAL_DAYS) * 100)) : 100;
+
+  // Admin grant expiry
+  const adminGrantExpiresAt = billing?.adminGrantExpiresAt ?? null;
+  const adminGrantActive = isAdminGranted && !!adminGrantExpiresAt && new Date(adminGrantExpiresAt) > new Date();
+  const adminGrantExpired = isAdminGranted && !!adminGrantExpiresAt && new Date(adminGrantExpiresAt) <= new Date();
+  const adminGrantDaysLeft = adminGrantActive ? daysLeft(adminGrantExpiresAt!) : 0;
+  const GRANT_CYCLE_DAYS = 30;
+  const adminGrantPct = adminGrantActive
+    ? Math.max(2, Math.round((adminGrantDaysLeft / GRANT_CYCLE_DAYS) * 100))
+    : 0;
+  const adminGrantEndFormatted = adminGrantExpiresAt
+    ? new Date(adminGrantExpiresAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : "";
 
   const subStatus = billing?.lsSubscriptionStatus;
   const statusInfo = subStatus ? STATUS_BADGE[subStatus] : null;
@@ -298,7 +311,11 @@ export function BillingPage() {
   const planDescription = hasActiveSub
     ? `${PLAN_PRICES[currentPlan]}/month`
     : isAdminGranted
-    ? `All ${PLAN_LABELS[currentPlan]} features included · Admin granted access`
+    ? adminGrantExpiresAt
+      ? adminGrantExpired
+        ? `Admin grant expired · ${adminGrantEndFormatted}`
+        : `All ${PLAN_LABELS[currentPlan]} features included · Ends ${adminGrantEndFormatted}`
+      : `All ${PLAN_LABELS[currentPlan]} features included · Admin granted access`
     : trialActive
     ? `All Starter features included · Ends ${trialEndFormatted}`
     : isOnTrial
@@ -323,6 +340,19 @@ export function BillingPage() {
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <ShieldCheck className="h-3 w-3" /> Admin grant
                 </Badge>
+              )}
+              {isAdminGranted && adminGrantActive && (
+                <Badge
+                  variant="secondary"
+                  className="flex items-center gap-1 font-semibold"
+                  data-testid="badge-admin-grant-days"
+                >
+                  <Timer className="h-3 w-3" />
+                  {adminGrantDaysLeft} day{adminGrantDaysLeft !== 1 ? "s" : ""} left
+                </Badge>
+              )}
+              {isAdminGranted && adminGrantExpired && (
+                <Badge variant="destructive" data-testid="badge-admin-grant-expired">Grant expired</Badge>
               )}
               {trialActive && !isAdminGranted && (
                 <Badge
@@ -361,6 +391,34 @@ export function BillingPage() {
                     <div
                       className={`h-full rounded-full transition-all ${subDaysLeft <= 7 ? "bg-red-400" : "bg-amber-400"}`}
                       style={{ width: `${Math.max(4, Math.min(100, (subDaysLeft / 30) * 100))}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Admin grant countdown */}
+            {isAdminGranted && adminGrantExpiresAt && (
+              <div className="mt-3 max-w-xs">
+                <div className={`flex items-center gap-2 text-xs font-medium mb-1.5 ${
+                  adminGrantExpired
+                    ? "text-red-500"
+                    : adminGrantDaysLeft <= 7
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-muted-foreground"
+                }`}>
+                  <Timer className="h-3.5 w-3.5 flex-shrink-0" />
+                  {adminGrantExpired
+                    ? `Grant expired · ${adminGrantEndFormatted}`
+                    : `${adminGrantDaysLeft} of ${GRANT_CYCLE_DAYS} days remaining · Ends ${adminGrantEndFormatted}`}
+                </div>
+                {!adminGrantExpired && (
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        adminGrantDaysLeft <= 7 ? "bg-red-400" : "bg-indigo-500/60"
+                      }`}
+                      style={{ width: `${adminGrantPct}%` }}
                     />
                   </div>
                 )}

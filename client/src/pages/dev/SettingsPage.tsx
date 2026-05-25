@@ -24,6 +24,7 @@ type Tab = typeof TABS[number]["key"];
 interface BillingStatus {
   plan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
   adminPlanOverride: boolean;
+  adminGrantExpiresAt: string | null;
   lsSubscriptionId: string | null;
   lsSubscriptionStatus: string | null;
   trialEndsAt: string | null;
@@ -63,6 +64,15 @@ function PlanTab() {
   const trialActive = isOnTrial && new Date(billing!.trialEndsAt!) > new Date();
   const trialExpired = isOnTrial && !trialActive;
   const remaining = billing?.trialEndsAt && trialActive ? daysLeft(billing.trialEndsAt) : 0;
+
+  const adminGrantExpiresAt = billing?.adminGrantExpiresAt ?? null;
+  const adminGrantActive = isAdminOverride && !!adminGrantExpiresAt && new Date(adminGrantExpiresAt) > new Date();
+  const adminGrantExpired = isAdminOverride && !!adminGrantExpiresAt && new Date(adminGrantExpiresAt) <= new Date();
+  const adminGrantDaysLeft = adminGrantActive ? daysLeft(adminGrantExpiresAt!) : 0;
+  const GRANT_CYCLE = 30;
+  const adminGrantEndFormatted = adminGrantExpiresAt
+    ? new Date(adminGrantExpiresAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : "";
 
   // Admin override or paid subscription → use actual plan
   // On trial → always Starter only (no free Solo/Agency)
@@ -114,6 +124,12 @@ function PlanTab() {
               <p className="text-xs text-muted-foreground mt-0.5">
                 {billing?.lsSubscriptionId
                   ? `${PLAN_PRICES[displayPlan]}/month · All ${info.label} features included`
+                  : isAdminOverride
+                  ? adminGrantExpiresAt
+                    ? adminGrantExpired
+                      ? `Admin grant expired · ${adminGrantEndFormatted}`
+                      : `Admin granted · ${adminGrantDaysLeft} day${adminGrantDaysLeft !== 1 ? "s" : ""} remaining · Ends ${adminGrantEndFormatted}`
+                    : `All ${info.label} features included · Admin granted access`
                   : trialActive
                   ? `Includes all Starter features · ${remaining} day${remaining !== 1 ? "s" : ""} remaining`
                   : trialExpired
@@ -133,6 +149,33 @@ function PlanTab() {
             <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
           </Button>
         </div>
+
+        {/* Admin grant countdown */}
+        {isAdminOverride && adminGrantExpiresAt && (
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Admin grant period</span>
+              <span className={adminGrantExpired ? "text-red-500" : adminGrantDaysLeft <= 7 ? "text-amber-500" : ""}>
+                {adminGrantExpired
+                  ? `Expired · ${adminGrantEndFormatted}`
+                  : `Ends ${adminGrantEndFormatted}`}
+              </span>
+            </div>
+            {!adminGrantExpired && (
+              <>
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${adminGrantDaysLeft <= 7 ? "bg-red-400" : "bg-indigo-500/60"}`}
+                    style={{ width: `${Math.max(2, Math.round((adminGrantDaysLeft / GRANT_CYCLE) * 100))}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {adminGrantDaysLeft} of {GRANT_CYCLE} days remaining
+                </p>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Trial progress bar */}
         {trialActive && billing?.trialEndsAt && (

@@ -14,6 +14,7 @@ interface AdminUser {
     id: string; slug: string; name: string; agencyName: string | null;
     onboardingComplete: boolean; plan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
     adminPlanOverride: boolean;
+    adminGrantExpiresAt: string | null;
     lsSubscriptionId: string | null; trialEndsAt: string | null;
     _count: { projects: number; clients: number; members: number };
   } | null;
@@ -255,6 +256,126 @@ function TrialDateEditor({
   );
 }
 
+function AdminGrantExpiryEditor({
+  userId,
+  adminGrantExpiresAt,
+  isAdminOverride,
+}: {
+  userId: string;
+  adminGrantExpiresAt: string | null;
+  isAdminOverride: boolean;
+}) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [alert, setAlert] = useState<{ type: "error" | "success"; message: string } | null>(null);
+
+  const toDateInput = (iso: string | null) =>
+    iso ? format(parseISO(iso), "yyyy-MM-dd") : "";
+
+  const [value, setValue] = useState(() => toDateInput(adminGrantExpiresAt));
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!editing) setValue(toDateInput(adminGrantExpiresAt));
+  }, [adminGrantExpiresAt, editing]);
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus();
+  }, [editing]);
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: (date: string | null) =>
+      adminApi.patch(`/api/admin/users/${userId}/admin-grant-expires`, { adminGrantExpiresAt: date }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+      setEditing(false);
+      setAlert({ type: "success", message: "Grant expiry saved" });
+      setTimeout(() => setAlert(null), 3000);
+    },
+    onError: () => {
+      setAlert({ type: "error", message: "Failed to update expiry" });
+    },
+  });
+
+  const handleSave = () => {
+    if (!value) {
+      mutate(null);
+    } else {
+      const [year, month, day] = value.split("-").map(Number);
+      const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+      mutate(date.toISOString());
+    }
+  };
+
+  const handleCancel = () => {
+    setValue(toDateInput(adminGrantExpiresAt));
+    setEditing(false);
+  };
+
+  if (!isAdminOverride) return null;
+
+  const isExpired = !!adminGrantExpiresAt && new Date(adminGrantExpiresAt) < new Date();
+  const daysLeft = adminGrantExpiresAt && !isExpired
+    ? Math.ceil((new Date(adminGrantExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  return (
+    <div className="space-y-1">
+      {!editing ? (
+        <button
+          data-testid={`button-edit-grant-expiry-${userId}`}
+          onClick={() => setEditing(true)}
+          className="group/grant inline-flex items-center gap-1 text-[11px] transition-colors"
+          title="Edit admin grant expiry"
+        >
+          <ShieldCheck className={`h-3 w-3 flex-shrink-0 ${isExpired ? "text-red-400" : daysLeft !== null && daysLeft <= 7 ? "text-amber-400" : "text-indigo-400"}`} />
+          <span className={`font-mono ${isExpired ? "text-red-400" : daysLeft !== null && daysLeft <= 7 ? "text-amber-400" : "text-indigo-300"}`}>
+            {adminGrantExpiresAt
+              ? isExpired
+                ? `expired ${format(parseISO(adminGrantExpiresAt), "MMM d, yyyy")}`
+                : `${format(parseISO(adminGrantExpiresAt), "MMM d, yyyy")} (${daysLeft}d left)`
+              : <span className="text-white/30 italic">no expiry</span>
+            }
+          </span>
+          <Pencil className="h-2.5 w-2.5 opacity-0 group-hover/grant:opacity-60 transition-opacity text-white/40" />
+        </button>
+      ) : (
+        <div className="flex items-center gap-1">
+          <input
+            ref={inputRef}
+            type="date"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") handleCancel(); }}
+            className="bg-white/10 border border-white/20 rounded text-[11px] text-white px-1.5 py-0.5 font-mono focus:outline-none focus:border-indigo-400 w-32"
+            data-testid={`input-grant-expiry-${userId}`}
+          />
+          <button
+            onClick={handleSave}
+            disabled={isPending}
+            className="p-0.5 rounded hover:bg-emerald-500/20 text-emerald-400 disabled:opacity-50"
+            title="Save"
+          >
+            <CheckIcon className="h-3 w-3" />
+          </button>
+          <button
+            onClick={handleCancel}
+            disabled={isPending}
+            className="p-0.5 rounded hover:bg-white/10 text-white/40 disabled:opacity-50"
+            title="Cancel"
+          >
+            <X className="h-3 w-3" />
+          </button>
+          {isPending && <span className="text-[10px] text-white/30 ml-1">Saving…</span>}
+        </div>
+      )}
+      {alert && (
+        <InlineAlert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} />
+      )}
+    </div>
+  );
+}
+
 const PLAN_FILTERS = [
   { value: "", label: "All" },
   { value: "FREE", label: "Free" },
@@ -449,6 +570,11 @@ export function AdminUsersTab() {
                               )}
                             </div>
                             <TrialDateEditor userId={u.id} trialEndsAt={ws.trialEndsAt} />
+                            <AdminGrantExpiryEditor
+                              userId={u.id}
+                              adminGrantExpiresAt={ws.adminGrantExpiresAt}
+                              isAdminOverride={isAdminOverride}
+                            />
                           </div>
                         ) : "—"}
                       </td>

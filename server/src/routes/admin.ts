@@ -574,7 +574,7 @@ router.patch("/users/:id/trial", ...adminGuard, async (req, res, next) => {
 router.patch("/users/:id/plan", ...adminGuard, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { plan } = req.body as { plan: string };
+    const { plan, adminGrantExpiresAt } = req.body as { plan: string; adminGrantExpiresAt?: string | null };
 
     const validPlans = ["FREE", "STARTER", "SOLO", "AGENCY"];
     if (!validPlans.includes(plan)) {
@@ -592,15 +592,58 @@ router.patch("/users/:id/plan", ...adminGuard, async (req, res, next) => {
     // SOLO/AGENCY: set override so features work without requiring a paid subscription
     const adminPlanOverride = plan === "SOLO" || plan === "AGENCY";
 
+    // Parse expiry date when provided
+    let expiresAt: Date | null = null;
+    if (adminPlanOverride && adminGrantExpiresAt) {
+      const parsed = new Date(adminGrantExpiresAt);
+      if (!isNaN(parsed.getTime())) expiresAt = parsed;
+    }
+
     const updated = await db.workspace.update({
       where: { id: user.workspace.id },
       data: {
         plan: plan as "FREE" | "STARTER" | "SOLO" | "AGENCY",
         adminPlanOverride,
+        adminGrantExpiresAt: adminPlanOverride ? expiresAt : null,
       },
     });
 
-    res.json({ success: true, workspaceId: updated.id, plan: updated.plan, adminPlanOverride: updated.adminPlanOverride });
+    res.json({
+      success: true,
+      workspaceId: updated.id,
+      plan: updated.plan,
+      adminPlanOverride: updated.adminPlanOverride,
+      adminGrantExpiresAt: updated.adminGrantExpiresAt,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Admin grant expiry change ─────────────────────────────────────────────────
+router.patch("/users/:id/admin-grant-expires", ...adminGuard, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { adminGrantExpiresAt } = req.body as { adminGrantExpiresAt: string | null };
+
+    const user = await db.user.findUnique({ where: { id }, include: { workspace: true } });
+    if (!user || !user.workspace) {
+      res.status(404).json({ error: "USER_OR_WORKSPACE_NOT_FOUND" });
+      return;
+    }
+
+    const date = adminGrantExpiresAt ? new Date(adminGrantExpiresAt) : null;
+    if (adminGrantExpiresAt && isNaN(date!.getTime())) {
+      res.status(400).json({ error: "INVALID_DATE" });
+      return;
+    }
+
+    const updated = await db.workspace.update({
+      where: { id: user.workspace.id },
+      data: { adminGrantExpiresAt: date },
+    });
+
+    res.json({ success: true, workspaceId: updated.id, adminGrantExpiresAt: updated.adminGrantExpiresAt });
   } catch (err) {
     next(err);
   }

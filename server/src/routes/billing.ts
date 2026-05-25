@@ -24,6 +24,7 @@ router.get("/status", requireAuth, async (req: AuthRequest, res, next) => {
       select: {
         plan: true,
         adminPlanOverride: true,
+        adminGrantExpiresAt: true,
         lsSubscriptionId: true,
         lsSubscriptionStatus: true,
         lsCustomerId: true,
