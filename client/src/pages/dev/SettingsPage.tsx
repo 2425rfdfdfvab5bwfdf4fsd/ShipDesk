@@ -60,10 +60,14 @@ function PlanTab() {
   const trialExpired = isOnTrial && !trialActive;
   const remaining = billing?.trialEndsAt && trialActive ? daysLeft(billing.trialEndsAt) : 0;
 
-  // During trial always show Starter; never show a "Free" plan label — all users are at least Starter
-  const displayPlan: "STARTER" | "SOLO" | "AGENCY" = isOnTrial || !rawPlan || rawPlan === "FREE"
-    ? "STARTER"
-    : rawPlan as "STARTER" | "SOLO" | "AGENCY";
+  // Admin-set plans (SOLO/AGENCY) always take precedence.
+  // During trial with no override, fall back to Starter; never show "Free".
+  const displayPlan: "STARTER" | "SOLO" | "AGENCY" =
+    rawPlan === "SOLO" || rawPlan === "AGENCY"
+      ? rawPlan
+      : isOnTrial || !rawPlan || rawPlan === "FREE"
+      ? "STARTER"
+      : (rawPlan as "STARTER" | "SOLO" | "AGENCY");
   const info = PLAN_INFO[displayPlan];
   const PlanIcon = info.icon;
   const features = PLAN_FEATURES[displayPlan] ?? [];
@@ -206,7 +210,9 @@ function IntegrationsTab() {
   const isOnTrial = billing && !billing.lsSubscriptionId && !!billing.trialEndsAt;
   const trialActive = isOnTrial && new Date(billing!.trialEndsAt!) > new Date();
   const effectivePlan = billing
-    ? billing.lsSubscriptionId
+    ? billing.plan === "SOLO" || billing.plan === "AGENCY"
+      ? billing.plan
+      : billing.lsSubscriptionId
       ? billing.plan
       : trialActive
       ? "STARTER"

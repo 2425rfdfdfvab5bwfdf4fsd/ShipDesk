@@ -20,6 +20,8 @@ function getEffectivePlan(workspace: {
   trialEndsAt: string | null;
 } | undefined): EffectivePlan {
   if (!workspace) return "FREE";
+  // Admin-set plans always take precedence over trial/subscription state
+  if (workspace.plan === "SOLO" || workspace.plan === "AGENCY") return workspace.plan;
   if (workspace.lsSubscriptionId) return workspace.plan as EffectivePlan;
   if (workspace.trialEndsAt && new Date(workspace.trialEndsAt) > new Date()) return "STARTER";
   return "FREE";
