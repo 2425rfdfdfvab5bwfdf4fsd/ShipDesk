@@ -25,7 +25,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npx concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\""
+args = "npm run dev"
 waitForPort = 5000
 
 [[ports]]
@@ -35,10 +35,6 @@ externalPort = 3000
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 5001
-externalPort = 3001
 
 [nix]
 channel = "stable-25_05"
