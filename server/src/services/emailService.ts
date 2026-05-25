@@ -186,3 +186,30 @@ export async function sendInvoiceNotification(opts: {
     `,
   });
 }
+
+export async function sendTeamInvite(opts: {
+  to: string;
+  inviterName: string;
+  workspaceName: string;
+  agencyName: string | null;
+  joinUrl: string;
+}): Promise<void> {
+  const client = getClient();
+  if (!client) {
+    console.log(`[emailService] Team invite would be sent to ${opts.to} — joinUrl: ${opts.joinUrl}`);
+    return;
+  }
+  const from = getFrom();
+  const workspace = opts.agencyName || opts.workspaceName;
+  await safeSend(client, {
+    sender: from,
+    to: [{ email: opts.to }],
+    subject: `${opts.inviterName} invited you to join ${workspace} on ShipDesk`,
+    htmlContent: `
+      <p>Hi there,</p>
+      <p><strong>${opts.inviterName}</strong> has invited you to join the <strong>${workspace}</strong> workspace on ShipDesk.</p>
+      <p><a href="${opts.joinUrl}" style="background:#6366F1;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Accept Invitation</a></p>
+      <p style="color:#6b7280;font-size:13px;">This link expires in 7 days. If you don't have a ShipDesk account, you'll be prompted to create one.</p>
+    `,
+  });
+}

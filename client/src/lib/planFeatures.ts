@@ -30,7 +30,7 @@ export const PLAN_FEATURES: Record<Exclude<Plan, "FREE">, string[]> = {
     "GitHub integration",
     "Everything in Solo",
     "Priority support",
-    "Team seats (coming soon)",
+    "Team seats (up to 5 members)",
     "Linear & Vercel sync (coming soon)",
   ],
 };

@@ -67,11 +67,19 @@ export async function requireAuth(
     req.userId = user.id;
     req.clerkUserId = clerkUserId;
 
-    const workspace = await db.workspace.findUnique({
+    const ownedWorkspace = await db.workspace.findUnique({
       where: { ownerId: user.id },
     });
-    if (workspace) {
-      req.workspaceId = workspace.id;
+    if (ownedWorkspace) {
+      req.workspaceId = ownedWorkspace.id;
+    } else {
+      const membership = await db.workspaceMember.findFirst({
+        where: { userId: user.id },
+        orderBy: { joinedAt: "asc" },
+      });
+      if (membership) {
+        req.workspaceId = membership.workspaceId;
+      }
     }
 
     next();

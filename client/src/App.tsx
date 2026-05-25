@@ -24,6 +24,7 @@ import { ScopeChangesPage } from "./pages/dev/ScopeChangesPage";
 import { SettingsPage } from "./pages/dev/SettingsPage";
 import { BillingPage } from "./pages/dev/BillingPage";
 import { TrialExpiredPage } from "./pages/dev/TrialExpiredPage";
+import { TeamJoinPage } from "./pages/dev/TeamJoinPage";
 
 import { ClientPortalHomePage } from "./pages/client/ClientPortalHomePage";
 import { ClientProjectPage } from "./pages/client/ClientProjectPage";
@@ -109,7 +110,7 @@ function DevApp() {
   const { isLoaded, isSignedIn } = useAuth();
   const [location, navigate] = useLocation();
 
-  const publicRoutes = ["/", "/sign-in", "/sign-up", "/build-logs", "/privacy", "/terms", "/cookies", "/contact", "/billing"];
+  const publicRoutes = ["/", "/sign-in", "/sign-up", "/build-logs", "/privacy", "/terms", "/cookies", "/contact", "/billing", "/team/join"];
   const isPublic = publicRoutes.includes(location);
 
   useEffect(() => {
@@ -146,6 +147,7 @@ function DevApp() {
             <SignUp routing="path" path="/sign-up" fallbackRedirectUrl="/onboarding" />
           </div>
         </Route>
+        <Route path="/team/join" component={TeamJoinPage} />
         <Route path="/onboarding" component={OnboardingPage} />
         <Route path="/billing">
           <AppShell><BillingPage /></AppShell>

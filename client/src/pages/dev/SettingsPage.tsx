@@ -2,18 +2,20 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useSEO } from "@/lib/seo";
-import { Github, Palette, Globe, Shield, CreditCard, CheckCircle, ArrowRight, Star, Zap, Building2, Loader2, Lock } from "lucide-react";
+import { Github, Palette, Globe, Shield, CreditCard, CheckCircle, ArrowRight, Star, Zap, Building2, Loader2, Lock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WorkspaceSettingsForm } from "@/components/workspace/WorkspaceSettingsForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { PLAN_FEATURES, PLAN_PRICES } from "@/lib/planFeatures";
+import { TeamTab } from "@/components/workspace/TeamTab";
 
 const TABS = [
   { key: "workspace", label: "Workspace", icon: Globe },
   { key: "branding", label: "Branding", icon: Palette },
   { key: "plan", label: "Plan", icon: CreditCard },
+  { key: "team", label: "Team", icon: Users },
   { key: "integrations", label: "Integrations", icon: Github },
 ] as const;
 
@@ -322,6 +324,7 @@ export function SettingsPage() {
       {activeTab === "workspace" && <WorkspaceSettingsForm showBranding={false} />}
       {activeTab === "branding" && <WorkspaceSettingsForm showBrandingOnly />}
       {activeTab === "plan" && <PlanTab />}
+      {activeTab === "team" && <TeamTab />}
       {activeTab === "integrations" && <IntegrationsTab />}
     </div>
   );

@@ -45,12 +45,13 @@ model Workspace {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
-  owner         User            @relation(fields: [ownerId], references: [id])
-  projects      Project[]
-  clients       Client[]
-  githubConn    GitHubConnection?
-  linearConn    LinearConnection?
-  members       WorkspaceMember[]
+  owner           User             @relation(fields: [ownerId], references: [id])
+  projects        Project[]
+  clients         Client[]
+  githubConn      GitHubConnection?
+  linearConn      LinearConnection?
+  members         WorkspaceMember[]
+  teamInvitations TeamInvitation[]
 }
 
 model Project {
@@ -408,6 +409,30 @@ model WorkspaceMember {
 
   @@unique([workspaceId, userId])
   @@index([workspaceId])
+}
+
+model TeamInvitation {
+  id          String               @id @default(uuid())
+  workspaceId String
+  email       String
+  tokenHash   String               @unique
+  invitedBy   String
+  role        WorkspaceRole        @default(MEMBER)
+  status      TeamInvitationStatus @default(PENDING)
+  invitedAt   DateTime             @default(now())
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, email])
+  @@index([workspaceId])
+}
+
+enum TeamInvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
 }
 
 enum WorkspaceRole {

@@ -8,6 +8,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { defaultLimiter } from "./middleware/rateLimiter.js";
 
 import workspaceRouter from "./routes/workspace.js";
+import teamRouter from "./routes/team.js";
 import projectsRouter from "./routes/projects.js";
 import githubRouter from "./routes/github.js";
 import reportsRouter from "./routes/reports.js";
@@ -104,6 +105,7 @@ app.get("/health", async (_req, res) => {
 
 app.use(defaultLimiter);
 app.use("/api/workspace", workspaceRouter);
+app.use("/api/workspace/team", teamRouter);
 app.use("/api/projects", messagesRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api/projects", clientsRouter);
