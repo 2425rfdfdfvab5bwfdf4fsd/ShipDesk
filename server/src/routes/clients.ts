@@ -11,15 +11,16 @@ import { getEffectivePlan, planHasFeature } from "../lib/planLimits.js";
 
 const router = Router({ mergeParams: true });
 
-async function getWorkspace(userId: string) {
-  const ws = await db.workspace.findUnique({ where: { ownerId: userId } });
+async function getWorkspace(workspaceId: string | undefined) {
+  if (!workspaceId) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+  const ws = await db.workspace.findUnique({ where: { id: workspaceId } });
   if (!ws) throw new AppError("Workspace not found", 404, "NOT_FOUND");
   return ws;
 }
 
 router.get("/:projectId/clients", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const project = await db.project.findFirst({
       where: { id: req.params.projectId, workspaceId: ws.id },
     });
@@ -63,7 +64,7 @@ const inviteSchema = z.object({ email: z.string().email() });
 
 router.post("/:projectId/invite", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const effectivePlan = getEffectivePlan(ws);
     if (!planHasFeature(effectivePlan, "client_invites")) {
       throw new AppError("Client invites require the Starter plan or higher", 403, "PLAN_FEATURE_REQUIRED");
@@ -138,7 +139,7 @@ router.delete(
   requireAuth,
   async (req: AuthRequest, res, next) => {
     try {
-      const ws = await getWorkspace(req.userId!);
+      const ws = await getWorkspace(req.workspaceId);
       const project = await db.project.findFirst({
         where: { id: req.params.projectId, workspaceId: ws.id },
       });

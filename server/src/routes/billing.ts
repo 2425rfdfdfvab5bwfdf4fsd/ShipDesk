@@ -17,8 +17,9 @@ const checkoutSchema = z.object({
 
 router.get("/status", requireAuth, async (req: AuthRequest, res, next) => {
   try {
+    if (!req.workspaceId) throw new AppError("Workspace not found", 404, "NOT_FOUND");
     const workspace = await db.workspace.findUnique({
-      where: { ownerId: req.userId! },
+      where: { id: req.workspaceId },
       select: {
         plan: true,
         lsSubscriptionId: true,

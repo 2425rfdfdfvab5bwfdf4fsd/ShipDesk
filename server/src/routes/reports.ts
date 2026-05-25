@@ -21,8 +21,9 @@ function getWeekBounds(now = new Date()): { start: Date; end: Date } {
   return { start: monday, end: sunday };
 }
 
-async function getWorkspace(userId: string) {
-  const ws = await db.workspace.findUnique({ where: { ownerId: userId } });
+async function getWorkspace(workspaceId: string | undefined) {
+  if (!workspaceId) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+  const ws = await db.workspace.findUnique({ where: { id: workspaceId } });
   if (!ws) throw new AppError("Workspace not found", 404, "NOT_FOUND");
   return ws;
 }
@@ -37,7 +38,7 @@ async function assertProjectAccess(projectId: string, workspaceId: string) {
 
 router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const projectId = req.query.projectId as string | undefined;
     const status = req.query.status as string | undefined;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -72,7 +73,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.get("/:id", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const report = await db.report.findFirst({
       where: { id: req.params.id, project: { workspaceId: ws.id } },
     });
@@ -88,7 +89,7 @@ router.post(
   requireAuth,
   async (req: AuthRequest, res, next) => {
     try {
-      const ws = await getWorkspace(req.userId!);
+      const ws = await getWorkspace(req.workspaceId);
       const effectivePlan = getEffectivePlan(ws);
 
       if (!planHasFeature(effectivePlan, "ai_reports")) {
@@ -204,7 +205,7 @@ const updateReportSchema = z.object({
 
 router.patch("/:id", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const report = await db.report.findFirst({
       where: { id: req.params.id, project: { workspaceId: ws.id } },
     });
@@ -238,7 +239,7 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.delete("/:id", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const report = await db.report.findFirst({
       where: { id: req.params.id, project: { workspaceId: ws.id } },
     });

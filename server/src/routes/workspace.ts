@@ -31,9 +31,8 @@ const updateWorkspaceSchema = z.object({
 
 router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const workspace = await db.workspace.findUnique({
-      where: { ownerId: req.userId! },
-    });
+    if (!req.workspaceId) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+    const workspace = await db.workspace.findUnique({ where: { id: req.workspaceId } });
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
     res.json(workspace);
   } catch (err) {
@@ -135,9 +134,9 @@ router.get(
   requireAuth,
   async (req: AuthRequest, res, next) => {
     try {
-      const workspace = await db.workspace.findUnique({
-        where: { ownerId: req.userId! },
-      });
+      const workspace = req.workspaceId
+        ? await db.workspace.findUnique({ where: { id: req.workspaceId } })
+        : null;
       if (!workspace) {
         res.json({
           hasGitHubConnected: false,
@@ -178,9 +177,8 @@ router.patch(
   requireAuth,
   async (req: AuthRequest, res, next) => {
     try {
-      const workspace = await db.workspace.findUnique({
-        where: { ownerId: req.userId! },
-      });
+      if (!req.workspaceId) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+      const workspace = await db.workspace.findUnique({ where: { id: req.workspaceId } });
       if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
 
       await db.workspace.update({
@@ -199,9 +197,9 @@ router.get(
   requireAuth,
   async (req: AuthRequest, res, next) => {
     try {
-      const workspace = await db.workspace.findUnique({
-        where: { ownerId: req.userId! },
-      });
+      const workspace = req.workspaceId
+        ? await db.workspace.findUnique({ where: { id: req.workspaceId } })
+        : null;
       if (!workspace) {
         res.json({ count: 0 });
         return;

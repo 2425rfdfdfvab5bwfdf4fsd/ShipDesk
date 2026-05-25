@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ export function TeamJoinPage() {
   const token = getTokenFromUrl();
 
   const joinMutation = useJoinTeam();
+  const hasAttempted = useRef(false);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -25,7 +26,8 @@ export function TeamJoinPage() {
       setErrorMsg("No invite token found in this link.");
       return;
     }
-    if (isSignedIn) {
+    if (isSignedIn && !hasAttempted.current) {
+      hasAttempted.current = true;
       joinMutation.mutate(token, {
         onSuccess: () => {
           setJoined(true);

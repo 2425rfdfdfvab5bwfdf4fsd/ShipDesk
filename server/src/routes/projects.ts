@@ -28,15 +28,16 @@ const STATUS_TRANSITIONS: Record<string, string[]> = {
   COMPLETED: [],
 };
 
-async function getWorkspace(userId: string) {
-  const ws = await db.workspace.findUnique({ where: { ownerId: userId } });
+async function getWorkspace(workspaceId: string | undefined) {
+  if (!workspaceId) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+  const ws = await db.workspace.findUnique({ where: { id: workspaceId } });
   if (!ws) throw new AppError("Workspace not found", 404, "NOT_FOUND");
   return ws;
 }
 
 router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const statusFilter = req.query.status as string | undefined;
 
     const projects = await db.project.findMany({
@@ -56,7 +57,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const body = createProjectSchema.parse(req.body);
 
     const effectivePlan = getEffectivePlan(ws);
@@ -91,7 +92,7 @@ router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.get("/:id", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const project = await db.project.findFirst({
       where: { id: req.params.id, workspaceId: ws.id },
     });
@@ -104,7 +105,7 @@ router.get("/:id", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.patch("/:id", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const body = updateProjectSchema.parse(req.body);
 
     const project = await db.project.findFirst({
@@ -135,7 +136,7 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.delete("/:id", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const project = await db.project.findFirst({
       where: { id: req.params.id, workspaceId: ws.id },
     });

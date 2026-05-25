@@ -18,15 +18,16 @@ const createInvoiceSchema = z.object({
   dueDate: z.string().datetime().optional(),
 });
 
-async function getWorkspace(userId: string) {
-  const ws = await db.workspace.findUnique({ where: { ownerId: userId } });
+async function getWorkspace(workspaceId: string | undefined) {
+  if (!workspaceId) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+  const ws = await db.workspace.findUnique({ where: { id: workspaceId } });
   if (!ws) throw new AppError("Workspace not found", 404, "NOT_FOUND");
   return ws;
 }
 
 router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const projectId = req.query.projectId as string | undefined;
     const status = req.query.status as string | undefined;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -63,7 +64,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const effectivePlan = getEffectivePlan(ws);
     if (!planHasFeature(effectivePlan, "invoices")) {
       throw new AppError("Invoices require the Starter plan or higher", 403, "PLAN_FEATURE_REQUIRED");
@@ -134,7 +135,7 @@ router.post("/", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.get("/:id", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const invoice = await db.invoice.findFirst({
       where: { id: req.params.id, project: { workspaceId: ws.id } },
     });
@@ -147,7 +148,7 @@ router.get("/:id", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.patch("/:id/mark-paid", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const invoice = await db.invoice.findFirst({
       where: { id: req.params.id, project: { workspaceId: ws.id } },
     });
@@ -165,7 +166,7 @@ router.patch("/:id/mark-paid", requireAuth, async (req: AuthRequest, res, next) 
 
 router.delete("/:id", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const invoice = await db.invoice.findFirst({
       where: { id: req.params.id, project: { workspaceId: ws.id } },
     });

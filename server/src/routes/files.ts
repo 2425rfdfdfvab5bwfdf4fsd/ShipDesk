@@ -16,15 +16,16 @@ const fileRecordSchema = z.object({
   cloudinarySecureUrl: z.string().url(),
 });
 
-async function getWorkspace(userId: string) {
-  const ws = await db.workspace.findUnique({ where: { ownerId: userId } });
+async function getWorkspace(workspaceId: string | undefined) {
+  if (!workspaceId) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+  const ws = await db.workspace.findUnique({ where: { id: workspaceId } });
   if (!ws) throw new AppError("Workspace not found", 404, "NOT_FOUND");
   return ws;
 }
 
 router.get("/upload-signature", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const effectivePlan = getEffectivePlan(ws);
     if (!planHasFeature(effectivePlan, "files")) {
       throw new AppError("File uploads require the Starter plan or higher", 403, "PLAN_FEATURE_REQUIRED");
@@ -47,7 +48,7 @@ router.get("/upload-signature", requireAuth, async (req: AuthRequest, res, next)
 
 router.get("/:projectId/files", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const project = await db.project.findFirst({
       where: { id: req.params.projectId, workspaceId: ws.id },
     });
@@ -65,7 +66,7 @@ router.get("/:projectId/files", requireAuth, async (req: AuthRequest, res, next)
 
 router.post("/:projectId/files", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const effectivePlan = getEffectivePlan(ws);
     if (!planHasFeature(effectivePlan, "files")) {
       throw new AppError("File uploads require the Starter plan or higher", 403, "PLAN_FEATURE_REQUIRED");
@@ -103,7 +104,7 @@ router.post("/:projectId/files", requireAuth, async (req: AuthRequest, res, next
 
 router.delete("/:projectId/files/:fileId", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const project = await db.project.findFirst({
       where: { id: req.params.projectId, workspaceId: ws.id },
     });

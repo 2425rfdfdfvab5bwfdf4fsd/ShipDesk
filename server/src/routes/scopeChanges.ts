@@ -21,15 +21,16 @@ const quoteSchema = z.object({
   quoteCurrency: z.enum(["USD", "EUR", "GBP", "CAD", "AUD"]),
 });
 
-async function getWorkspace(userId: string) {
-  const ws = await db.workspace.findUnique({ where: { ownerId: userId } });
+async function getWorkspace(workspaceId: string | undefined) {
+  if (!workspaceId) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+  const ws = await db.workspace.findUnique({ where: { id: workspaceId } });
   if (!ws) throw new AppError("Workspace not found", 404, "NOT_FOUND");
   return ws;
 }
 
 router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const projectId = req.query.projectId as string | undefined;
     const status = req.query.status as string | undefined;
 
@@ -51,7 +52,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.get("/:id", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const sc = await db.scopeChange.findFirst({
       where: { id: req.params.id, project: { workspaceId: ws.id } },
     });
@@ -64,7 +65,7 @@ router.get("/:id", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.patch("/:id/quote", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const effectivePlan = getEffectivePlan(ws);
     if (!planHasFeature(effectivePlan, "scope_changes")) {
       throw new AppError("Scope change quoting requires the Solo plan or higher", 403, "PLAN_FEATURE_REQUIRED");
@@ -120,7 +121,7 @@ router.patch("/:id/quote", requireAuth, async (req: AuthRequest, res, next) => {
 
 router.patch("/:id/mark-paid", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const ws = await getWorkspace(req.userId!);
+    const ws = await getWorkspace(req.workspaceId);
     const sc = await db.scopeChange.findFirst({
       where: { id: req.params.id, project: { workspaceId: ws.id } },
     });
