@@ -163,6 +163,35 @@ export interface PortalBranding {
   agencyName: string | null;
 }
 
+export type TeamMemberRole = "OWNER" | "MEMBER";
+export type TeamInvitationStatus = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
+
+export interface TeamMember {
+  id: string;
+  userId?: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  role: TeamMemberRole;
+  joinedAt: string;
+}
+
+export interface TeamInvitation {
+  id: string;
+  email: string;
+  role: string;
+  status: TeamInvitationStatus;
+  invitedAt: string;
+  expiresAt: string;
+}
+
+export interface TeamData {
+  owner: (TeamMember & { isOwner?: boolean }) | null;
+  members: TeamMember[];
+  invitations: TeamInvitation[];
+  seatLimit: number;
+}
+
 export interface GitHubRepo {
   id: number;
   full_name: string;

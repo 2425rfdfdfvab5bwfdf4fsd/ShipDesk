@@ -27,10 +27,17 @@ function getEffectivePlan(plan: string, lsSub: string | null, trialEndsAt: Date 
   return "FREE";
 }
 
+async function getWorkspaceForRequest(req: AuthRequest) {
+  if (!req.workspaceId) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+  const workspace = await db.workspace.findUnique({ where: { id: req.workspaceId } });
+  if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+  return workspace;
+}
+
+// GET /api/workspace/team — readable by owner and members
 router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const workspace = await db.workspace.findUnique({ where: { ownerId: req.userId! } });
-    if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+    const workspace = await getWorkspaceForRequest(req);
 
     const [members, invitations] = await Promise.all([
       db.workspaceMember.findMany({
@@ -53,7 +60,14 @@ router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
 
     res.json({
       owner: ownerUser
-        ? { id: ownerUser.id, name: ownerUser.name, email: ownerUser.email, avatarUrl: ownerUser.avatarUrl, role: "OWNER", joinedAt: ownerUser.createdAt }
+        ? {
+            id: ownerUser.id,
+            name: ownerUser.name,
+            email: ownerUser.email,
+            avatarUrl: ownerUser.avatarUrl,
+            role: "OWNER",
+            joinedAt: ownerUser.createdAt,
+          }
         : null,
       members: members.map((m) => ({
         id: m.id,
@@ -79,25 +93,25 @@ router.get("/", requireAuth, async (req: AuthRequest, res, next) => {
   }
 });
 
+// POST /api/workspace/team/invite — owner only
 router.post("/invite", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const workspace = await db.workspace.findUnique({ where: { ownerId: req.userId! } });
-    if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
-    if (workspace.ownerId !== req.userId) throw new AppError("Only the workspace owner can invite members", 403, "FORBIDDEN");
+    const workspace = await getWorkspaceForRequest(req);
+    if (workspace.ownerId !== req.userId) {
+      throw new AppError("Only the workspace owner can invite members", 403, "FORBIDDEN");
+    }
 
     const effectivePlan = getEffectivePlan(workspace.plan, workspace.lsSubscriptionId, workspace.trialEndsAt);
-    if (effectivePlan !== "AGENCY") {
+    if (effectivePlan !== "AGENCY" || !workspace.lsSubscriptionId) {
       throw new AppError("Team seats require the Agency plan", 403, "PLAN_REQUIRED");
     }
 
     const { email } = z.object({ email: z.string().email() }).parse(req.body);
     const normalizedEmail = email.toLowerCase().trim();
 
-    if (workspace.ownerId === req.userId) {
-      const ownerUser = await db.user.findUnique({ where: { id: req.userId } });
-      if (ownerUser?.email === normalizedEmail) {
-        throw new AppError("You cannot invite yourself", 400, "CANNOT_INVITE_SELF");
-      }
+    const ownerUser = await db.user.findUnique({ where: { id: req.userId! } });
+    if (ownerUser?.email === normalizedEmail) {
+      throw new AppError("You cannot invite yourself", 400, "CANNOT_INVITE_SELF");
     }
 
     const memberCount = await db.workspaceMember.count({ where: { workspaceId: workspace.id } });
@@ -113,27 +127,36 @@ router.post("/invite", requireAuth, async (req: AuthRequest, res, next) => {
       if (existingMember) throw new AppError("This person is already a member", 409, "ALREADY_MEMBER");
     }
 
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = hashToken(rawToken);
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
     const jwtPayload = { email: normalizedEmail, workspaceId: workspace.id, type: "team_invite" };
     const signedToken = jwt.sign(jwtPayload, getSessionSecret(), { expiresIn: "7d" });
     const signedHash = hashToken(signedToken);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await db.teamInvitation.upsert({
       where: { workspaceId_email: { workspaceId: workspace.id, email: normalizedEmail } },
-      update: { tokenHash: signedHash, invitedBy: req.userId!, expiresAt, status: "PENDING", invitedAt: new Date(), acceptedAt: null },
-      create: { workspaceId: workspace.id, email: normalizedEmail, tokenHash: signedHash, invitedBy: req.userId!, expiresAt },
+      update: {
+        tokenHash: signedHash,
+        invitedBy: req.userId!,
+        expiresAt,
+        status: "PENDING",
+        invitedAt: new Date(),
+        acceptedAt: null,
+      },
+      create: {
+        workspaceId: workspace.id,
+        email: normalizedEmail,
+        tokenHash: signedHash,
+        invitedBy: req.userId!,
+        expiresAt,
+      },
     });
 
-    const inviterUser = await db.user.findUnique({ where: { id: req.userId! } });
     const frontendUrl = process.env.FRONTEND_URL ?? `https://${process.env.REPLIT_DEV_DOMAIN}`;
     const joinUrl = `${frontendUrl}/team/join?token=${encodeURIComponent(signedToken)}`;
 
     await sendTeamInvite({
       to: normalizedEmail,
-      inviterName: inviterUser?.name ?? workspace.name,
+      inviterName: ownerUser?.name ?? workspace.name,
       workspaceName: workspace.name,
       agencyName: workspace.agencyName,
       joinUrl,
@@ -145,11 +168,13 @@ router.post("/invite", requireAuth, async (req: AuthRequest, res, next) => {
   }
 });
 
+// DELETE /api/workspace/team/members/:memberId — owner only
 router.delete("/members/:memberId", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const workspace = await db.workspace.findUnique({ where: { ownerId: req.userId! } });
-    if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
-    if (workspace.ownerId !== req.userId) throw new AppError("Only the workspace owner can remove members", 403, "FORBIDDEN");
+    const workspace = await getWorkspaceForRequest(req);
+    if (workspace.ownerId !== req.userId) {
+      throw new AppError("Only the workspace owner can remove members", 403, "FORBIDDEN");
+    }
 
     const member = await db.workspaceMember.findUnique({ where: { id: req.params.memberId } });
     if (!member || member.workspaceId !== workspace.id) {
@@ -163,10 +188,13 @@ router.delete("/members/:memberId", requireAuth, async (req: AuthRequest, res, n
   }
 });
 
+// DELETE /api/workspace/team/invitations/:invitationId — owner only
 router.delete("/invitations/:invitationId", requireAuth, async (req: AuthRequest, res, next) => {
   try {
-    const workspace = await db.workspace.findUnique({ where: { ownerId: req.userId! } });
-    if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
+    const workspace = await getWorkspaceForRequest(req);
+    if (workspace.ownerId !== req.userId) {
+      throw new AppError("Only the workspace owner can cancel invitations", 403, "FORBIDDEN");
+    }
 
     const invitation = await db.teamInvitation.findUnique({ where: { id: req.params.invitationId } });
     if (!invitation || invitation.workspaceId !== workspace.id) {
@@ -183,6 +211,7 @@ router.delete("/invitations/:invitationId", requireAuth, async (req: AuthRequest
   }
 });
 
+// POST /api/workspace/team/join — any authenticated user with a valid token
 router.post("/join", requireAuth, async (req: AuthRequest, res, next) => {
   try {
     const { token } = z.object({ token: z.string() }).parse(req.body);
@@ -194,7 +223,9 @@ router.post("/join", requireAuth, async (req: AuthRequest, res, next) => {
       throw new AppError("Invalid or expired invite link", 401, "INVALID_TOKEN");
     }
 
-    if (payload.type !== "team_invite") throw new AppError("Invalid token type", 401, "INVALID_TOKEN");
+    if (payload.type !== "team_invite") {
+      throw new AppError("Invalid token type", 401, "INVALID_TOKEN");
+    }
 
     const tokenHash = hashToken(token);
     const invitation = await db.teamInvitation.findUnique({ where: { tokenHash } });

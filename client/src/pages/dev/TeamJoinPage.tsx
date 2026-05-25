@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/clerk-react";
-import { useMutation } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle, XCircle, Users } from "lucide-react";
+import { useJoinTeam } from "@/hooks/useWorkspace";
 
 function getTokenFromUrl(): string | null {
   const params = new URLSearchParams(window.location.search);
@@ -18,24 +17,7 @@ export function TeamJoinPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const token = getTokenFromUrl();
 
-  const joinMutation = useMutation({
-    mutationFn: (t: string) =>
-      api.post("/api/workspace/team/join", { token: t }).then((r) => r.data),
-    onSuccess: () => {
-      setJoined(true);
-      setTimeout(() => navigate("/dashboard"), 2500);
-    },
-    onError: (err: any) => {
-      const code = err?.response?.data?.error;
-      const messages: Record<string, string> = {
-        LINK_USED: "This invite link has already been used or revoked.",
-        LINK_EXPIRED: "This invite link has expired. Ask your workspace owner to send a new invite.",
-        EMAIL_MISMATCH: "This invite was sent to a different email address. Please sign in with the invited email.",
-        INVALID_TOKEN: "This invite link is invalid or has expired.",
-      };
-      setErrorMsg(messages[code] ?? "Something went wrong. Please try again.");
-    },
-  });
+  const joinMutation = useJoinTeam();
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -44,7 +26,22 @@ export function TeamJoinPage() {
       return;
     }
     if (isSignedIn) {
-      joinMutation.mutate(token);
+      joinMutation.mutate(token, {
+        onSuccess: () => {
+          setJoined(true);
+          setTimeout(() => navigate("/dashboard"), 2500);
+        },
+        onError: (err: unknown) => {
+          const code = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+          const messages: Record<string, string> = {
+            LINK_USED: "This invite link has already been used or revoked.",
+            LINK_EXPIRED: "This invite link has expired. Ask your workspace owner to send a new invite.",
+            EMAIL_MISMATCH: "This invite was sent to a different email address. Please sign in with the invited email.",
+            INVALID_TOKEN: "This invite link is invalid or has expired.",
+          };
+          setErrorMsg(messages[code ?? ""] ?? "Something went wrong. Please try again.");
+        },
+      });
     }
   }, [isLoaded, isSignedIn, token]);
 
@@ -109,10 +106,17 @@ export function TeamJoinPage() {
           </p>
         </div>
         <div className="flex flex-col gap-2">
-          <Button onClick={() => navigate(`/sign-in?redirect_url=${encodeURIComponent(window.location.href)}`)}>
+          <Button
+            data-testid="button-signin-to-accept"
+            onClick={() => navigate(`/sign-in?redirect_url=${encodeURIComponent(window.location.href)}`)}
+          >
             Sign in to accept
           </Button>
-          <Button variant="outline" onClick={() => navigate(`/sign-up?redirect_url=${encodeURIComponent(window.location.href)}`)}>
+          <Button
+            variant="outline"
+            data-testid="button-signup-to-accept"
+            onClick={() => navigate(`/sign-up?redirect_url=${encodeURIComponent(window.location.href)}`)}
+          >
             Create an account
           </Button>
         </div>

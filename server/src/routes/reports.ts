@@ -109,7 +109,6 @@ router.post(
         const monthlyCount = await db.report.count({
           where: {
             project: { workspaceId: ws.id },
-            generatedBy: "AI",
             generatedAt: { gte: monthStart },
           },
         });

@@ -104,8 +104,8 @@ app.get("/health", async (_req, res) => {
 });
 
 app.use(defaultLimiter);
-app.use("/api/workspace", workspaceRouter);
 app.use("/api/workspace/team", teamRouter);
+app.use("/api/workspace", workspaceRouter);
 app.use("/api/projects", messagesRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api/projects", clientsRouter);

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import { Workspace, OnboardingStatus } from "../types";
+import { Workspace, OnboardingStatus, TeamData } from "../types";
 
 export function useWorkspace() {
   return useQuery<Workspace>({
@@ -70,5 +70,46 @@ export function useCheckSubdomain(slug: string) {
     queryFn: () =>
       api.get(`/api/workspace/check-subdomain?slug=${slug}`).then((r) => r.data),
     enabled: slug.length >= 3,
+  });
+}
+
+export function useTeam() {
+  return useQuery<TeamData>({
+    queryKey: ["workspace-team"],
+    queryFn: () => api.get("/api/workspace/team").then((r) => r.data),
+  });
+}
+
+export function useInviteTeamMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (email: string) =>
+      api.post("/api/workspace/team/invite", { email }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["workspace-team"] }),
+  });
+}
+
+export function useRemoveTeamMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (memberId: string) =>
+      api.delete(`/api/workspace/team/members/${memberId}`).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["workspace-team"] }),
+  });
+}
+
+export function useCancelTeamInvite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (invitationId: string) =>
+      api.delete(`/api/workspace/team/invitations/${invitationId}`).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["workspace-team"] }),
+  });
+}
+
+export function useJoinTeam() {
+  return useMutation({
+    mutationFn: (token: string) =>
+      api.post("/api/workspace/team/join", { token }).then((r) => r.data),
   });
 }

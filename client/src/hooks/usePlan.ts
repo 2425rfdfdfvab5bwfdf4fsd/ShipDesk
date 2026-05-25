@@ -23,6 +23,7 @@ export interface PlanCapabilities {
   canUseAiReports: boolean;
   canUseGitHub: boolean;
   canUseScopeChanges: boolean;
+  canUseTeamSeats: boolean;
 }
 
 const PROJECT_LIMITS: Record<Plan, number> = {
@@ -51,6 +52,8 @@ function buildCapabilities(billing: BillingStatus): PlanCapabilities {
   const starterOrAbove = effectivePlan !== "FREE";
   const soloOrAbove = effectivePlan === "SOLO" || effectivePlan === "AGENCY";
 
+  const agencyOnly = effectivePlan === "AGENCY" && !!billing.lsSubscriptionId;
+
   return {
     plan: billing.plan,
     effectivePlan,
@@ -63,6 +66,7 @@ function buildCapabilities(billing: BillingStatus): PlanCapabilities {
     canUseAiReports: starterOrAbove,
     canUseGitHub: soloOrAbove,
     canUseScopeChanges: soloOrAbove,
+    canUseTeamSeats: agencyOnly,
   };
 }
 

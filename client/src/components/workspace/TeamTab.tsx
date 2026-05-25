@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -8,40 +7,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { UserPlus, Trash2, Loader2, Crown, Clock, Users, Lock, ArrowRight } from "lucide-react";
-import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
-
-interface TeamMember {
-  id: string;
-  userId?: string;
-  name: string;
-  email: string;
-  avatarUrl: string | null;
-  role: "OWNER" | "MEMBER";
-  joinedAt: string;
-}
-
-interface TeamInvitation {
-  id: string;
-  email: string;
-  role: string;
-  status: string;
-  invitedAt: string;
-  expiresAt: string;
-}
-
-interface TeamData {
-  owner: TeamMember | null;
-  members: TeamMember[];
-  invitations: TeamInvitation[];
-  seatLimit: number;
-}
-
-interface BillingStatus {
-  plan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
-  lsSubscriptionId: string | null;
-  trialEndsAt: string | null;
-}
+import { usePlan } from "@/hooks/usePlan";
+import {
+  useTeam,
+  useInviteTeamMember,
+  useRemoveTeamMember,
+  useCancelTeamInvite,
+} from "@/hooks/useWorkspace";
+import type { TeamMember } from "@/types";
 
 function getInitials(name: string): string {
   return name
@@ -52,84 +26,62 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-function isAgencyPlan(billing: BillingStatus | undefined): boolean {
-  if (!billing) return false;
-  if (billing.lsSubscriptionId) return billing.plan === "AGENCY";
-  return false;
-}
-
 export function TeamTab() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const qc = useQueryClient();
   const [email, setEmail] = useState("");
 
-  const { data: team, isLoading } = useQuery<TeamData>({
-    queryKey: ["workspace-team"],
-    queryFn: () => api.get("/api/workspace/team").then((r) => r.data),
-  });
+  const { data: team, isLoading } = useTeam();
+  const { capabilities } = usePlan();
+  const canUseTeam = capabilities?.canUseTeamSeats ?? false;
 
-  const { data: billing } = useQuery<BillingStatus>({
-    queryKey: ["billing-status"],
-    queryFn: () => api.get("/api/billing/status").then((r) => r.data),
-    staleTime: 60_000,
-  });
+  const inviteMutation = useInviteTeamMember();
+  const removeMemberMutation = useRemoveTeamMember();
+  const cancelInviteMutation = useCancelTeamInvite();
 
-  const canUseTeam = isAgencyPlan(billing);
   const totalSeats = 1 + (team?.members.length ?? 0);
   const pendingCount = team?.invitations.length ?? 0;
   const seatLimit = team?.seatLimit ?? 5;
   const seatsUsed = totalSeats + pendingCount;
   const atLimit = seatsUsed >= seatLimit;
 
-  const inviteMutation = useMutation({
-    mutationFn: (emailAddr: string) =>
-      api.post("/api/workspace/team/invite", { email: emailAddr }).then((r) => r.data),
-    onSuccess: () => {
-      toast({ title: "Invite sent", description: `An invitation email has been sent to ${email}.` });
-      setEmail("");
-      qc.invalidateQueries({ queryKey: ["workspace-team"] });
-    },
-    onError: (err: any) => {
-      const code = err?.response?.data?.error;
-      const messages: Record<string, string> = {
-        PLAN_REQUIRED: "Team seats require the Agency plan.",
-        ALREADY_MEMBER: "This person is already a member.",
-        SEAT_LIMIT_REACHED: `Workspace is at the ${seatLimit}-seat limit.`,
-        CANNOT_INVITE_SELF: "You cannot invite yourself.",
-      };
-      toast({
-        title: "Could not send invite",
-        description: messages[code] ?? "Something went wrong.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const removeMemberMutation = useMutation({
-    mutationFn: (memberId: string) =>
-      api.delete(`/api/workspace/team/members/${memberId}`).then((r) => r.data),
-    onSuccess: () => {
-      toast({ title: "Member removed" });
-      qc.invalidateQueries({ queryKey: ["workspace-team"] });
-    },
-    onError: () => toast({ title: "Failed to remove member", variant: "destructive" }),
-  });
-
-  const cancelInviteMutation = useMutation({
-    mutationFn: (invitationId: string) =>
-      api.delete(`/api/workspace/team/invitations/${invitationId}`).then((r) => r.data),
-    onSuccess: () => {
-      toast({ title: "Invite cancelled" });
-      qc.invalidateQueries({ queryKey: ["workspace-team"] });
-    },
-    onError: () => toast({ title: "Failed to cancel invite", variant: "destructive" }),
-  });
-
   function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
-    inviteMutation.mutate(email.trim());
+    inviteMutation.mutate(email.trim(), {
+      onSuccess: () => {
+        toast({ title: "Invite sent", description: `An invitation has been sent to ${email}.` });
+        setEmail("");
+      },
+      onError: (err: unknown) => {
+        const code = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+        const messages: Record<string, string> = {
+          PLAN_REQUIRED: "Team seats require the Agency plan.",
+          ALREADY_MEMBER: "This person is already a member.",
+          SEAT_LIMIT_REACHED: `Workspace is at the ${seatLimit}-seat limit.`,
+          CANNOT_INVITE_SELF: "You cannot invite yourself.",
+        };
+        toast({
+          title: "Could not send invite",
+          description: messages[code ?? ""] ?? "Something went wrong.",
+          variant: "destructive",
+        });
+      },
+    });
+  }
+
+  function handleRemoveMember(memberId: string) {
+    removeMemberMutation.mutate(memberId, {
+      onSuccess: () => toast({ title: "Member removed" }),
+      onError: () => toast({ title: "Failed to remove member", variant: "destructive" }),
+    });
+  }
+
+  function handleCancelInvite(invitationId: string) {
+    cancelInviteMutation.mutate(invitationId, {
+      onSuccess: () => toast({ title: "Invite cancelled" }),
+      onError: () => toast({ title: "Failed to cancel invite", variant: "destructive" }),
+    });
   }
 
   if (isLoading) {
@@ -224,7 +176,7 @@ export function TeamTab() {
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                  onClick={() => removeMemberMutation.mutate(member.id)}
+                  onClick={() => handleRemoveMember(member.id)}
                   disabled={removeMemberMutation.isPending}
                   data-testid={`button-remove-member-${member.id}`}
                   title="Remove member"
@@ -265,7 +217,7 @@ export function TeamTab() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{inv.email}</p>
                   <p className="text-xs text-muted-foreground">
-                    Invited {formatDistanceToNow(new Date(inv.invitedAt), { addSuffix: true })} ·
+                    Invited {formatDistanceToNow(new Date(inv.invitedAt), { addSuffix: true })} ·{" "}
                     expires {formatDistanceToNow(new Date(inv.expiresAt), { addSuffix: true })}
                   </p>
                 </div>
@@ -275,7 +227,7 @@ export function TeamTab() {
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                    onClick={() => cancelInviteMutation.mutate(inv.id)}
+                    onClick={() => handleCancelInvite(inv.id)}
                     disabled={cancelInviteMutation.isPending}
                     data-testid={`button-cancel-invite-${inv.id}`}
                     title="Cancel invite"
