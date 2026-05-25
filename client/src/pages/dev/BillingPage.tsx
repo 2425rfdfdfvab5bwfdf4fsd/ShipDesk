@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { useSEO } from "@/lib/seo";
 import {
   CheckCircle, Zap, Building2, Loader2, ExternalLink,
-  CreditCard, ArrowRight, Star
+  CreditCard, ArrowRight, Star, ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import type { Plan } from "@/types";
 
 interface BillingStatus {
   plan: Plan;
+  adminPlanOverride: boolean;
   lsSubscriptionId: string | null;
   lsSubscriptionStatus: string | null;
   lsCustomerId: string | null;
@@ -34,16 +35,20 @@ function PlanCard({
   plan,
   currentPlan,
   hasActiveSubscription,
+  isAdminGranted,
   onUpgrade,
   isLoading,
 }: {
   plan: "STARTER" | "SOLO" | "AGENCY";
-  currentPlan: Plan;
+  currentPlan: "STARTER" | "SOLO" | "AGENCY";
   hasActiveSubscription: boolean;
+  isAdminGranted: boolean;
   onUpgrade: (plan: "STARTER" | "SOLO" | "AGENCY") => void;
   isLoading: boolean;
 }) {
-  const isPaidCurrentPlan = currentPlan === plan && hasActiveSubscription;
+  const isCurrentPlan = currentPlan === plan;
+  const isPaidCurrentPlan = isCurrentPlan && hasActiveSubscription;
+  const isAdminCurrentPlan = isCurrentPlan && isAdminGranted;
   const isHighlighted = plan === "AGENCY";
   const features = PLAN_FEATURES[plan];
 
@@ -55,16 +60,22 @@ function PlanCard({
           : "bg-muted/30 border border-border"
       }`}
     >
-      {isHighlighted && !isPaidCurrentPlan && (
+      {isHighlighted && !isPaidCurrentPlan && !isAdminCurrentPlan && (
         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
           <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
             <Star className="h-3 w-3" /> Most popular
           </span>
         </div>
       )}
-      {isPaidCurrentPlan && (
+      {(isPaidCurrentPlan || isAdminCurrentPlan) && (
         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-          <Badge variant="success" className="text-xs px-3 py-1">Current plan</Badge>
+          {isAdminCurrentPlan ? (
+            <span className="bg-indigo-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3" /> Admin grant
+            </span>
+          ) : (
+            <Badge variant="success" className="text-xs px-3 py-1">Current plan</Badge>
+          )}
         </div>
       )}
 
@@ -99,16 +110,20 @@ function PlanCard({
       <Button
         data-testid={`button-subscribe-${plan.toLowerCase()}`}
         className={`w-full h-10 ${
-          isHighlighted && !isPaidCurrentPlan
+          isHighlighted && !isPaidCurrentPlan && !isAdminCurrentPlan
             ? "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
             : ""
         }`}
-        variant={isPaidCurrentPlan ? "outline" : isHighlighted ? "default" : "secondary"}
-        disabled={isPaidCurrentPlan || isLoading}
-        onClick={() => !isPaidCurrentPlan && onUpgrade(plan)}
+        variant={isPaidCurrentPlan || isAdminCurrentPlan ? "outline" : isHighlighted ? "default" : "secondary"}
+        disabled={isPaidCurrentPlan || isAdminCurrentPlan || isLoading}
+        onClick={() => !isPaidCurrentPlan && !isAdminCurrentPlan && onUpgrade(plan)}
       >
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
+        ) : isAdminCurrentPlan ? (
+          <span className="flex items-center gap-1.5">
+            <ShieldCheck className="h-3.5 w-3.5" /> Admin granted
+          </span>
         ) : isPaidCurrentPlan ? (
           "Current plan"
         ) : (
@@ -162,18 +177,47 @@ export function BillingPage() {
     }
   };
 
+  const isAdminGranted = !!billing?.adminPlanOverride;
+  const hasActiveSub = !!billing?.lsSubscriptionId;
+
+  // Resolve the actual plan to display — admin override and paid subs both use the real plan
   const currentPlan: "STARTER" | "SOLO" | "AGENCY" =
-    (billing?.plan === "SOLO" || billing?.plan === "AGENCY") ? billing.plan : "STARTER";
-  const subStatus = billing?.lsSubscriptionStatus;
-  const statusInfo = subStatus ? STATUS_BADGE[subStatus] : null;
-  const isOnTrial = !billing?.lsSubscriptionId && !!billing?.trialEndsAt;
+    billing?.plan === "SOLO" || billing?.plan === "AGENCY" ? billing.plan : "STARTER";
+
+  // Trial only applies to users without a subscription AND without an admin override
+  const isOnTrial = !hasActiveSub && !isAdminGranted && !!billing?.trialEndsAt;
   const trialActive = isOnTrial && billing?.trialEndsAt != null && new Date(billing.trialEndsAt) > new Date();
 
-  // Trial = Starter plan for 14 days; always show the real plan name
-  const displayLabel = { FREE: "Free", STARTER: "Starter", SOLO: "Solo", AGENCY: "Agency" }[isOnTrial ? "STARTER" : currentPlan];
-  // Without an active paid subscription always show Starter features (what the user gets on the entry plan)
-  const hasActiveSub = !!billing?.lsSubscriptionId;
-  const featuresForDisplay = hasActiveSub ? PLAN_FEATURES[currentPlan] : PLAN_FEATURES["STARTER"];
+  const subStatus = billing?.lsSubscriptionStatus;
+  const statusInfo = subStatus ? STATUS_BADGE[subStatus] : null;
+
+  // Display name: admin override and paid subs show real plan name; trial always shows Starter
+  const PLAN_LABELS = { FREE: "Free", STARTER: "Starter", SOLO: "Solo", AGENCY: "Agency" };
+  const displayLabel = (isAdminGranted || hasActiveSub)
+    ? PLAN_LABELS[currentPlan]
+    : PLAN_LABELS[isOnTrial ? "STARTER" : currentPlan];
+
+  // Features shown below: use real plan for admin/paid, Starter for trial
+  const featuresForDisplay = (isAdminGranted || hasActiveSub)
+    ? PLAN_FEATURES[currentPlan]
+    : PLAN_FEATURES["STARTER"];
+
+  const featuresLabel = isAdminGranted
+    ? `What's included in your ${PLAN_LABELS[currentPlan]} plan`
+    : isOnTrial
+    ? "What's included in your Starter plan"
+    : "What's included in your plan";
+
+  // Current plan description line
+  const planDescription = hasActiveSub
+    ? `${PLAN_PRICES[currentPlan]}/month`
+    : isAdminGranted
+    ? `All ${PLAN_LABELS[currentPlan]} features included · Admin granted access`
+    : trialActive && billing?.trialEndsAt
+    ? `All Starter features included · Trial ends ${new Date(billing.trialEndsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
+    : isOnTrial
+    ? "Trial expired — choose a plan below to continue"
+    : "";
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8">
@@ -189,28 +233,25 @@ export function BillingPage() {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Current plan</p>
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="text-lg font-bold">{displayLabel}</span>
-              {trialActive && (
+              {isAdminGranted && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3" /> Admin grant
+                </Badge>
+              )}
+              {trialActive && !isAdminGranted && (
                 <Badge variant="secondary">14-Day Trial</Badge>
               )}
-              {isOnTrial && !trialActive && (
+              {isOnTrial && !trialActive && !isAdminGranted && (
                 <Badge variant="destructive">Expired</Badge>
               )}
-              {statusInfo && !isOnTrial && (
+              {statusInfo && !isOnTrial && !isAdminGranted && (
                 <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {billing?.lsSubscriptionId
-                ? `${PLAN_PRICES[currentPlan]}/month`
-                : trialActive && billing?.trialEndsAt
-                ? `All Starter features included · Trial ends ${new Date(billing.trialEndsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
-                : isOnTrial
-                ? "Trial expired — choose a plan below to continue"
-                : ""}
-            </p>
+            <p className="text-xs text-muted-foreground">{planDescription}</p>
           </div>
 
-          {billing?.lsSubscriptionId && (
+          {hasActiveSub && (
             <Button
               data-testid="button-manage-subscription"
               variant="outline"
@@ -238,44 +279,37 @@ export function BillingPage() {
         <>
           {/* Plan cards */}
           <div>
-              <h2 className="text-sm font-semibold mb-4">
-                {billing?.lsSubscriptionId ? "Switch plan" : "Choose a plan"}
-              </h2>
-              <div className="grid sm:grid-cols-3 gap-4">
+            <h2 className="text-sm font-semibold mb-4">
+              {hasActiveSub ? "Switch plan" : isAdminGranted ? "Available plans" : "Choose a plan"}
+            </h2>
+            <div className="grid sm:grid-cols-3 gap-4">
+              {(["STARTER", "SOLO", "AGENCY"] as const).map((plan) => (
                 <PlanCard
-                  plan="STARTER"
+                  key={plan}
+                  plan={plan}
                   currentPlan={currentPlan}
-                  hasActiveSubscription={!!billing?.lsSubscriptionId}
+                  hasActiveSubscription={hasActiveSub}
+                  isAdminGranted={isAdminGranted}
                   onUpgrade={handleUpgrade}
-                  isLoading={checkingOut === "STARTER"}
+                  isLoading={checkingOut === plan}
                 />
-                <PlanCard
-                  plan="SOLO"
-                  currentPlan={currentPlan}
-                  hasActiveSubscription={!!billing?.lsSubscriptionId}
-                  onUpgrade={handleUpgrade}
-                  isLoading={checkingOut === "SOLO"}
-                />
-                <PlanCard
-                  plan="AGENCY"
-                  currentPlan={currentPlan}
-                  hasActiveSubscription={!!billing?.lsSubscriptionId}
-                  onUpgrade={handleUpgrade}
-                  isLoading={checkingOut === "AGENCY"}
-                />
-              </div>
-              {isOnTrial && (
-                <p className="text-center text-xs text-muted-foreground mt-4">
-                  No credit card required during trial · Cancel any time
-                </p>
-              )}
+              ))}
+            </div>
+            {isOnTrial && !isAdminGranted && (
+              <p className="text-center text-xs text-muted-foreground mt-4">
+                No credit card required during trial · Cancel any time
+              </p>
+            )}
+            {isAdminGranted && (
+              <p className="text-center text-xs text-muted-foreground mt-4">
+                Your plan has been granted by an administrator · Subscribe to manage billing yourself
+              </p>
+            )}
           </div>
 
-          {/* What's included for current plan */}
+          {/* What's included */}
           <div className="rounded-xl border bg-card p-5">
-            <h2 className="text-sm font-semibold mb-3">
-              {isOnTrial ? "What's included in your Starter plan" : "What's included in your plan"}
-            </h2>
+            <h2 className="text-sm font-semibold mb-3">{featuresLabel}</h2>
             <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
               {featuresForDisplay.map((feature) => (
                 <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
