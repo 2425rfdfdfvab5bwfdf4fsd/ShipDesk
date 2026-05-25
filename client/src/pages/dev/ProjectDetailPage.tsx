@@ -345,12 +345,12 @@ export function ProjectDetailPage() {
                 <Button variant="outline" size="sm" className="h-7 gap-1 text-xs px-2.5" onClick={() => setShowInvoiceModal(true)} data-testid="button-new-invoice">
                   <Plus className="h-3 w-3" /> Invoice
                 </Button>
-                <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" existingDraftThisWeek={existingDraftThisWeek} />
+                <GenerateReportButton projectId={id} hasGitHub={hasGitHub} canUseAiReports={capabilities?.canUseAiReports ?? true} size="sm" existingDraftThisWeek={existingDraftThisWeek} />
               </div>
 
               {/* Mobile actions — compact dropdown */}
               <div className="flex sm:hidden items-center gap-1 shrink-0">
-                <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" iconOnly existingDraftThisWeek={existingDraftThisWeek} />
+                <GenerateReportButton projectId={id} hasGitHub={hasGitHub} canUseAiReports={capabilities?.canUseAiReports ?? true} size="sm" iconOnly existingDraftThisWeek={existingDraftThisWeek} />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="h-7 w-7 p-0" data-testid="button-mobile-actions">
@@ -532,7 +532,7 @@ export function ProjectDetailPage() {
                   <p className="text-xs font-semibold">Generate your first report</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">Summarise GitHub activity into a client update.</p>
                 </div>
-                <GenerateReportButton projectId={id} hasGitHub={true} size="sm" variant="outline" existingDraftThisWeek={existingDraftThisWeek} />
+                <GenerateReportButton projectId={id} hasGitHub={true} canUseAiReports={capabilities?.canUseAiReports ?? true} size="sm" variant="outline" existingDraftThisWeek={existingDraftThisWeek} />
               </div>
             ) : null}
 
@@ -569,7 +569,7 @@ export function ProjectDetailPage() {
                       Sync
                     </Button>
                   )}
-                  <GenerateReportButton projectId={id} hasGitHub={hasGitHub} size="sm" variant="outline" existingDraftThisWeek={existingDraftThisWeek} />
+                  <GenerateReportButton projectId={id} hasGitHub={hasGitHub} canUseAiReports={capabilities?.canUseAiReports ?? true} size="sm" variant="outline" existingDraftThisWeek={existingDraftThisWeek} />
                 </div>
               }
             />
@@ -603,7 +603,7 @@ export function ProjectDetailPage() {
                     {hasGitHub ? "Generate your first report to share progress." : "Connect a GitHub repository to start generating reports."}
                   </p>
                 </div>
-                {hasGitHub && <GenerateReportButton projectId={id} hasGitHub={true} size="sm" existingDraftThisWeek={existingDraftThisWeek} />}
+                {hasGitHub && <GenerateReportButton projectId={id} hasGitHub={true} canUseAiReports={capabilities?.canUseAiReports ?? true} size="sm" existingDraftThisWeek={existingDraftThisWeek} />}
               </div>
             ) : (
               <div className="space-y-2.5">

@@ -6,6 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScopeChangeCard } from "@/components/scope/ScopeChangeCard";
 import { QuoteForm } from "@/components/scope/QuoteForm";
 import { useScopeChanges, useSubmitQuote, useMarkScopeChangePaid } from "@/hooks/useScopeChanges";
+import { usePlan } from "@/hooks/usePlan";
+import { PlanGate } from "@/components/ui/PlanGate";
 import { toast } from "@/hooks/use-toast";
 import { ScopeChange } from "@/types";
 
@@ -23,6 +25,7 @@ export function ScopeChangesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [quoteTarget, setQuoteTarget] = useState<ScopeChange | null>(null);
 
+  const { capabilities } = usePlan();
   const { data: scopeChanges, isLoading } = useScopeChanges(
     undefined,
     statusFilter === "all" ? undefined : statusFilter
@@ -31,6 +34,14 @@ export function ScopeChangesPage() {
   const markPaid = useMarkScopeChangePaid();
 
   const items = scopeChanges || [];
+
+  if (capabilities && !capabilities.canUseScopeChanges) {
+    return (
+      <div className="p-6 max-w-lg mx-auto mt-8">
+        <PlanGate allowed={false} requiredPlan="SOLO" featureName="Scope Change Requests" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">

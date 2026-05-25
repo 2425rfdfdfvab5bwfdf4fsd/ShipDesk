@@ -273,7 +273,7 @@ export function BillingPage() {
           {/* What's included for current plan */}
           <div className="rounded-xl border bg-card p-5">
             <h2 className="text-sm font-semibold mb-3">
-              {isOnTrial ? "What's included in your free trial" : "What's included in your plan"}
+              {isOnTrial ? "What's included in your Starter plan" : "What's included in your plan"}
             </h2>
             <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
               {featuresForDisplay.map((feature) => (

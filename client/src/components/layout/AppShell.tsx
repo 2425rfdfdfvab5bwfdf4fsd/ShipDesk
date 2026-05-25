@@ -97,11 +97,11 @@ export function AppShell({ children }: AppShellProps) {
               {(() => {
                 const isOnTrial = !workspace.lsSubscriptionId && !!workspace.trialEndsAt;
                 const trialActive = isOnTrial && new Date(workspace.trialEndsAt!) > new Date();
-                const label = isOnTrial
-                  ? trialActive ? "Trial" : "Expired"
+                const label = isOnTrial && !trialActive
+                  ? "Expired"
                   : workspace.plan === "AGENCY" ? "Agency"
                   : workspace.plan === "SOLO" ? "Solo"
-                  : workspace.plan === "STARTER" ? "Starter"
+                  : (workspace.plan === "STARTER" || (isOnTrial && trialActive)) ? "Starter"
                   : "Free";
                 return (
                   <span className={cn(

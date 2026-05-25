@@ -138,7 +138,7 @@ export function TrialExpiredPage() {
                   <span className="font-semibold text-sm">{plan.name}</span>
                 </div>
                 <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-2xl font-bold">{plan.price}</span>
+                  <span className="text-2xl font-bold">{PLAN_PRICES[plan.key]}</span>
                   <span className="text-white/40 text-xs">/month</span>
                 </div>
                 <ul className="space-y-1.5 mb-5 flex-1">

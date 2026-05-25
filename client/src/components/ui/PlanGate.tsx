@@ -8,7 +8,7 @@ interface PlanGateProps {
   allowed: boolean;
   requiredPlan: Plan;
   featureName: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const PLAN_LABELS: Record<Plan, string> = {

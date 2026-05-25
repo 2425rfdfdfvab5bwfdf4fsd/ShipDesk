@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Zap, Check, Loader2, AlertTriangle } from "lucide-react";
+import { Link } from "wouter";
+import { Zap, Check, Loader2, AlertTriangle, Lock, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 interface GenerateReportButtonProps {
   projectId: string;
   hasGitHub?: boolean;
+  canUseAiReports?: boolean;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
   iconOnly?: boolean;
@@ -23,10 +25,30 @@ const STEPS: { key: Step; label: string }[] = [
   { key: "writing",   label: "Writing summary with AI" },
 ];
 
-export function GenerateReportButton({ projectId, hasGitHub = true, variant = "default", size = "default", iconOnly = false, existingDraftThisWeek = false }: GenerateReportButtonProps) {
+export function GenerateReportButton({ projectId, hasGitHub = true, canUseAiReports = true, variant = "default", size = "default", iconOnly = false, existingDraftThisWeek = false }: GenerateReportButtonProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("idle");
   const generate = useGenerateReport();
+
+  if (!canUseAiReports) {
+    return (
+      <Button
+        asChild
+        variant={variant}
+        size={size}
+        className={iconOnly ? "h-7 w-7 p-0" : "gap-1.5"}
+        title="Upgrade to Starter to generate AI reports"
+        data-testid="button-generate-report-locked"
+      >
+        <Link href="/billing">
+          <Lock className={iconOnly ? "h-3.5 w-3.5" : "h-3.5 w-3.5"} />
+          {!iconOnly && (
+            <>Upgrade <ArrowRight className="h-3 w-3" /></>
+          )}
+        </Link>
+      </Button>
+    );
+  }
 
   const activeStepIndex = STEPS.findIndex((s) => s.key === step);
 
