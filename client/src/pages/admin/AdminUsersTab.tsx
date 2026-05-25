@@ -269,18 +269,21 @@ function AdminGrantExpiryEditor({
   const [editing, setEditing] = useState(false);
   const [alert, setAlert] = useState<{ type: "error" | "success"; message: string } | null>(null);
 
-  const toDateInput = (iso: string | null) =>
-    iso ? format(parseISO(iso), "yyyy-MM-dd") : "";
+  const isExpired = !!adminGrantExpiresAt && new Date(adminGrantExpiresAt) < new Date();
+  const currentDaysLeft = adminGrantExpiresAt && !isExpired
+    ? Math.ceil((new Date(adminGrantExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
 
-  const [value, setValue] = useState(() => toDateInput(adminGrantExpiresAt));
+  const defaultDays = currentDaysLeft ?? 30;
+  const [days, setDays] = useState(String(defaultDays));
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!editing) setValue(toDateInput(adminGrantExpiresAt));
+    if (!editing) setDays(String(currentDaysLeft ?? 30));
   }, [adminGrantExpiresAt, editing]);
 
   useEffect(() => {
-    if (editing) inputRef.current?.focus();
+    if (editing) { inputRef.current?.focus(); inputRef.current?.select(); }
   }, [editing]);
 
   const { mutate, isPending } = useMutation({
@@ -298,26 +301,23 @@ function AdminGrantExpiryEditor({
   });
 
   const handleSave = () => {
-    if (!value) {
+    const n = parseInt(days, 10);
+    if (!days.trim() || isNaN(n) || n <= 0) {
       mutate(null);
-    } else {
-      const [year, month, day] = value.split("-").map(Number);
-      const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-      mutate(date.toISOString());
+      return;
     }
+    const date = new Date();
+    date.setUTCHours(12, 0, 0, 0);
+    date.setUTCDate(date.getUTCDate() + n);
+    mutate(date.toISOString());
   };
 
   const handleCancel = () => {
-    setValue(toDateInput(adminGrantExpiresAt));
+    setDays(String(currentDaysLeft ?? 30));
     setEditing(false);
   };
 
   if (!isAdminOverride) return null;
-
-  const isExpired = !!adminGrantExpiresAt && new Date(adminGrantExpiresAt) < new Date();
-  const daysLeft = adminGrantExpiresAt && !isExpired
-    ? Math.ceil((new Date(adminGrantExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-    : null;
 
   return (
     <div className="space-y-1">
@@ -326,30 +326,33 @@ function AdminGrantExpiryEditor({
           data-testid={`button-edit-grant-expiry-${userId}`}
           onClick={() => setEditing(true)}
           className="group/grant inline-flex items-center gap-1 text-[11px] transition-colors"
-          title="Edit admin grant expiry"
+          title="Set grant expiry in days"
         >
-          <ShieldCheck className={`h-3 w-3 flex-shrink-0 ${isExpired ? "text-red-400" : daysLeft !== null && daysLeft <= 7 ? "text-amber-400" : "text-indigo-400"}`} />
-          <span className={`font-mono ${isExpired ? "text-red-400" : daysLeft !== null && daysLeft <= 7 ? "text-amber-400" : "text-indigo-300"}`}>
+          <ShieldCheck className={`h-3 w-3 flex-shrink-0 ${isExpired ? "text-red-400" : currentDaysLeft !== null && currentDaysLeft <= 7 ? "text-amber-400" : "text-indigo-400"}`} />
+          <span className={`font-mono ${isExpired ? "text-red-400" : currentDaysLeft !== null && currentDaysLeft <= 7 ? "text-amber-400" : "text-indigo-300"}`}>
             {adminGrantExpiresAt
               ? isExpired
                 ? `expired ${format(parseISO(adminGrantExpiresAt), "MMM d, yyyy")}`
-                : `${format(parseISO(adminGrantExpiresAt), "MMM d, yyyy")} (${daysLeft}d left)`
-              : <span className="text-white/30 italic">no expiry</span>
+                : `${currentDaysLeft}d left · ends ${format(parseISO(adminGrantExpiresAt), "MMM d, yyyy")}`
+              : <span className="text-white/30 italic">no expiry set</span>
             }
           </span>
           <Pencil className="h-2.5 w-2.5 opacity-0 group-hover/grant:opacity-60 transition-opacity text-white/40" />
         </button>
       ) : (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <input
             ref={inputRef}
-            type="date"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
+            type="number"
+            min="1"
+            max="3650"
+            value={days}
+            onChange={(e) => setDays(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") handleCancel(); }}
-            className="bg-white/10 border border-white/20 rounded text-[11px] text-white px-1.5 py-0.5 font-mono focus:outline-none focus:border-indigo-400 w-32"
+            className="bg-white/10 border border-white/20 rounded text-[11px] text-white px-1.5 py-0.5 font-mono focus:outline-none focus:border-indigo-400 w-14 text-center"
             data-testid={`input-grant-expiry-${userId}`}
           />
+          <span className="text-[11px] text-white/40">days</span>
           <button
             onClick={handleSave}
             disabled={isPending}
