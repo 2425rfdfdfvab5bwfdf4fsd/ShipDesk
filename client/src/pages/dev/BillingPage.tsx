@@ -25,6 +25,8 @@ interface BillingStatus {
   lsSubscriptionStatus: string | null;
   lsCustomerId: string | null;
   trialEndsAt: string | null;
+  lsRenewsAt: string | null;
+  lsEndsAt: string | null;
 }
 
 const STATUS_BADGE: Record<string, { label: string; variant: "success" | "warning" | "destructive" | "secondary" }> = {
@@ -219,6 +221,15 @@ export function BillingPage() {
     ? new Date(billing.trialEndsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
     : "";
 
+  const isCancelled = billing?.lsSubscriptionStatus === "cancelled" || billing?.lsSubscriptionStatus === "expired";
+  const subRenewsAt = hasActiveSub && !isCancelled ? billing?.lsRenewsAt ?? null : null;
+  const subEndsAt = hasActiveSub && isCancelled ? billing?.lsEndsAt ?? null : null;
+  const subDateToShow = subEndsAt || subRenewsAt;
+  const subDaysLeft = subDateToShow ? daysLeft(subDateToShow) : null;
+  const subDateFormatted = subDateToShow
+    ? new Date(subDateToShow).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : "";
+
   const planDescription = hasActiveSub
     ? `${PLAN_PRICES[currentPlan]}/month`
     : isAdminGranted
@@ -266,6 +277,31 @@ export function BillingPage() {
               )}
             </div>
             <p className="text-xs text-muted-foreground">{planDescription}</p>
+
+            {/* Subscription renewal / expiry countdown */}
+            {hasActiveSub && subDateToShow && subDaysLeft !== null && (
+              <div className="mt-3 max-w-xs">
+                <div className={`flex items-center gap-2 text-xs font-medium mb-1.5 ${
+                  isCancelled
+                    ? subDaysLeft <= 7 ? "text-red-500" : "text-amber-600 dark:text-amber-400"
+                    : "text-muted-foreground"
+                }`}>
+                  <Timer className="h-3.5 w-3.5 flex-shrink-0" />
+                  {isCancelled
+                    ? `Access ends in ${subDaysLeft} day${subDaysLeft !== 1 ? "s" : ""} · ${subDateFormatted}`
+                    : `Renews in ${subDaysLeft} day${subDaysLeft !== 1 ? "s" : ""} · ${subDateFormatted}`}
+                </div>
+                {isCancelled && (
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${subDaysLeft <= 7 ? "bg-red-400" : "bg-amber-400"}`}
+                      style={{ width: `${Math.max(4, Math.min(100, (subDaysLeft / 30) * 100))}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Trial progress bar */}
             {trialActive && (
               <div className="mt-2 max-w-xs">

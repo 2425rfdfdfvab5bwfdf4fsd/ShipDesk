@@ -95,6 +95,22 @@ export async function getSubscriptionPortalUrl(subscriptionId: string): Promise<
   return urls?.customer_portal || urls?.update_payment_method || "";
 }
 
+export async function getSubscriptionDetails(subscriptionId: string): Promise<{
+  renewsAt: string | null;
+  endsAt: string | null;
+  status: string | null;
+}> {
+  setup();
+  const result = await getSubscription(subscriptionId);
+  if (result.error) return { renewsAt: null, endsAt: null, status: null };
+  const attrs = result.data?.data.attributes as Record<string, unknown> | undefined;
+  return {
+    renewsAt: typeof attrs?.renews_at === "string" ? attrs.renews_at : null,
+    endsAt: typeof attrs?.ends_at === "string" ? attrs.ends_at : null,
+    status: typeof attrs?.status === "string" ? attrs.status : null,
+  };
+}
+
 export function verifyWebhookSignature(
   rawBody: Buffer,
   signature: string

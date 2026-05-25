@@ -10,6 +10,8 @@ interface BillingStatus {
   lsSubscriptionId: string | null;
   lsSubscriptionStatus: string | null;
   trialEndsAt: string | null;
+  lsRenewsAt: string | null;
+  lsEndsAt: string | null;
 }
 
 export interface PlanCapabilities {
@@ -75,7 +77,14 @@ function buildCapabilities(billing: BillingStatus): PlanCapabilities {
   };
 }
 
-export function usePlan(): { capabilities: PlanCapabilities | null; isLoading: boolean } {
+export function usePlan(): {
+  capabilities: PlanCapabilities | null;
+  isLoading: boolean;
+  lsRenewsAt: string | null;
+  lsEndsAt: string | null;
+  lsSubscriptionStatus: string | null;
+  hasActiveSub: boolean;
+} {
   const { isSignedIn } = useAuth();
 
   const { data: billing, isLoading } = useQuery<BillingStatus>({
@@ -85,7 +94,21 @@ export function usePlan(): { capabilities: PlanCapabilities | null; isLoading: b
     staleTime: 60_000,
   });
 
-  if (!billing) return { capabilities: null, isLoading };
+  if (!billing) return {
+    capabilities: null,
+    isLoading,
+    lsRenewsAt: null,
+    lsEndsAt: null,
+    lsSubscriptionStatus: null,
+    hasActiveSub: false,
+  };
 
-  return { capabilities: buildCapabilities(billing), isLoading };
+  return {
+    capabilities: buildCapabilities(billing),
+    isLoading,
+    lsRenewsAt: billing.lsRenewsAt,
+    lsEndsAt: billing.lsEndsAt,
+    lsSubscriptionStatus: billing.lsSubscriptionStatus,
+    hasActiveSub: !!billing.lsSubscriptionId,
+  };
 }

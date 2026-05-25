@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useWorkspace, useUnreadMessageCount } from "@/hooks/useWorkspace";
+import { usePlan } from "@/hooks/usePlan";
 
 const ADMIN_EMAIL = "saifkhan13483@gmail.com";
 
@@ -69,6 +70,7 @@ export function AppShell({ children }: AppShellProps) {
   const { data: unreadData } = useUnreadMessageCount();
   const unreadCount = unreadData?.count ?? 0;
   const effectivePlan = getEffectivePlan(workspace);
+  const { lsRenewsAt, lsEndsAt, lsSubscriptionStatus, hasActiveSub } = usePlan();
 
   // Only redirect to onboarding when we know for certain there is no workspace (404).
   // Any other error (e.g. 401 while auth token is still loading on refresh) should
@@ -173,6 +175,27 @@ export function AppShell({ children }: AppShellProps) {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
+                </div>
+              );
+            })()}
+            {/* Subscription renewal / expiry — shown for paid subscribers */}
+            {hasActiveSub && (() => {
+              const isCancelled = lsSubscriptionStatus === "cancelled" || lsSubscriptionStatus === "expired";
+              const dateToShow = isCancelled ? lsEndsAt : lsRenewsAt;
+              if (!dateToShow) return null;
+              const remaining = daysLeft(dateToShow);
+              const formatted = new Date(dateToShow).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+              const urgentColor = isCancelled && remaining <= 7
+                ? "text-red-500 dark:text-red-400"
+                : "text-muted-foreground";
+              return (
+                <div className="mt-2">
+                  <span className={`text-[10px] font-medium ${urgentColor}`}>
+                    {isCancelled
+                      ? `Access ends in ${remaining} day${remaining !== 1 ? "s" : ""}`
+                      : `Renews in ${remaining} day${remaining !== 1 ? "s" : ""}`}
+                  </span>
+                  <p className="text-[9px] text-muted-foreground/70">{formatted}</p>
                 </div>
               );
             })()}

@@ -6,6 +6,7 @@ import { AppError } from "../lib/errors.js";
 import {
   createSubscriptionCheckout,
   getSubscriptionPortalUrl,
+  getSubscriptionDetails,
 } from "../services/lemonSqueezyService.js";
 
 const router = Router();
@@ -30,7 +31,20 @@ router.get("/status", requireAuth, async (req: AuthRequest, res, next) => {
       },
     });
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
-    res.json(workspace);
+
+    let lsRenewsAt: string | null = null;
+    let lsEndsAt: string | null = null;
+    if (workspace.lsSubscriptionId) {
+      try {
+        const details = await getSubscriptionDetails(workspace.lsSubscriptionId);
+        lsRenewsAt = details.renewsAt;
+        lsEndsAt = details.endsAt;
+      } catch {
+        // Non-fatal — subscription dates will just be null
+      }
+    }
+
+    res.json({ ...workspace, lsRenewsAt, lsEndsAt });
   } catch (err) {
     next(err);
   }
