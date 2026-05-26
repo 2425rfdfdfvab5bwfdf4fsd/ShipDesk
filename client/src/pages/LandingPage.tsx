@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@clerk/clerk-react";
 import { useSEO } from "@/lib/seo";
+import { PLAN_PRICES_YEARLY } from "@/lib/planFeatures";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, Github, FileText, DollarSign, MessageSquare, Shield,
@@ -251,6 +252,7 @@ function MockDashboard() {
 export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isYearly, setIsYearly] = useState(false);
   const { isSignedIn } = useAuth();
 
   useEffect(() => {
@@ -651,12 +653,44 @@ export function LandingPage() {
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
               Every feature. Fully working. Right now.
             </h2>
-            <p className="text-white/50 max-w-md mx-auto">
+            <p className="text-white/50 max-w-md mx-auto mb-8">
               14-day free trial, no credit card required. Cancel any time.
             </p>
+            {/* Monthly / Yearly toggle */}
+            <div className="flex items-center justify-center gap-3">
+              <span className={`text-sm transition-colors ${!isYearly ? "font-medium text-white" : "text-white/40"}`}>
+                Monthly
+              </span>
+              <button
+                data-testid="toggle-landing-billing-period"
+                onClick={() => setIsYearly((v) => !v)}
+                className={`relative w-11 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                  isYearly ? "bg-indigo-500" : "bg-white/20"
+                }`}
+                role="switch"
+                aria-checked={isYearly}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                    isYearly ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+              <span className={`text-sm transition-colors ${isYearly ? "font-medium text-white" : "text-white/40"}`}>
+                Yearly
+              </span>
+              {isYearly && (
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/20">
+                  Save 20%
+                </span>
+              )}
+            </div>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
-            {PRICING.map((plan, i) => (
+            {PRICING.map((plan, i) => {
+              const yearlyKey = plan.name.toUpperCase() as keyof typeof PLAN_PRICES_YEARLY;
+              const displayPrice = isYearly && PLAN_PRICES_YEARLY[yearlyKey] ? PLAN_PRICES_YEARLY[yearlyKey] : plan.price;
+              return (
               <motion.div
                 key={plan.name}
                 initial={{ opacity: 0, y: 16 }}
@@ -680,9 +714,12 @@ export function LandingPage() {
                   <h3 className="text-lg font-bold mb-1">{plan.name}</h3>
                   <p className="text-white/50 text-sm mb-4">{plan.description}</p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-white/50 text-sm">{plan.period}</span>
+                    <span className="text-4xl font-bold">{displayPrice}</span>
+                    <span className="text-white/50 text-sm">/mo</span>
                   </div>
+                  {isYearly && (
+                    <p className="text-[11px] text-emerald-400 mt-1 font-medium">Billed annually · Save 20%</p>
+                  )}
                 </div>
                 <ul className="space-y-2.5 mb-7 flex-1">
                   {plan.features.map((feature) => (
@@ -718,7 +755,8 @@ export function LandingPage() {
                   </Button>
                 </Link>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
