@@ -14,6 +14,78 @@ import {
 import { Button } from "@/components/ui/button";
 import { ShipDeskLogoMark } from "@/components/ui/ShipDeskLogo";
 
+function SplashScreen({ onDone }: { onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 2000);
+    return () => clearTimeout(t);
+  }, [onDone]);
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#06080f]"
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.55, ease: "easeInOut" } }}
+    >
+      {/* Ambient glow behind mark */}
+      <motion.div
+        className="absolute w-64 h-64 rounded-full"
+        style={{ background: "radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%)" }}
+        initial={{ opacity: 0, scale: 0.4 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+      />
+
+      {/* Logo mark — draw-on */}
+      <motion.svg
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-20 h-20 relative z-10"
+        style={{ willChange: "transform" }}
+      >
+        <motion.rect
+          x="36" y="14" width="28" height="72" rx="14"
+          transform="rotate(45 50 50)"
+          fill="rgba(255,255,255,0.85)"
+          initial={{ opacity: 0, scale: 0.2 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
+        />
+        <motion.rect
+          x="36" y="14" width="28" height="72" rx="14"
+          transform="rotate(-45 50 50)"
+          fill="#6366F1"
+          fillOpacity="0.92"
+          initial={{ opacity: 0, scale: 0.2 }}
+          animate={{ opacity: 0.92, scale: 1 }}
+          transition={{ duration: 0.45, delay: 0.18, ease: [0.34, 1.56, 0.64, 1] }}
+        />
+      </motion.svg>
+
+      {/* Wordmark */}
+      <motion.p
+        className="mt-5 text-2xl font-bold tracking-tight text-white relative z-10"
+        style={{ fontFamily: "'Inter', sans-serif" }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.42, duration: 0.35, ease: "easeOut" }}
+      >
+        ShipDesk
+      </motion.p>
+
+      {/* Tagline */}
+      <motion.p
+        className="mt-2 text-sm text-white/40 tracking-wide relative z-10"
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.65, duration: 0.35, ease: "easeOut" }}
+      >
+        AI-native client portal
+      </motion.p>
+    </motion.div>
+  );
+}
+
 const FEATURES = [
   {
     icon: Github,
@@ -256,6 +328,15 @@ export function LandingPage() {
   const [isYearly, setIsYearly] = useState(false);
   const { isSignedIn } = useAuth();
 
+  const [splashDone, setSplashDone] = useState(() =>
+    typeof sessionStorage !== "undefined" && !!sessionStorage.getItem("sd-splash-seen")
+  );
+
+  function handleSplashDone() {
+    sessionStorage.setItem("sd-splash-seen", "1");
+    setSplashDone(true);
+  }
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -271,7 +352,12 @@ export function LandingPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#06080f] text-white [overflow-x:clip]">
+    <>
+      <AnimatePresence>
+        {!splashDone && <SplashScreen key="splash" onDone={handleSplashDone} />}
+      </AnimatePresence>
+
+      <div className="min-h-screen bg-[#06080f] text-white [overflow-x:clip]">
       {/* Nav */}
       <header
         className={`sticky top-0 z-30 transition-all duration-300 ${
@@ -903,5 +989,6 @@ export function LandingPage() {
         </div>
       </footer>
     </div>
+    </>
   );
 }
