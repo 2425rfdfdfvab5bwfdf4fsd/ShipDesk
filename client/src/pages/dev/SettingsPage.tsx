@@ -268,7 +268,7 @@ function IntegrationsTab() {
       ? "STARTER"
       : "FREE"
     : "FREE";
-  const canUseGitHub = effectivePlan === "SOLO" || effectivePlan === "AGENCY";
+  const canUseGitHub = effectivePlan === "STARTER" || effectivePlan === "SOLO" || effectivePlan === "AGENCY";
 
   const integrations = [
     {

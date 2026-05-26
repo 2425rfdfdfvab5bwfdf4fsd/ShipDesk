@@ -71,7 +71,7 @@ function buildCapabilities(billing: BillingStatus): PlanCapabilities {
     canUseMessaging: starterOrAbove,
     canUseClientInvites: starterOrAbove,
     canUseAiReports: starterOrAbove,
-    canUseGitHub: soloOrAbove,
+    canUseGitHub: starterOrAbove,
     canUseScopeChanges: soloOrAbove,
     canUseTeamSeats: agencyOnly,
   };

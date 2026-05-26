@@ -25,7 +25,7 @@ type Feature =
 
 const PLAN_FEATURES: Record<Plan, Set<Feature>> = {
   FREE: new Set([]),
-  STARTER: new Set(["invoices", "files", "messaging", "client_invites", "ai_reports"]),
+  STARTER: new Set(["invoices", "files", "messaging", "client_invites", "ai_reports", "github"]),
   SOLO: new Set(["invoices", "files", "messaging", "client_invites", "ai_reports", "github", "scope_changes"]),
   AGENCY: new Set(["invoices", "files", "messaging", "client_invites", "ai_reports", "github", "scope_changes"]),
 };
