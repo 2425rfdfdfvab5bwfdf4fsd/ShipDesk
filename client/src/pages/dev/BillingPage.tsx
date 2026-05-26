@@ -397,24 +397,6 @@ export function BillingPage() {
               </div>
             )}
 
-            {/* Admin grant countdown */}
-            {isAdminGranted && adminGrantExpiresAt && (
-              <div className="mt-3 max-w-xs">
-                <div className={`flex items-center gap-2 text-xs font-medium mb-1.5 ${
-                  adminGrantExpired
-                    ? "text-red-500"
-                    : adminGrantDaysLeft <= 7
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-muted-foreground"
-                }`}>
-                  <Timer className="h-3.5 w-3.5 flex-shrink-0" />
-                  {adminGrantExpired
-                    ? `Grant expired · ${adminGrantEndFormatted}`
-                    : `${adminGrantDaysLeft} days remaining · Ends ${adminGrantEndFormatted}`}
-                </div>
-              </div>
-            )}
-
             {/* Trial progress bar */}
             {trialActive && (
               <div className="mt-2 max-w-xs">

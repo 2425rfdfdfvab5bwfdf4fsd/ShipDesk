@@ -150,20 +150,6 @@ function PlanTab() {
           </Button>
         </div>
 
-        {/* Admin grant countdown */}
-        {isAdminOverride && adminGrantExpiresAt && (
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Admin grant period</span>
-              <span className={adminGrantExpired ? "text-red-500" : adminGrantDaysLeft <= 7 ? "text-amber-500" : ""}>
-                {adminGrantExpired
-                  ? `Expired · ${adminGrantEndFormatted}`
-                  : `Ends ${adminGrantEndFormatted}`}
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Trial progress bar */}
         {trialActive && billing?.trialEndsAt && (
           <div className="space-y-1.5">
