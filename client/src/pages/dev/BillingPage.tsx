@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { PLAN_FEATURES, PLAN_PRICES } from "@/lib/planFeatures";
+import { PLAN_FEATURES, PLAN_PRICES, PLAN_PRICES_YEARLY } from "@/lib/planFeatures";
 import type { Plan } from "@/types";
 
 function daysLeft(date: string): number {
@@ -50,6 +50,7 @@ function PlanCard({
   lsRenewsAt,
   lsEndsAt,
   lsSubscriptionStatus,
+  isYearly,
 }: {
   plan: "STARTER" | "SOLO" | "AGENCY";
   currentPlan: "STARTER" | "SOLO" | "AGENCY";
@@ -61,6 +62,7 @@ function PlanCard({
   lsRenewsAt: string | null;
   lsEndsAt: string | null;
   lsSubscriptionStatus: string | null;
+  isYearly: boolean;
 }) {
   const isCurrentPlan = currentPlan === plan;
   const isPaidCurrentPlan = isCurrentPlan && hasActiveSubscription;
@@ -127,10 +129,17 @@ function PlanCard({
           </h3>
         </div>
         <div className="flex items-baseline gap-1 mt-2">
-          <span className="text-3xl font-bold">{PLAN_PRICES[plan]}</span>
-          <span className="text-muted-foreground text-sm">/month</span>
+          <span className="text-3xl font-bold">
+            {isYearly ? PLAN_PRICES_YEARLY[plan] : PLAN_PRICES[plan]}
+          </span>
+          <span className="text-muted-foreground text-sm">/mo</span>
         </div>
-        {plan === "STARTER" && !hasActiveSubscription && !hasTrialStarted && (
+        {isYearly && (
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
+            Billed annually · Save 20%
+          </p>
+        )}
+        {!isYearly && plan === "STARTER" && !hasActiveSubscription && !hasTrialStarted && (
           <p className="text-[11px] text-primary/70 mt-1 font-medium">First 14 days free</p>
         )}
       </div>
@@ -197,6 +206,7 @@ export function BillingPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [checkingOut, setCheckingOut] = useState<"STARTER" | "SOLO" | "AGENCY" | null>(null);
+  const [isYearly, setIsYearly] = useState(false);
 
   const { data: billing, isLoading } = useQuery<BillingStatus>({
     queryKey: ["billing-status"],
@@ -441,9 +451,40 @@ export function BillingPage() {
         <>
           {/* Plan cards */}
           <div>
-            <h2 className="text-sm font-semibold mb-4">
-              {hasActiveSub ? "Switch plan" : isAdminGranted ? "Available plans" : "Choose a plan"}
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+              <h2 className="text-sm font-semibold">
+                {hasActiveSub ? "Switch plan" : isAdminGranted ? "Available plans" : "Choose a plan"}
+              </h2>
+              {/* Monthly / Yearly toggle */}
+              <div className="flex items-center gap-2.5 self-start sm:self-auto">
+                <span className={`text-sm transition-colors ${!isYearly ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                  Monthly
+                </span>
+                <button
+                  data-testid="toggle-billing-period"
+                  onClick={() => setIsYearly((v) => !v)}
+                  className={`relative w-10 h-5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    isYearly ? "bg-primary" : "bg-muted-foreground/30"
+                  }`}
+                  role="switch"
+                  aria-checked={isYearly}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                      isYearly ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm transition-colors ${isYearly ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                  Yearly
+                </span>
+                {isYearly && (
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                    Save 20%
+                  </span>
+                )}
+              </div>
+            </div>
             <div className="grid sm:grid-cols-3 gap-4">
               {(["STARTER", "SOLO", "AGENCY"] as const).map((plan) => (
                 <PlanCard
@@ -458,6 +499,7 @@ export function BillingPage() {
                   lsRenewsAt={billing?.lsRenewsAt ?? null}
                   lsEndsAt={billing?.lsEndsAt ?? null}
                   lsSubscriptionStatus={billing?.lsSubscriptionStatus ?? null}
+                  isYearly={isYearly}
                 />
               ))}
             </div>
