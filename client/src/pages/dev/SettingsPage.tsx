@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useSEO } from "@/lib/seo";
@@ -345,6 +345,11 @@ function IntegrationsTab() {
 export function SettingsPage() {
   useSEO({ title: "Settings", noindex: true });
   const [activeTab, setActiveTab] = useState<Tab>("workspace");
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(n => n + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto">
