@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ShipDeskLogoMark } from "@/components/ui/ShipDeskLogo";
 import { cn } from "@/lib/utils";
 import { useWorkspace, useUnreadMessageCount } from "@/hooks/useWorkspace";
 import { usePlan } from "@/hooks/usePlan";
@@ -111,7 +112,7 @@ export function AppShell({ children }: AppShellProps) {
             onClick={() => setSidebarOpen(false)}
             className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
           >
-            <img src="/favicon.svg" alt="ShipDesk" className="w-7 h-7" />
+            <ShipDeskLogoMark className="w-7 h-7" />
             <span className="font-bold text-sm tracking-tight">ShipDesk</span>
           </Link>
           <Button
@@ -314,7 +315,7 @@ export function AppShell({ children }: AppShellProps) {
             <Menu className="h-5 w-5" />
           </Button>
           <Link href="/dashboard" className="flex items-center gap-2">
-            <img src="/favicon.svg" alt="ShipDesk" className="w-6 h-6" />
+            <ShipDeskLogoMark className="w-6 h-6" />
             <span className="font-bold text-sm">ShipDesk</span>
           </Link>
           <div className="w-8" />

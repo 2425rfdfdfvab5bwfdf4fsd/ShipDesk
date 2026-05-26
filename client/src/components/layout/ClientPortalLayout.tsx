@@ -5,6 +5,7 @@ import { api, clearClientSessionToken } from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
 import { LogOut, ChevronLeft, Menu, X, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ShipDeskLogoMark } from "@/components/ui/ShipDeskLogo";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -106,11 +107,7 @@ export function ClientPortalLayout({ children, workspaceSlug }: ClientPortalLayo
                 className="h-7 w-auto object-contain flex-shrink-0"
               />
             ) : (
-              <img
-                src="/favicon.svg"
-                alt="ShipDesk"
-                className="w-7 h-7 flex-shrink-0"
-              />
+              <ShipDeskLogoMark className="w-7 h-7 flex-shrink-0" />
             )}
             <span className="font-semibold text-sm truncate">
               {branding?.agencyName || "Client Portal"}

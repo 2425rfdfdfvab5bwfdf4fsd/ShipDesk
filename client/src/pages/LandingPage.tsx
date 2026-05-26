@@ -12,6 +12,7 @@ import {
   LayoutDashboard, LogIn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ShipDeskLogoMark } from "@/components/ui/ShipDeskLogo";
 
 const FEATURES = [
   {
@@ -282,10 +283,8 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-5 sm:px-8 h-[68px] flex items-center justify-between gap-8">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:shadow-indigo-500/50 transition-shadow">
-              <img src="/favicon.svg" alt="" className="w-5 h-5" />
-            </div>
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group hover:opacity-90 transition-opacity">
+            <ShipDeskLogoMark className="w-8 h-8" variant="onDark" />
             <span className="font-bold text-[17px] tracking-tight text-white">ShipDesk</span>
           </Link>
 
@@ -389,9 +388,7 @@ export function LandingPage() {
               {/* Sidebar header */}
               <div className="flex items-center justify-between px-5 h-[68px] border-b border-white/[0.07] shrink-0">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                    <img src="/favicon.svg" alt="" className="w-5 h-5" />
-                  </div>
+                  <ShipDeskLogoMark className="w-8 h-8" variant="onDark" />
                   <span className="font-bold text-[17px] tracking-tight text-white">ShipDesk</span>
                 </div>
                 <button
@@ -864,7 +861,7 @@ export function LandingPage() {
           <div className="flex flex-col lg:flex-row justify-between gap-10 mb-10">
             <div className="max-w-xs">
               <div className="flex items-center gap-2 mb-3">
-                <img src="/favicon.svg" alt="ShipDesk" className="w-7 h-7" />
+                <ShipDeskLogoMark className="w-7 h-7" variant="onDark" />
                 <span className="font-bold text-white">ShipDesk</span>
               </div>
               <p className="text-sm text-white/40 leading-relaxed">
