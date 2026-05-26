@@ -71,7 +71,7 @@ export function TrialExpiredPage() {
             Your free trial has ended
           </h1>
           <p className="text-white/50 text-base leading-relaxed">
-            Your 14-day Starter trial is over. Pay $5/month to continue with the Starter plan and keep all your projects, reports, and client data.
+            Your 14-day Starter trial is over. Pay $10/month to continue with the Starter plan and keep all your projects, reports, and client data.
           </p>
         </div>
 
@@ -91,7 +91,7 @@ export function TrialExpiredPage() {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold">$5</p>
+              <p className="text-3xl font-bold">$10</p>
               <p className="text-xs text-white/40">/month</p>
             </div>
           </div>

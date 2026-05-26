@@ -109,13 +109,14 @@ const STATS = [
 const PRICING = [
   {
     name: "Starter",
-    price: "$5",
+    price: "$10",
     period: "/month",
     description: "Get your first client portal live in minutes.",
     features: [
       { label: "3 client projects" },
       { label: "10 AI status reports/month" },
       { label: "Magic link client portal" },
+      { label: "GitHub webhook integration" },
       { label: "Invoice + payment links" },
       { label: "File uploads & sharing" },
       { label: "Async client messaging" },

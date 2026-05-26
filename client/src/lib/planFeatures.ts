@@ -1,7 +1,7 @@
 import type { Plan } from "@/types";
 
 export const PLAN_PRICES: Record<Exclude<Plan, "FREE">, string> = {
-  STARTER: "$5",
+  STARTER: "$10",
   SOLO: "$29",
   AGENCY: "$79",
 };
@@ -11,6 +11,7 @@ export const PLAN_FEATURES: Record<Exclude<Plan, "FREE">, string[]> = {
     "3 client projects",
     "10 AI status reports/month",
     "Magic link client portal",
+    "GitHub webhook integration",
     "Invoice + payment links",
     "File uploads & sharing",
     "Async client messaging",
