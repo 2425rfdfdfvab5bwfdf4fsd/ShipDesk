@@ -4,9 +4,9 @@ import { adminApi } from "@/lib/adminApi";
 import {
   Search, ChevronLeft, ChevronRight, Copy, Check,
   ShieldCheck, CalendarDays, Pencil, X, Check as CheckIcon,
-  AlertCircle, XCircle,
+  AlertCircle, XCircle, RefreshCw, AlertTriangle,
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 
 interface AdminUser {
   id: string; email: string; name: string; createdAt: string; avatarUrl: string | null;
@@ -29,6 +29,16 @@ const PLAN_STYLES: Record<string, string> = {
   SOLO:    "bg-indigo-500/15 text-indigo-400",
   AGENCY:  "bg-purple-500/15 text-purple-400",
 };
+
+function safeFormat(dateStr: string | null | undefined, fmt: string, fallback = "—"): string {
+  if (!dateStr) return fallback;
+  try {
+    const d = parseISO(dateStr);
+    return isValid(d) ? format(d, fmt) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
@@ -65,10 +75,12 @@ function PlanSelector({
   userId,
   currentPlan,
   adminPlanOverride,
+  hasWorkspace,
 }: {
   userId: string;
   currentPlan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
   adminPlanOverride: boolean;
+  hasWorkspace: boolean;
 }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -83,11 +95,21 @@ function PlanSelector({
       setAlert({ type: "success", message: `Plan set to ${plan}` });
       setTimeout(() => setAlert(null), 3000);
     },
-    onError: () => {
+    onError: (err: any) => {
       setOpen(false);
-      setAlert({ type: "error", message: "Failed to update plan" });
+      const code = err?.response?.data?.error;
+      setAlert({
+        type: "error",
+        message: code === "USER_OR_WORKSPACE_NOT_FOUND"
+          ? "User has no workspace yet"
+          : "Failed to update plan",
+      });
     },
   });
+
+  if (!hasWorkspace) {
+    return <span className="text-white/25 text-xs italic">No workspace</span>;
+  }
 
   return (
     <div className="relative space-y-1">
@@ -145,27 +167,34 @@ function PlanSelector({
   );
 }
 
+const QUICK_TRIAL_DAYS = [7, 14, 30];
+
 function TrialDateEditor({
   userId,
   trialEndsAt,
+  hasWorkspace,
 }: {
   userId: string;
   trialEndsAt: string | null;
+  hasWorkspace: boolean;
 }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [alert, setAlert] = useState<{ type: "error" | "success"; message: string } | null>(null);
 
-  const toDateInput = (iso: string | null) =>
-    iso ? format(parseISO(iso), "yyyy-MM-dd") : "";
+  const toDateInput = (iso: string | null) => {
+    if (!iso) return "";
+    try {
+      const d = parseISO(iso);
+      return isValid(d) ? format(d, "yyyy-MM-dd") : "";
+    } catch { return ""; }
+  };
 
   const [value, setValue] = useState(() => toDateInput(trialEndsAt));
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!editing) {
-      setValue(toDateInput(trialEndsAt));
-    }
+    if (!editing) setValue(toDateInput(trialEndsAt));
   }, [trialEndsAt, editing]);
 
   useEffect(() => {
@@ -181,19 +210,36 @@ function TrialDateEditor({
       setAlert({ type: "success", message: "Trial date saved" });
       setTimeout(() => setAlert(null), 3000);
     },
-    onError: () => {
-      setAlert({ type: "error", message: "Failed to update trial date" });
+    onError: (err: any) => {
+      const code = err?.response?.data?.error;
+      setAlert({
+        type: "error",
+        message: code === "USER_OR_WORKSPACE_NOT_FOUND"
+          ? "User has no workspace yet"
+          : "Failed to update trial date",
+      });
     },
   });
 
-  const handleSave = () => {
-    if (!value) {
-      mutate(null);
-    } else {
-      const [year, month, day] = value.split("-").map(Number);
-      const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-      mutate(date.toISOString());
+  const handleSave = (overrideValue?: string) => {
+    const v = overrideValue ?? value;
+    if (!v) { mutate(null); return; }
+    const parts = v.split("-").map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) {
+      setAlert({ type: "error", message: "Invalid date format" });
+      return;
     }
+    const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 12, 0, 0));
+    mutate(date.toISOString());
+  };
+
+  const handleQuickExtend = (days: number) => {
+    const base = trialEndsAt && new Date(trialEndsAt) > new Date()
+      ? new Date(trialEndsAt)
+      : new Date();
+    base.setUTCDate(base.getUTCDate() + days);
+    base.setUTCHours(12, 0, 0, 0);
+    mutate(base.toISOString());
   };
 
   const handleCancel = () => {
@@ -201,26 +247,44 @@ function TrialDateEditor({
     setEditing(false);
   };
 
+  if (!hasWorkspace) return null;
+
+  const isExpired = !!trialEndsAt && new Date(trialEndsAt) < new Date();
+
   return (
     <div className="space-y-1">
       {!editing ? (
-        <button
-          data-testid={`button-edit-trial-${userId}`}
-          onClick={() => setEditing(true)}
-          className="group/trial inline-flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 transition-colors"
-          title="Edit trial end date"
-        >
-          <CalendarDays className="h-3 w-3 flex-shrink-0" />
-          <span className="font-mono">
-            {trialEndsAt
-              ? format(parseISO(trialEndsAt), "MMM d, yyyy")
-              : <span className="italic">no trial</span>
-            }
-          </span>
-          <Pencil className="h-2.5 w-2.5 opacity-0 group-hover/trial:opacity-60 transition-opacity" />
-        </button>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            data-testid={`button-edit-trial-${userId}`}
+            onClick={() => setEditing(true)}
+            className="group/trial inline-flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 transition-colors"
+            title="Edit trial end date"
+          >
+            <CalendarDays className="h-3 w-3 flex-shrink-0" />
+            <span className={`font-mono ${isExpired ? "text-red-400/70" : ""}`}>
+              {trialEndsAt ? safeFormat(trialEndsAt, "MMM d, yyyy") : <span className="italic">no trial</span>}
+            </span>
+            <Pencil className="h-2.5 w-2.5 opacity-0 group-hover/trial:opacity-60 transition-opacity" />
+          </button>
+          {/* Quick extend buttons */}
+          <div className="flex gap-0.5">
+            {QUICK_TRIAL_DAYS.map((d) => (
+              <button
+                key={d}
+                onClick={() => handleQuickExtend(d)}
+                disabled={isPending}
+                title={`Extend trial by ${d} days`}
+                className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 hover:bg-indigo-500/20 text-white/30 hover:text-indigo-300 transition-colors disabled:opacity-40 border border-transparent hover:border-indigo-500/20"
+              >
+                +{d}d
+              </button>
+            ))}
+          </div>
+          {isPending && <span className="text-[10px] text-white/30 italic">Saving…</span>}
+        </div>
       ) : (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
           <input
             ref={inputRef}
             type="date"
@@ -231,7 +295,7 @@ function TrialDateEditor({
             data-testid={`input-trial-date-${userId}`}
           />
           <button
-            onClick={handleSave}
+            onClick={() => handleSave()}
             disabled={isPending}
             className="p-0.5 rounded hover:bg-emerald-500/20 text-emerald-400 disabled:opacity-50"
             title="Save"
@@ -245,6 +309,14 @@ function TrialDateEditor({
             title="Cancel"
           >
             <X className="h-3 w-3" />
+          </button>
+          <button
+            onClick={() => mutate(null)}
+            disabled={isPending}
+            className="text-[10px] text-red-400/60 hover:text-red-400 px-1 py-0.5 rounded hover:bg-red-500/10 transition-colors"
+            title="Clear trial date"
+          >
+            Clear
           </button>
           {isPending && <span className="text-[10px] text-white/30 ml-1">Saving…</span>}
         </div>
@@ -332,15 +404,15 @@ function AdminGrantExpiryEditor({
           <span className={`font-mono ${isExpired ? "text-red-400" : currentDaysLeft !== null && currentDaysLeft <= 7 ? "text-amber-400" : "text-indigo-300"}`}>
             {adminGrantExpiresAt
               ? isExpired
-                ? `expired ${format(parseISO(adminGrantExpiresAt), "MMM d, yyyy")}`
-                : `${currentDaysLeft}d left · ends ${format(parseISO(adminGrantExpiresAt), "MMM d, yyyy")}`
+                ? `expired ${safeFormat(adminGrantExpiresAt, "MMM d, yyyy")}`
+                : `${currentDaysLeft}d left · ends ${safeFormat(adminGrantExpiresAt, "MMM d, yyyy")}`
               : <span className="text-white/30 italic">no expiry set</span>
             }
           </span>
           <Pencil className="h-2.5 w-2.5 opacity-0 group-hover/grant:opacity-60 transition-opacity text-white/40" />
         </button>
       ) : (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <input
             ref={inputRef}
             type="number"
@@ -369,12 +441,79 @@ function AdminGrantExpiryEditor({
           >
             <X className="h-3 w-3" />
           </button>
+          <button
+            onClick={() => mutate(null)}
+            disabled={isPending}
+            className="text-[10px] text-red-400/60 hover:text-red-400 px-1 py-0.5 rounded hover:bg-red-500/10 transition-colors"
+            title="Remove expiry"
+          >
+            No expiry
+          </button>
           {isPending && <span className="text-[10px] text-white/30 ml-1">Saving…</span>}
         </div>
       )}
       {alert && (
         <InlineAlert type={alert.type} message={alert.message} onDismiss={() => setAlert(null)} />
       )}
+    </div>
+  );
+}
+
+function Pagination({
+  page, pages, total, onPage,
+}: {
+  page: number; pages: number; total: number; onPage: (p: number) => void;
+}) {
+  if (pages <= 1) return null;
+
+  const getPageNumbers = (): (number | "…")[] => {
+    if (pages <= 7) return Array.from({ length: pages }, (_, i) => i + 1);
+    const items: (number | "…")[] = [1];
+    if (page > 3) items.push("…");
+    for (let i = Math.max(2, page - 1); i <= Math.min(pages - 1, page + 1); i++) {
+      items.push(i);
+    }
+    if (page < pages - 2) items.push("…");
+    items.push(pages);
+    return items;
+  };
+
+  return (
+    <div className="flex items-center justify-between text-sm text-white/40">
+      <span className="text-xs">{total} total · page {page} of {pages}</span>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onPage(Math.max(1, page - 1))}
+          disabled={page === 1}
+          className="p-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-30 transition-colors"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        {getPageNumbers().map((p, i) =>
+          p === "…" ? (
+            <span key={`ellipsis-${i}`} className="px-1 text-white/20 select-none">…</span>
+          ) : (
+            <button
+              key={p}
+              onClick={() => onPage(p as number)}
+              className={`min-w-[32px] h-8 rounded-lg border text-xs font-medium transition-colors ${
+                p === page
+                  ? "bg-indigo-500 border-indigo-500 text-white"
+                  : "border-white/10 hover:bg-white/5 text-white/50 hover:text-white"
+              }`}
+            >
+              {p}
+            </button>
+          )
+        )}
+        <button
+          onClick={() => onPage(Math.min(pages, page + 1))}
+          disabled={page === pages}
+          className="p-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-30 transition-colors"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -392,12 +531,16 @@ export function AdminUsersTab() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [planFilter, setPlanFilter] = useState("");
+  const qc = useQueryClient();
 
-  const { data, isLoading } = useQuery<PagedResponse>({
+  const { data, isLoading, isError, error, isFetching } = useQuery<PagedResponse>({
     queryKey: ["admin-users", page, search, planFilter],
     queryFn: () =>
-      adminApi.get("/api/admin/users", { params: { page, search: search || undefined, plan: planFilter || undefined } }).then((r) => r.data),
+      adminApi.get("/api/admin/users", {
+        params: { page, search: search || undefined, plan: planFilter || undefined },
+      }).then((r) => r.data),
     staleTime: 30_000,
+    retry: 1,
   });
 
   const handlePlanFilter = (value: string) => {
@@ -419,38 +562,89 @@ export function AdminUsersTab() {
     setPage(1);
   };
 
+  const handleRefresh = () => {
+    qc.invalidateQueries({ queryKey: ["admin-users"] });
+  };
+
+  // ── Error state ──────────────────────────────────────────────────────────────
+  if (isError) {
+    const status = (error as any)?.response?.status;
+    const isAuth = status === 401 || status === 403;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20">
+          <AlertTriangle className="h-6 w-6 text-red-400" />
+        </div>
+        <div className="text-center">
+          <p className="text-white font-semibold mb-1">
+            {isAuth ? "Access denied" : "Failed to load users"}
+          </p>
+          <p className="text-white/40 text-sm">
+            {isAuth
+              ? `Your account doesn't have permission to view this (${status})`
+              : "There was a problem fetching the users list. Check the server logs."}
+          </p>
+        </div>
+        {!isAuth && (
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-white/70 transition-colors"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Retry
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-white">Users</h2>
-          <p className="text-sm text-white/50">{data?.total ?? "—"} registered developers</p>
+          <p className="text-sm text-white/50">
+            {isLoading ? "Loading…" : `${data?.total ?? 0} registered developers`}
+          </p>
         </div>
-        <form onSubmit={handleSearch} className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
-            <input
-              data-testid="input-user-search"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search by name or email…"
-              className="bg-white/5 border border-white/10 rounded-lg pl-8 pr-8 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 w-56"
-            />
-            {searchInput && (
-              <button
-                type="button"
-                onClick={handleClearSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-          <button type="submit" className="px-3 py-1.5 text-xs bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg transition-colors font-medium">
-            Search
+        <div className="flex items-center gap-2">
+          <form onSubmit={handleSearch} className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
+              <input
+                data-testid="input-user-search"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search by name or email…"
+                className="bg-white/5 border border-white/10 rounded-lg pl-8 pr-8 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 w-56"
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="px-3 py-1.5 text-xs bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg transition-colors font-medium"
+            >
+              Search
+            </button>
+          </form>
+          <button
+            onClick={handleRefresh}
+            disabled={isFetching}
+            title="Refresh"
+            className="p-1.5 rounded-lg border border-white/10 hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors disabled:opacity-40"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
           </button>
-        </form>
+        </div>
       </div>
 
       {/* Plan filter tabs */}
@@ -499,13 +693,13 @@ export function AdminUsersTab() {
                       <div className="h-4 bg-white/5 rounded animate-pulse" />
                     </td></tr>
                   ))
-                : data?.users.length === 0
+                : !data || data.users.length === 0
                 ? (
                   <tr><td colSpan={8} className="px-4 py-12 text-center text-white/30 text-sm">
                     No users found{search ? ` for "${search}"` : ""}{planFilter ? ` on ${planFilter} plan` : ""}
                   </td></tr>
                 )
-                : data?.users.map((u) => {
+                : data.users.map((u) => {
                   const ws = u.workspace;
                   const hasTrial = !!ws?.trialEndsAt;
                   const trialExpired = hasTrial && new Date(ws!.trialEndsAt!) < new Date();
@@ -514,6 +708,7 @@ export function AdminUsersTab() {
 
                   return (
                     <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
+                      {/* User */}
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2.5">
                           {u.avatarUrl ? (
@@ -532,22 +727,40 @@ export function AdminUsersTab() {
                           </div>
                         </div>
                       </td>
+
+                      {/* Workspace */}
                       <td className="px-4 py-3.5">
                         {ws ? (
                           <div>
                             <div className="text-white/80 text-sm leading-tight">{ws.agencyName || ws.name}</div>
                             <div className="text-[11px] text-white/35 font-mono mt-0.5">{ws.slug}</div>
                           </div>
-                        ) : <span className="text-white/25 text-xs italic">No workspace</span>}
+                        ) : (
+                          <span
+                            className="text-white/25 text-xs italic"
+                            title="This user hasn't completed workspace setup yet"
+                          >
+                            No workspace
+                          </span>
+                        )}
                       </td>
+
+                      {/* Plan */}
                       <td className="px-4 py-3.5">
-                        {ws
-                          ? <PlanSelector userId={u.id} currentPlan={ws.plan} adminPlanOverride={isAdminOverride} />
-                          : <span className="text-white/25 text-xs">—</span>}
+                        <PlanSelector
+                          userId={u.id}
+                          currentPlan={ws?.plan ?? "FREE"}
+                          adminPlanOverride={isAdminOverride}
+                          hasWorkspace={!!ws}
+                        />
                       </td>
+
+                      {/* Stats */}
                       <td className="px-4 py-3.5 text-white/60 text-sm">{ws?._count.projects ?? "—"}</td>
                       <td className="px-4 py-3.5 text-white/60 text-sm">{ws?._count.clients ?? "—"}</td>
                       <td className="px-4 py-3.5 text-white/60 text-sm">{ws?._count.members ?? "—"}</td>
+
+                      {/* Status & Trial */}
                       <td className="px-4 py-3.5">
                         {ws ? (
                           <div className="flex flex-col gap-1.5">
@@ -572,17 +785,21 @@ export function AdminUsersTab() {
                                 </span>
                               )}
                             </div>
-                            <TrialDateEditor userId={u.id} trialEndsAt={ws.trialEndsAt} />
+                            <TrialDateEditor userId={u.id} trialEndsAt={ws.trialEndsAt} hasWorkspace={!!ws} />
                             <AdminGrantExpiryEditor
                               userId={u.id}
                               adminGrantExpiresAt={ws.adminGrantExpiresAt}
                               isAdminOverride={isAdminOverride}
                             />
                           </div>
-                        ) : "—"}
+                        ) : (
+                          <span className="text-white/25 text-xs">—</span>
+                        )}
                       </td>
+
+                      {/* Joined */}
                       <td className="px-4 py-3.5 text-white/40 text-xs whitespace-nowrap">
-                        {format(parseISO(u.createdAt), "MMM d, yyyy")}
+                        {safeFormat(u.createdAt, "MMM d, yyyy")}
                       </td>
                     </tr>
                   );
@@ -593,22 +810,12 @@ export function AdminUsersTab() {
         </div>
       </div>
 
-      {/* Pagination */}
-      {data && data.pages > 1 && (
-        <div className="flex items-center justify-between text-sm text-white/40">
-          <span>Page {data.page} of {data.pages} · {data.total} total</span>
-          <div className="flex gap-1">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-              className="p-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-30 transition-colors">
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button onClick={() => setPage(p => Math.min(data.pages, p + 1))} disabled={page === data.pages}
-              className="p-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-30 transition-colors">
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pages={data?.pages ?? 1}
+        total={data?.total ?? 0}
+        onPage={setPage}
+      />
     </div>
   );
 }
