@@ -4,7 +4,7 @@ import { adminApi } from "@/lib/adminApi";
 import {
   Search, ChevronLeft, ChevronRight, Copy, Check,
   ShieldCheck, CalendarDays, Pencil, X,
-  AlertCircle, XCircle, RefreshCw, AlertTriangle,
+  AlertCircle, XCircle, RefreshCw, AlertTriangle, Users,
 } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
 
@@ -578,15 +578,15 @@ export function AdminUsersTab() {
     const status = (error as any)?.response?.status;
     const isAuth = status === 401 || status === 403;
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20">
-          <AlertTriangle className="h-6 w-6 text-red-400" />
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20">
+          <AlertTriangle className="h-7 w-7 text-red-400" />
         </div>
         <div className="text-center">
-          <p className="text-white font-semibold mb-1">
+          <p className="text-white font-semibold text-base mb-1">
             {isAuth ? "Access denied" : "Failed to load users"}
           </p>
-          <p className="text-white/40 text-sm">
+          <p className="text-white/40 text-sm max-w-sm">
             {isAuth
               ? `Your account doesn't have permission to view this (${status})`
               : "There was a problem fetching the users list. Check the server logs."}
@@ -606,31 +606,35 @@ export function AdminUsersTab() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-5">
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-white">Users</h2>
-          <p className="text-sm text-white/50">
-            {isLoading ? "Loading…" : `${data?.total ?? 0} registered developers`}
+          <h2 className="text-xl font-bold text-white tracking-tight">Users</h2>
+          <p className="text-sm text-white/40 mt-0.5">
+            {isLoading
+              ? "Loading…"
+              : `${data?.total ?? 0} registered developer${(data?.total ?? 0) !== 1 ? "s" : ""}`}
           </p>
         </div>
+
         <div className="flex items-center gap-2">
-          <form onSubmit={handleSearch} className="flex items-center gap-2">
+          <form onSubmit={handleSearch} className="flex items-center gap-1.5">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/30" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/25 pointer-events-none" />
               <input
                 data-testid="input-user-search"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search by name or email…"
-                className="bg-white/5 border border-white/10 rounded-lg pl-8 pr-8 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 w-56"
+                placeholder="Search users…"
+                className="bg-white/[0.06] border border-white/[0.08] rounded-xl pl-9 pr-8 py-2 text-sm text-white placeholder-white/25 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] w-56 transition-all"
               />
               {searchInput && (
                 <button
                   type="button"
                   onClick={handleClearSearch}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -638,7 +642,7 @@ export function AdminUsersTab() {
             </div>
             <button
               type="submit"
-              className="px-3 py-1.5 text-xs bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg transition-colors font-medium"
+              className="px-4 py-2 text-xs bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-semibold transition-colors"
             >
               Search
             </button>
@@ -647,23 +651,23 @@ export function AdminUsersTab() {
             onClick={handleRefresh}
             disabled={isFetching}
             title="Refresh"
-            className="p-1.5 rounded-lg border border-white/10 hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors disabled:opacity-40"
+            className="p-2 rounded-xl border border-white/[0.08] hover:bg-white/5 text-white/35 hover:text-white/70 transition-colors disabled:opacity-40"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
 
-      {/* Plan filter tabs */}
-      <div className="flex gap-1 flex-wrap">
+      {/* ── Plan filter — segmented control ────────────────────────────────── */}
+      <div className="flex items-center gap-1 p-1 bg-white/[0.04] rounded-xl border border-white/[0.06] w-fit">
         {PLAN_FILTERS.map(({ value, label }) => (
           <button
             key={value}
             onClick={() => handlePlanFilter(value)}
-            className={`px-3 py-1.5 text-xs rounded-lg border transition-colors font-medium ${
+            className={`px-4 py-1.5 text-xs rounded-lg font-semibold transition-all ${
               planFilter === value
-                ? "bg-indigo-500 border-indigo-500 text-white"
-                : "bg-white/5 border-white/10 text-white/50 hover:text-white hover:bg-white/10"
+                ? "bg-indigo-500 text-white shadow-sm shadow-indigo-500/20"
+                : "text-white/40 hover:text-white/75 hover:bg-white/[0.06]"
             }`}
           >
             {label}
@@ -671,15 +675,15 @@ export function AdminUsersTab() {
         ))}
       </div>
 
-      {/* Active search indicator — only shown when a text search is active */}
+      {/* ── Active search indicator ─────────────────────────────────────────── */}
       {search && (
         <div className="flex items-center gap-2 text-xs text-white/40">
-          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 text-indigo-400/60" />
           <span>
-            Showing results for{" "}
-            <span className="text-white/70 font-medium">"{search}"</span>
+            Results for{" "}
+            <span className="text-white/70 font-semibold">"{search}"</span>
             {planFilter && (
-              <> within <span className="text-white/70 font-medium">{planFilter}</span> plan</>
+              <> in <span className="text-white/70 font-semibold">{planFilter}</span> plan</>
             )}
           </span>
           <button
@@ -691,29 +695,65 @@ export function AdminUsersTab() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="rounded-xl border border-white/10 overflow-hidden">
+      {/* ── Table ──────────────────────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-white/[0.08] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-white/[0.04] border-b border-white/10">
-              <tr>
-                {["User", "Workspace", "Plan", "Projects", "Clients", "Members", "Status & Trial", "Joined"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-[11px] font-semibold text-white/40 uppercase tracking-wider whitespace-nowrap">{h}</th>
+
+            {/* Head */}
+            <thead>
+              <tr className="border-b border-white/[0.07] bg-white/[0.03]">
+                {["User", "Workspace", "Plan", "Activity", "Status & Trial", "Joined"].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left px-5 py-3.5 text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap"
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+
+            {/* Body */}
+            <tbody>
               {isLoading
-                ? Array.from({ length: 8 }).map((_, i) => (
-                    <tr key={i}><td colSpan={8} className="px-4 py-3.5">
-                      <div className="h-4 bg-white/5 rounded animate-pulse" />
-                    </td></tr>
+                ? Array.from({ length: 6 }).map((_, i) => (
+                    <tr key={i} className="border-b border-white/[0.04] last:border-0">
+                      <td colSpan={6} className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-white/[0.06] animate-pulse flex-shrink-0" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-3 bg-white/[0.06] rounded-md animate-pulse w-28" />
+                            <div className="h-2.5 bg-white/[0.04] rounded-md animate-pulse w-44" />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
                   ))
                 : !data || data.users.length === 0
                 ? (
-                  <tr><td colSpan={8} className="px-4 py-12 text-center text-white/30 text-sm">
-                    No users found{search ? ` for "${search}"` : ""}{planFilter ? ` on ${planFilter} plan` : ""}
-                  </td></tr>
+                  <tr>
+                    <td colSpan={6} className="px-5 py-16 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center">
+                          <Users className="h-5 w-5 text-white/20" />
+                        </div>
+                        <p className="text-white/30 text-sm">
+                          No users found
+                          {search ? ` matching "${search}"` : ""}
+                          {planFilter ? ` on ${planFilter} plan` : ""}
+                        </p>
+                        {(search || planFilter) && (
+                          <button
+                            onClick={handleClearAll}
+                            className="text-xs text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
+                          >
+                            Clear filters
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 )
                 : data.users.map((u) => {
                   const ws = u.workspace;
@@ -723,46 +763,54 @@ export function AdminUsersTab() {
                   const isAdminOverride = !!ws?.adminPlanOverride;
 
                   return (
-                    <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
-                      {/* User */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2.5">
+                    <tr
+                      key={u.id}
+                      className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.025] transition-colors group"
+                    >
+                      {/* ── User ── */}
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
                           {u.avatarUrl ? (
-                            <img src={u.avatarUrl} alt="" className="w-7 h-7 rounded-full flex-shrink-0 object-cover" />
+                            <img
+                              src={u.avatarUrl}
+                              alt=""
+                              className="w-9 h-9 rounded-full flex-shrink-0 object-cover ring-1 ring-white/10"
+                            />
                           ) : (
-                            <div className="w-7 h-7 rounded-full bg-indigo-500/20 flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-indigo-400">
+                            <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-indigo-300 bg-gradient-to-br from-indigo-500/25 to-indigo-500/10 ring-1 ring-indigo-500/20">
                               {(u.name?.charAt(0) || u.email.charAt(0)).toUpperCase()}
                             </div>
                           )}
                           <div className="min-w-0">
-                            <div className="font-medium text-white text-sm leading-tight truncate max-w-[160px]">{u.name}</div>
+                            <div className="font-semibold text-white/90 text-sm leading-snug truncate max-w-[160px]">
+                              {u.name || <span className="text-white/25 font-normal italic">No name</span>}
+                            </div>
                             <div className="flex items-center gap-1 mt-0.5">
-                              <span className="text-[11px] text-white/40 font-mono truncate max-w-[140px]">{u.email}</span>
+                              <span className="text-[11px] text-white/35 truncate max-w-[150px]">{u.email}</span>
                               <CopyButton value={u.email} />
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Workspace */}
-                      <td className="px-4 py-3.5">
+                      {/* ── Workspace ── */}
+                      <td className="px-5 py-4">
                         {ws ? (
                           <div>
-                            <div className="text-white/80 text-sm leading-tight">{ws.agencyName || ws.name}</div>
-                            <div className="text-[11px] text-white/35 font-mono mt-0.5">{ws.slug}</div>
+                            <div className="text-white/80 text-sm font-medium leading-snug truncate max-w-[160px]">
+                              {ws.agencyName || ws.name}
+                            </div>
+                            <div className="text-[11px] text-white/30 font-mono mt-0.5">{ws.slug}</div>
                           </div>
                         ) : (
-                          <span
-                            className="text-white/25 text-xs italic"
-                            title="This user hasn't completed workspace setup yet"
-                          >
+                          <span className="text-white/20 text-xs italic" title="User hasn't set up a workspace yet">
                             No workspace
                           </span>
                         )}
                       </td>
 
-                      {/* Plan */}
-                      <td className="px-4 py-3.5">
+                      {/* ── Plan ── */}
+                      <td className="px-5 py-4">
                         <PlanSelector
                           userId={u.id}
                           currentPlan={ws?.plan ?? "FREE"}
@@ -771,37 +819,65 @@ export function AdminUsersTab() {
                         />
                       </td>
 
-                      {/* Stats */}
-                      <td className="px-4 py-3.5 text-white/60 text-sm">{ws?._count.projects ?? "—"}</td>
-                      <td className="px-4 py-3.5 text-white/60 text-sm">{ws?._count.clients ?? "—"}</td>
-                      <td className="px-4 py-3.5 text-white/60 text-sm">{ws?._count.members ?? "—"}</td>
-
-                      {/* Status & Trial */}
-                      <td className="px-4 py-3.5">
+                      {/* ── Activity (projects · clients · members merged) ── */}
+                      <td className="px-5 py-4">
                         {ws ? (
-                          <div className="flex flex-col gap-1.5">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[11px] text-white/45">
+                              <span className="text-white/75 font-semibold tabular-nums">{ws._count.projects}</span>
+                              <span className="text-white/25 ml-1">projects</span>
+                            </span>
+                            <span className="text-[11px] text-white/45">
+                              <span className="text-white/75 font-semibold tabular-nums">{ws._count.clients}</span>
+                              <span className="text-white/25 ml-1">clients</span>
+                            </span>
+                            <span className="text-[11px] text-white/45">
+                              <span className="text-white/75 font-semibold tabular-nums">{ws._count.members}</span>
+                              <span className="text-white/25 ml-1">members</span>
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-white/20 text-xs">—</span>
+                        )}
+                      </td>
+
+                      {/* ── Status & Trial ── */}
+                      <td className="px-5 py-4">
+                        {ws ? (
+                          <div className="space-y-2">
+                            {/* Status badges */}
                             <div className="flex flex-wrap gap-1">
-                              <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium ${ws.onboardingComplete ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
+                              <span className={`inline-flex items-center text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ring-1 ${
+                                ws.onboardingComplete
+                                  ? "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20"
+                                  : "bg-amber-500/10 text-amber-400 ring-amber-500/20"
+                              }`}>
                                 {ws.onboardingComplete ? "Onboarded" : "Pending setup"}
                               </span>
                               {isAdminOverride && (
-                                <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-indigo-500/15 text-indigo-300">
+                                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide bg-indigo-500/10 text-indigo-300 ring-1 ring-indigo-500/25">
                                   <ShieldCheck className="h-2.5 w-2.5" />
                                   Admin grant
                                 </span>
                               )}
                               {hasSubscription && !isAdminOverride && (
-                                <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium bg-indigo-500/15 text-indigo-300">
+                                <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide bg-violet-500/10 text-violet-300 ring-1 ring-violet-500/20">
                                   Subscribed
                                 </span>
                               )}
                               {hasTrial && !hasSubscription && !isAdminOverride && (
-                                <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium ${trialExpired ? "bg-red-500/15 text-red-400" : "bg-cyan-500/15 text-cyan-400"}`}>
+                                <span className={`inline-flex items-center text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ring-1 ${
+                                  trialExpired
+                                    ? "bg-red-500/10 text-red-400 ring-red-500/20"
+                                    : "bg-sky-500/10 text-sky-400 ring-sky-500/20"
+                                }`}>
                                   {trialExpired ? "Trial expired" : "On trial"}
                                 </span>
                               )}
                             </div>
+                            {/* Trial date */}
                             <TrialDateEditor userId={u.id} trialEndsAt={ws.trialEndsAt} hasWorkspace={!!ws} />
+                            {/* Admin grant expiry */}
                             <AdminGrantExpiryEditor
                               userId={u.id}
                               adminGrantExpiresAt={ws.adminGrantExpiresAt}
@@ -809,12 +885,12 @@ export function AdminUsersTab() {
                             />
                           </div>
                         ) : (
-                          <span className="text-white/25 text-xs">—</span>
+                          <span className="text-white/20 text-xs">—</span>
                         )}
                       </td>
 
-                      {/* Joined */}
-                      <td className="px-4 py-3.5 text-white/40 text-xs whitespace-nowrap">
+                      {/* ── Joined ── */}
+                      <td className="px-5 py-4 text-white/35 text-xs whitespace-nowrap">
                         {safeFormat(u.createdAt, "MMM d, yyyy")}
                       </td>
                     </tr>
