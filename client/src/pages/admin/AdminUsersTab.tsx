@@ -552,7 +552,6 @@ export function AdminUsersTab() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setPlanFilter("");
     setSearch(searchInput);
     setPage(1);
   };
@@ -560,6 +559,13 @@ export function AdminUsersTab() {
   const handleClearSearch = () => {
     setSearchInput("");
     setSearch("");
+    setPage(1);
+  };
+
+  const handleClearAll = () => {
+    setSearchInput("");
+    setSearch("");
+    setPlanFilter("");
     setPage(1);
   };
 
@@ -665,21 +671,22 @@ export function AdminUsersTab() {
         ))}
       </div>
 
-      {/* Active filter indicator */}
-      {(search || planFilter) && (
+      {/* Active search indicator — only shown when a text search is active */}
+      {search && (
         <div className="flex items-center gap-2 text-xs text-white/40">
           <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
           <span>
-            Showing
-            {search && <> results for <span className="text-white/70 font-medium">"{search}"</span></>}
-            {search && planFilter && " · "}
-            {planFilter && <>plan <span className="text-white/70 font-medium">{planFilter}</span></>}
+            Showing results for{" "}
+            <span className="text-white/70 font-medium">"{search}"</span>
+            {planFilter && (
+              <> within <span className="text-white/70 font-medium">{planFilter}</span> plan</>
+            )}
           </span>
           <button
-            onClick={() => { handleClearSearch(); setPlanFilter(""); }}
+            onClick={planFilter ? handleClearAll : handleClearSearch}
             className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
           >
-            Clear all
+            {planFilter ? "Clear all" : "Clear"}
           </button>
         </div>
       )}
