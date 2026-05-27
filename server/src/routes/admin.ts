@@ -592,20 +592,31 @@ router.patch("/users/:id/plan", ...adminGuard, async (req, res, next) => {
     // SOLO/AGENCY: set override so features work without requiring a paid subscription
     const adminPlanOverride = plan === "SOLO" || plan === "AGENCY";
 
-    // Parse expiry date when provided
-    let expiresAt: Date | null = null;
-    if (adminPlanOverride && adminGrantExpiresAt) {
-      const parsed = new Date(adminGrantExpiresAt);
-      if (!isNaN(parsed.getTime())) expiresAt = parsed;
+    // Build the update data — only touch adminGrantExpiresAt when explicitly provided
+    // or when downgrading (always clear on FREE/STARTER).
+    const updateData: {
+      plan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
+      adminPlanOverride: boolean;
+      adminGrantExpiresAt?: Date | null;
+    } = {
+      plan: plan as "FREE" | "STARTER" | "SOLO" | "AGENCY",
+      adminPlanOverride,
+    };
+
+    if (!adminPlanOverride) {
+      // Downgrading to FREE/STARTER — always clear the grant expiry.
+      updateData.adminGrantExpiresAt = null;
+    } else if (adminGrantExpiresAt !== undefined) {
+      // SOLO/AGENCY and caller explicitly supplied an expiry — parse and apply it.
+      const parsed = new Date(adminGrantExpiresAt as string);
+      updateData.adminGrantExpiresAt = !isNaN(parsed.getTime()) ? parsed : null;
     }
+    // If adminPlanOverride is true and adminGrantExpiresAt was NOT in the body,
+    // we deliberately omit the field so Prisma leaves the existing value intact.
 
     const updated = await db.workspace.update({
       where: { id: user.workspace.id },
-      data: {
-        plan: plan as "FREE" | "STARTER" | "SOLO" | "AGENCY",
-        adminPlanOverride,
-        adminGrantExpiresAt: adminPlanOverride ? expiresAt : null,
-      },
+      data: updateData,
     });
 
     res.json({

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "@/lib/adminApi";
 import {
   Search, ChevronLeft, ChevronRight, Copy, Check,
-  ShieldCheck, CalendarDays, Pencil, X, Check as CheckIcon,
+  ShieldCheck, CalendarDays, Pencil, X,
   AlertCircle, XCircle, RefreshCw, AlertTriangle,
 } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
@@ -62,7 +62,7 @@ function InlineAlert({ type, message, onDismiss }: { type: "error" | "success"; 
     }`}>
       {type === "error"
         ? <XCircle className="h-3 w-3 flex-shrink-0" />
-        : <CheckIcon className="h-3 w-3 flex-shrink-0" />}
+        : <Check className="h-3 w-3 flex-shrink-0" />}
       <span>{message}</span>
       <button onClick={onDismiss} className="ml-auto opacity-60 hover:opacity-100">
         <X className="h-2.5 w-2.5" />
@@ -300,7 +300,7 @@ function TrialDateEditor({
             className="p-0.5 rounded hover:bg-emerald-500/20 text-emerald-400 disabled:opacity-50"
             title="Save"
           >
-            <CheckIcon className="h-3 w-3" />
+            <Check className="h-3 w-3" />
           </button>
           <button
             onClick={handleCancel}
@@ -431,7 +431,7 @@ function AdminGrantExpiryEditor({
             className="p-0.5 rounded hover:bg-emerald-500/20 text-emerald-400 disabled:opacity-50"
             title="Save"
           >
-            <CheckIcon className="h-3 w-3" />
+            <Check className="h-3 w-3" />
           </button>
           <button
             onClick={handleCancel}
@@ -552,6 +552,7 @@ export function AdminUsersTab() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    setPlanFilter("");
     setSearch(searchInput);
     setPage(1);
   };
@@ -664,13 +665,21 @@ export function AdminUsersTab() {
         ))}
       </div>
 
-      {/* Active search indicator */}
-      {search && (
+      {/* Active filter indicator */}
+      {(search || planFilter) && (
         <div className="flex items-center gap-2 text-xs text-white/40">
-          <AlertCircle className="h-3.5 w-3.5" />
-          Showing results for <span className="text-white/70 font-medium">"{search}"</span>
-          <button onClick={handleClearSearch} className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
-            Clear
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>
+            Showing
+            {search && <> results for <span className="text-white/70 font-medium">"{search}"</span></>}
+            {search && planFilter && " · "}
+            {planFilter && <>plan <span className="text-white/70 font-medium">{planFilter}</span></>}
+          </span>
+          <button
+            onClick={() => { handleClearSearch(); setPlanFilter(""); }}
+            className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2"
+          >
+            Clear all
           </button>
         </div>
       )}
@@ -715,7 +724,7 @@ export function AdminUsersTab() {
                             <img src={u.avatarUrl} alt="" className="w-7 h-7 rounded-full flex-shrink-0 object-cover" />
                           ) : (
                             <div className="w-7 h-7 rounded-full bg-indigo-500/20 flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-indigo-400">
-                              {u.name.charAt(0).toUpperCase()}
+                              {(u.name?.charAt(0) || u.email.charAt(0)).toUpperCase()}
                             </div>
                           )}
                           <div className="min-w-0">
