@@ -45,6 +45,7 @@ channel = "stable-25_05"
 PORT = "3000"
 ADMIN_SECRET_KEY = "A3s3MwKYlb8Yi/2QYc7Ec9hoywe+MEhcjR4cjxsR/y4="
 ADMIN_EMAIL = "saifkhan13483@gmail.com"
+VERCEL_AUTOMATION_BYPASS_SECRET = "ReplitShipDesk2026AutoBypass7xKm"
 
 [userenv.development]
 NODE_ENV = "development"
