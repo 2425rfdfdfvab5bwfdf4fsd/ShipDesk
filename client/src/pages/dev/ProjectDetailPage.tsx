@@ -1024,14 +1024,25 @@ export function ProjectDetailPage() {
               </div>
 
               {/* Vercel */}
-              <div className="bg-card border rounded-lg p-4 space-y-3">
-                <div>
-                  <p className="text-xs font-semibold">Vercel Deployment</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Show clients when new versions ship — deployment activity appears in AI reports.
-                  </p>
+              <div className={cn("bg-card border rounded-lg p-4 space-y-3", !(capabilities?.canUseLinearVercel ?? false) && "opacity-70")}>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-semibold">Vercel Deployment</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Show clients when new versions ship — deployment activity appears in AI reports.
+                    </p>
+                  </div>
+                  {!(capabilities?.canUseLinearVercel ?? false) && (
+                    <div className="w-4 h-4 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Lock className="h-2 w-2 text-amber-600 dark:text-amber-400" />
+                    </div>
+                  )}
                 </div>
-                {vercelStatusLoading ? (
+                {!(capabilities?.canUseLinearVercel ?? false) ? (
+                  <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs text-amber-600 dark:text-amber-400">
+                    <a href="/billing">Upgrade to Agency to unlock Vercel sync →</a>
+                  </Button>
+                ) : vercelStatusLoading ? (
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground py-1">
                     <Loader2 className="h-3 w-3 animate-spin" /> Checking…
                   </div>

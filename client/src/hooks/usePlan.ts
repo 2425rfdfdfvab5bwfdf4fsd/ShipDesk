@@ -27,6 +27,7 @@ export interface PlanCapabilities {
   canUseGitHub: boolean;
   canUseScopeChanges: boolean;
   canUseTeamSeats: boolean;
+  canUseLinearVercel: boolean;
 }
 
 const PROJECT_LIMITS: Record<Plan, number> = {
@@ -74,6 +75,7 @@ function buildCapabilities(billing: BillingStatus): PlanCapabilities {
     canUseGitHub: starterOrAbove,
     canUseScopeChanges: soloOrAbove,
     canUseTeamSeats: agencyOnly,
+    canUseLinearVercel: agencyOnly,
   };
 }
 

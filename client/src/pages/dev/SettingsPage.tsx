@@ -278,6 +278,7 @@ function IntegrationsTab() {
       : "FREE"
     : "FREE";
   const canUseGitHub = effectivePlan === "STARTER" || effectivePlan === "SOLO" || effectivePlan === "AGENCY";
+  const canUseLinearVercel = effectivePlan === "AGENCY" && (!!billing?.lsSubscriptionId || isAdminOverride);
   const ghConnected = !!ghStatus?.connected;
   const ghLogin = ghStatus?.login ?? null;
   const linearConnected = !!linearStatus?.connected;
@@ -356,14 +357,23 @@ function IntegrationsTab() {
       </div>
 
       {/* Linear */}
-      <div className="bg-card border rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
-        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+      <div className={cn("bg-card border rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4", !canUseLinearVercel && "opacity-70")}>
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 relative">
           <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+          {!canUseLinearVercel && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+              <Lock className="h-2 w-2 text-amber-600 dark:text-amber-400" />
+            </div>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <p className="text-sm font-semibold">Linear</p>
-            {linearLoading ? (
+            {!canUseLinearVercel ? (
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:text-amber-400">
+                Agency only
+              </span>
+            ) : linearLoading ? (
               <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">Checking…</span>
             ) : linearConnected ? (
               <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:text-emerald-400">
@@ -375,64 +385,78 @@ function IntegrationsTab() {
               </span>
             )}
           </div>
-          {linearConnected ? (
-            <>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Linear is connected
-                {linearStatus?.organizationName ? ` to ${linearStatus.organizationName}` : ""}.
-                Issue activity is included in your weekly AI reports.
-              </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-1.5 h-7 text-xs text-muted-foreground hover:text-destructive mt-2"
-                disabled={linearDisconnecting}
-                onClick={handleLinearDisconnect}
-                data-testid="button-linear-disconnect"
-              >
-                {linearDisconnecting ? <Loader2 className="h-3 w-3 animate-spin" /> : <LogOut className="h-3 w-3" />}
-                Disconnect
-              </Button>
-            </>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {linearConnected && canUseLinearVercel
+              ? `Linear is connected${linearStatus?.organizationName ? ` to ${linearStatus.organizationName}` : ""}. Issue activity is included in your weekly AI reports.`
+              : "Pull Linear issue activity into weekly reports alongside GitHub data."}
+          </p>
+          {!canUseLinearVercel ? (
+            <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs mt-1 text-amber-600 dark:text-amber-400">
+              <a href="/billing">Upgrade to Agency to unlock Linear sync →</a>
+            </Button>
+          ) : linearConnected ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 h-7 text-xs text-muted-foreground hover:text-destructive mt-2"
+              disabled={linearDisconnecting}
+              onClick={handleLinearDisconnect}
+              data-testid="button-linear-disconnect"
+            >
+              {linearDisconnecting ? <Loader2 className="h-3 w-3 animate-spin" /> : <LogOut className="h-3 w-3" />}
+              Disconnect
+            </Button>
           ) : (
-            <>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Pull Linear issue activity into weekly reports alongside GitHub data.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 h-7 text-xs mt-2"
-                onClick={handleLinearConnect}
-                data-testid="button-linear-connect"
-              >
-                <ExternalLink className="h-3 w-3" />
-                Connect Linear
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 h-7 text-xs mt-2"
+              onClick={handleLinearConnect}
+              data-testid="button-linear-connect"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Connect Linear
+            </Button>
           )}
         </div>
       </div>
 
       {/* Vercel */}
-      <div className="bg-card border rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
-        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+      <div className={cn("bg-card border rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4", !canUseLinearVercel && "opacity-70")}>
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 relative">
           <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+          {!canUseLinearVercel && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+              <Lock className="h-2 w-2 text-amber-600 dark:text-amber-400" />
+            </div>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <p className="text-sm font-semibold">Vercel</p>
-            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
-              Per project
-            </span>
+            {!canUseLinearVercel ? (
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:text-amber-400">
+                Agency only
+              </span>
+            ) : (
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
+                Per project
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
             Include deployment activity in your reports — show clients when new versions ship. Connect a Vercel project from each project's Settings tab.
           </p>
-          <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
-            <AlertCircle className="h-3 w-3 shrink-0" />
-            <span>Open any project → Settings → Vercel to connect</span>
-          </div>
+          {!canUseLinearVercel ? (
+            <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs mt-1 text-amber-600 dark:text-amber-400">
+              <a href="/billing">Upgrade to Agency to unlock Vercel sync →</a>
+            </Button>
+          ) : (
+            <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+              <AlertCircle className="h-3 w-3 shrink-0" />
+              <span>Open any project → Settings → Vercel to connect</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
