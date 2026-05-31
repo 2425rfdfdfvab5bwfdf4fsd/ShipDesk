@@ -153,6 +153,8 @@ export function ProjectDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadQueue, setUploadQueue] = useState<{ current: number; total: number } | undefined>(undefined);
+  const [uploadingFileName, setUploadingFileName] = useState<string | undefined>(undefined);
   const [showRepoPicker, setShowRepoPicker] = useState(false);
   const [repoSearch, setRepoSearch] = useState("");
   const [editingInfo, setEditingInfo] = useState(false);
@@ -229,50 +231,94 @@ export function ProjectDetailPage() {
     return reports.some(r => r.status === "DRAFT" && new Date(r.weekStartDate) >= weekStart);
   }, [reportsData]);
 
-  const handleUploadFile = async (file: File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      toast({ variant: "destructive", title: "File too large", description: "Maximum file size is 50 MB." });
-      return;
-    }
-    if (!uploadSig) {
-      toast({ variant: "destructive", title: "Upload unavailable", description: "Configure Cloudinary credentials to enable file uploads." });
-      return;
-    }
+  const uploadSingleFile = async (file: File) => {
+    if (!uploadSig) throw new Error("Upload configuration unavailable. Configure Cloudinary credentials.");
     const formData = new FormData();
     formData.append("file", file);
     formData.append("api_key", uploadSig.apiKey);
     formData.append("timestamp", String(uploadSig.timestamp));
     formData.append("signature", uploadSig.signature);
     formData.append("folder", uploadSig.folder);
-    if (uploadSig.uploadPreset) {
-      formData.append("upload_preset", uploadSig.uploadPreset);
-    }
-    setUploadProgress(0);
-    try {
-      const data = await new Promise<{ secure_url: string; public_id: string; bytes: number; format: string }>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
-        });
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(JSON.parse(xhr.responseText));
-          } else {
-            let msg = `Upload failed (${xhr.status})`;
-            try { msg = JSON.parse(xhr.responseText)?.error?.message || msg; } catch { /* ignore */ }
-            reject(new Error(msg));
-          }
-        });
-        xhr.addEventListener("error", () => reject(new Error("Network error during upload")));
-        xhr.open("POST", `https://api.cloudinary.com/v1_1/${uploadSig.cloudName}/auto/upload`);
-        xhr.send(formData);
+    if (uploadSig.uploadPreset) formData.append("upload_preset", uploadSig.uploadPreset);
+
+    const data = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
       });
-      await createFile.mutateAsync({ projectId: id, fileName: file.name, fileSize: file.size, mimeType: file.type, cloudinaryPublicId: data.public_id, cloudinarySecureUrl: data.secure_url });
-      toast({ title: "File uploaded" });
-    } catch (err) {
-      toast({ variant: "destructive", title: "Upload failed", description: err instanceof Error ? err.message : "Please try again." });
-    } finally {
-      setUploadProgress(null);
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          let msg = `Upload failed (${xhr.status})`;
+          try { msg = JSON.parse(xhr.responseText)?.error?.message || msg; } catch { /* ignore */ }
+          reject(new Error(msg));
+        }
+      });
+      xhr.addEventListener("error", () => reject(new Error("Network error during upload")));
+      xhr.open("POST", `https://api.cloudinary.com/v1_1/${uploadSig.cloudName}/auto/upload`);
+      xhr.send(formData);
+    });
+
+    await createFile.mutateAsync({
+      projectId: id,
+      fileName: file.name,
+      fileSize: file.size,
+      mimeType: file.type,
+      cloudinaryPublicId: data.public_id,
+      cloudinarySecureUrl: data.secure_url,
+    });
+  };
+
+  const handleUploadFiles = async (selectedFiles: File[]) => {
+    const oversized = selectedFiles.filter((f) => f.size > 50 * 1024 * 1024);
+    const valid = selectedFiles.filter((f) => f.size <= 50 * 1024 * 1024);
+
+    if (oversized.length > 0) {
+      toast({
+        variant: "destructive",
+        title: oversized.length === 1 ? "File too large" : `${oversized.length} files too large`,
+        description: `Max 50 MB per file. ${oversized.map((f) => f.name).join(", ")} skipped.`,
+      });
+      if (valid.length === 0) return;
+    }
+
+    if (!uploadSig) {
+      toast({ variant: "destructive", title: "Upload unavailable", description: "Configure Cloudinary credentials to enable file uploads." });
+      return;
+    }
+
+    const total = valid.length;
+    let succeeded = 0;
+
+    for (let i = 0; i < total; i++) {
+      const file = valid[i];
+      setUploadProgress(0);
+      setUploadingFileName(file.name);
+      setUploadQueue(total > 1 ? { current: i + 1, total } : undefined);
+      try {
+        await uploadSingleFile(file);
+        succeeded++;
+      } catch (err) {
+        toast({
+          variant: "destructive",
+          title: `Failed to upload ${file.name}`,
+          description: err instanceof Error ? err.message : "Please try again.",
+        });
+      } finally {
+        setUploadProgress(null);
+      }
+    }
+
+    setUploadQueue(undefined);
+    setUploadingFileName(undefined);
+
+    if (succeeded > 0) {
+      toast({
+        title: total === 1
+          ? "File uploaded"
+          : `${succeeded} of ${total} file${total > 1 ? "s" : ""} uploaded`,
+      });
     }
   };
 
@@ -652,13 +698,15 @@ export function ProjectDetailPage() {
             />
             <FileList
               files={files || []}
-              onUpload={handleUploadFile}
-              onDelete={(fileId) => {
-                deleteFile.mutate({ projectId: id, fileId });
+              onUpload={handleUploadFiles}
+              onDelete={async (fileId) => {
+                await deleteFile.mutateAsync({ projectId: id, fileId });
                 toast({ title: "File deleted" });
               }}
-              uploading={createFile.isPending || uploadProgress !== null}
+              uploading={uploadProgress !== null}
               uploadProgress={uploadProgress ?? undefined}
+              uploadQueue={uploadQueue}
+              uploadingFileName={uploadingFileName}
               isLoading={filesLoading}
             />
           </TabsContent>
