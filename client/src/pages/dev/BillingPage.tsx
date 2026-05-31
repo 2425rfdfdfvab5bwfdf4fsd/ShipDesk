@@ -136,7 +136,7 @@ function PlanCard({
         </div>
         {isYearly && (
           <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
-            Billed annually · Save 20%
+            Billed annually · Save 50%
           </p>
         )}
         {!isYearly && plan === "STARTER" && !hasActiveSubscription && !hasTrialStarted && (
@@ -485,7 +485,7 @@ export function BillingPage() {
                 </span>
                 {isYearly && (
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                    Save 20%
+                    Save 50%
                   </span>
                 )}
               </div>

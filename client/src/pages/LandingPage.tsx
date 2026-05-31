@@ -678,7 +678,7 @@ export function LandingPage() {
               </span>
               {isYearly && (
                 <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/20">
-                  Save 20%
+                  Save 50%
                 </span>
               )}
             </div>
@@ -715,7 +715,7 @@ export function LandingPage() {
                     <span className="text-white/50 text-sm">/mo</span>
                   </div>
                   {isYearly && (
-                    <p className="text-[11px] text-emerald-400 mt-1 font-medium">Billed annually · Save 20%</p>
+                    <p className="text-[11px] text-emerald-400 mt-1 font-medium">Billed annually · Save 50%</p>
                   )}
                 </div>
                 <ul className="space-y-2.5 mb-7 flex-1">
