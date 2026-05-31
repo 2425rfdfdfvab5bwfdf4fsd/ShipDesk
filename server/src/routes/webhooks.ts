@@ -208,6 +208,52 @@ router.post("/lemonsqueezy", (req: Request, res: Response) => {
     return;
   }
 
+  // ── Payment success / recovery / unpause ──────────────────────────────
+  if (
+    eventName === "subscription_payment_success" ||
+    eventName === "subscription_payment_recovered" ||
+    eventName === "subscription_unpaused"
+  ) {
+    const workspaceId = customData.workspaceId;
+    if (!workspaceId) { res.json({ received: true, skipped: "no_workspace_id" }); return; }
+    db.workspace
+      .update({ where: { id: workspaceId }, data: { lsSubscriptionStatus: "active" } })
+      .then(() => res.json({ received: true }))
+      .catch((err) => {
+        console.error("LS payment success webhook error:", err);
+        res.status(500).json({ error: "Internal error" });
+      });
+    return;
+  }
+
+  // ── Payment failed ─────────────────────────────────────────────────────
+  if (eventName === "subscription_payment_failed") {
+    const workspaceId = customData.workspaceId;
+    if (!workspaceId) { res.json({ received: true, skipped: "no_workspace_id" }); return; }
+    db.workspace
+      .update({ where: { id: workspaceId }, data: { lsSubscriptionStatus: "past_due" } })
+      .then(() => res.json({ received: true }))
+      .catch((err) => {
+        console.error("LS payment failed webhook error:", err);
+        res.status(500).json({ error: "Internal error" });
+      });
+    return;
+  }
+
+  // ── Subscription paused ────────────────────────────────────────────────
+  if (eventName === "subscription_paused") {
+    const workspaceId = customData.workspaceId;
+    if (!workspaceId) { res.json({ received: true, skipped: "no_workspace_id" }); return; }
+    db.workspace
+      .update({ where: { id: workspaceId }, data: { lsSubscriptionStatus: "paused" } })
+      .then(() => res.json({ received: true }))
+      .catch((err) => {
+        console.error("LS paused webhook error:", err);
+        res.status(500).json({ error: "Internal error" });
+      });
+    return;
+  }
+
   if (payload.meta.event_name === "order_created") {
     const processOrder = async () => {
       const [existingInvoice, existingScope] = await Promise.all([

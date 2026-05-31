@@ -50,6 +50,14 @@ router.post("/:id/vercel/connect", requireAuth, async (req: AuthRequest, res, ne
     const workspace = await db.workspace.findUnique({ where: { ownerId: req.userId! } });
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
 
+    // Agency plan enforcement
+    const isAgency =
+      workspace.adminPlanOverride ||
+      (workspace.plan === "AGENCY" && !!workspace.lsSubscriptionId);
+    if (!isAgency) {
+      throw new AppError("Vercel sync requires the Agency plan", 403, "PLAN_REQUIRED");
+    }
+
     await assertProjectAccess(req.params.id, workspace.id);
 
     const { apiToken, vercelProjectId } = connectSchema.parse(req.body);

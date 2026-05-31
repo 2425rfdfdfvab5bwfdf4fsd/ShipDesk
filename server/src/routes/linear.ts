@@ -101,6 +101,19 @@ router.get("/connect", async (req: Request, res: Response) => {
     return;
   }
 
+  // Agency plan enforcement
+  const connectWorkspace = await db.workspace.findUnique({
+    where: { ownerId: userId },
+    select: { plan: true, lsSubscriptionId: true, adminPlanOverride: true },
+  });
+  const isConnectAgency =
+    connectWorkspace?.adminPlanOverride ||
+    (connectWorkspace?.plan === "AGENCY" && !!connectWorkspace.lsSubscriptionId);
+  if (!isConnectAgency) {
+    res.redirect(`${getAppBase(req)}/settings?tab=integrations&linear=error`);
+    return;
+  }
+
   const state = jwt.sign(
     { userId, nonce: crypto.randomBytes(8).toString("hex") },
     process.env.SESSION_SECRET || "secret",
@@ -167,6 +180,15 @@ router.get("/callback", async (req: Request, res: Response) => {
 
     const workspace = await db.workspace.findUnique({ where: { ownerId: decoded.userId } });
     if (!workspace) {
+      res.redirect(`${appBase}/settings?tab=integrations&linear=error`);
+      return;
+    }
+
+    // Agency plan enforcement (double-check at callback to prevent replay)
+    const isCallbackAgency =
+      workspace.adminPlanOverride ||
+      (workspace.plan === "AGENCY" && !!workspace.lsSubscriptionId);
+    if (!isCallbackAgency) {
       res.redirect(`${appBase}/settings?tab=integrations&linear=error`);
       return;
     }

@@ -56,9 +56,12 @@ CLOUDINARY_CLOUD_NAME        # File uploads
 CLOUDINARY_API_KEY
 CLOUDINARY_API_SECRET
 CLOUDINARY_UPLOAD_PRESET
-LEMONSQUEEZY_API_KEY         # Payment links on invoices/scope changes
+LEMONSQUEEZY_API_KEY              # Payment links on invoices/scope changes
 LEMONSQUEEZY_STORE_ID
-LEMONSQUEEZY_VARIANT_ID
+LEMONSQUEEZY_VARIANT_ID           # One-time payment variant (invoices / scope changes)
+LEMONSQUEEZY_STARTER_VARIANT_ID   # Subscription variant for Starter plan
+LEMONSQUEEZY_SOLO_VARIANT_ID      # Subscription variant for Solo plan
+LEMONSQUEEZY_AGENCY_VARIANT_ID    # Subscription variant for Agency plan
 LEMONSQUEEZY_WEBHOOK_SECRET
 RESEND_API_KEY               # Transactional emails
 EMAIL_FROM                   # From address (default: noreply@shipdesk.io)

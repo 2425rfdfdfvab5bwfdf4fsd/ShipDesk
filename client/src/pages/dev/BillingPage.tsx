@@ -30,9 +30,9 @@ interface BillingStatus {
   lsEndsAt: string | null;
 }
 
-const STATUS_BADGE: Record<string, { label: string; variant: "success" | "warning" | "destructive" | "secondary" }> = {
+const STATUS_BADGE: Record<string, { label: string; variant: "success" | "warning" | "destructive" | "secondary" | "info" }> = {
   active: { label: "Active", variant: "success" },
-  on_trial: { label: "Trial", variant: "info" as "secondary" },
+  on_trial: { label: "Trial", variant: "info" },
   paused: { label: "Paused", variant: "warning" },
   cancelled: { label: "Cancelled", variant: "destructive" },
   expired: { label: "Expired", variant: "destructive" },
@@ -74,9 +74,10 @@ function PlanCard({
   const isCancelled = lsSubscriptionStatus === "cancelled" || lsSubscriptionStatus === "expired";
   const cycleDate = isPaidCurrentPlan ? (isCancelled ? lsEndsAt : lsRenewsAt) : null;
   const cycleDaysLeft = cycleDate ? daysLeft(cycleDate) : null;
-  const CYCLE_DAYS = 30;
+  // Infer cycle length: >60 days remaining = yearly (365), otherwise monthly (30)
+  const CYCLE_DAYS = cycleDaysLeft !== null && cycleDaysLeft > 60 ? 365 : 30;
   const cyclePct = cycleDaysLeft !== null
-    ? Math.max(2, Math.round((cycleDaysLeft / CYCLE_DAYS) * 100))
+    ? Math.min(100, Math.max(2, Math.round((cycleDaysLeft / CYCLE_DAYS) * 100)))
     : 0;
 
   // Button label
