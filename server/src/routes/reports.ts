@@ -6,6 +6,8 @@ import { AppError } from "../lib/errors.js";
 import { generateWeeklyReport, ReportContent, ReportTone } from "../services/geminiService.js";
 import { notifyClientsOfPublishedReport } from "../services/reportScheduler.js";
 import { getEffectivePlan, planHasFeature, PLAN_MONTHLY_AI_REPORTS } from "../lib/planLimits.js";
+import { fetchLinearIssues, formatLinearIssues } from "../services/linearService.js";
+import { fetchVercelDeployments, formatVercelDeployments } from "../services/vercelService.js";
 
 const router = Router();
 
@@ -178,6 +180,45 @@ router.post(
       const toneLabel = tone === "formal" ? "" : tone === "friendly" ? " (Friendly)" : " (Brief)";
       const title = `${project.name} Update — ${weekStart} to ${weekEndShort}${toneLabel}`;
 
+      // Fetch Linear issues if connected and project has a team linked
+      let linearActivity: string | null = null;
+      try {
+        const wsWithLinear = await db.workspace.findUnique({
+          where: { id: ws.id },
+          include: { linearConn: true },
+        });
+        if (wsWithLinear?.linearConn && project.linearTeamId) {
+          const issues = await fetchLinearIssues(
+            wsWithLinear.linearConn.accessTokenEncrypted,
+            project.linearTeamId,
+            start,
+            end
+          );
+          linearActivity = formatLinearIssues(issues);
+        }
+      } catch (err) {
+        console.warn("Linear fetch failed, skipping:", err);
+      }
+
+      // Fetch Vercel deployments if connected
+      let vercelActivity: string | null = null;
+      try {
+        const vercelConn = await db.vercelConnection.findUnique({
+          where: { projectId: project.id },
+        });
+        if (vercelConn) {
+          const deployments = await fetchVercelDeployments(
+            vercelConn.apiTokenEncrypted,
+            vercelConn.vercelProjectId,
+            start,
+            end
+          );
+          vercelActivity = formatVercelDeployments(deployments);
+        }
+      } catch (err) {
+        console.warn("Vercel fetch failed, skipping:", err);
+      }
+
       const content = await generateWeeklyReport({
         projectName: project.name,
         clientName: project.clientName,
@@ -189,6 +230,8 @@ router.post(
         truncationNote,
         tone,
         customContext,
+        linearActivity,
+        vercelActivity,
       });
 
       const report = await db.report.create({

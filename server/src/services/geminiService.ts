@@ -245,13 +245,31 @@ function buildPrompt(opts: {
   activityBlock: string;
   tone: ReportTone;
   customContext?: string | null;
+  linearActivity?: string | null;
+  vercelActivity?: string | null;
 }): string {
-  const { greeting, sender, projectName, projectContext, weekStart, weekEnd, activityBlock, tone, customContext } = opts;
+  const { greeting, sender, projectName, projectContext, weekStart, weekEnd, activityBlock, tone, customContext, linearActivity, vercelActivity } = opts;
   const toneConfig = getToneInstructions(tone);
 
   const customContextBlock = customContext?.trim()
     ? `\n<developer_notes>\nThe developer has added these additional notes about this period (things GitHub may not capture, like client calls, planning sessions, or manual work):\n${customContext.trim()}\n</developer_notes>\n`
     : "";
+
+  const linearBlock = linearActivity
+    ? `\n<linear_activity>\n${linearActivity}\n</linear_activity>\n`
+    : "";
+
+  const vercelBlock = vercelActivity
+    ? `\n<vercel_deployments>\n${vercelActivity}\n</vercel_deployments>\n`
+    : "";
+
+  const extraSources = [
+    linearActivity ? "Linear task activity" : null,
+    vercelActivity ? "Vercel deployment history" : null,
+    customContext?.trim() ? "developer notes" : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return `${toneConfig.persona}
 
@@ -265,9 +283,9 @@ Developer / Agency: ${sender}
 <github_activity>
 ${activityBlock}
 </github_activity>
-${customContextBlock}
+${linearBlock}${vercelBlock}${customContextBlock}
 <task>
-Translate the GitHub activity${customContext?.trim() ? " and developer notes" : ""} above into a polished, client-friendly status report.
+Translate the GitHub activity${extraSources ? `, ${extraSources},` : ""} above into a polished, client-friendly status report.
 
 ACCURACY (most important):
 - Only describe work that is directly evidenced by the commit messages or developer notes above. Never invent, assume, or pad.
@@ -326,6 +344,8 @@ export async function generateWeeklyReport(opts: {
   truncationNote?: string;
   tone?: ReportTone;
   customContext?: string | null;
+  linearActivity?: string | null;
+  vercelActivity?: string | null;
 }): Promise<ReportContent> {
   const tone: ReportTone = opts.tone ?? "formal";
   const weekStart = opts.weekStartDate.toISOString().split("T")[0];
@@ -333,7 +353,11 @@ export async function generateWeeklyReport(opts: {
   const sender = opts.developerName || "Your Development Team";
   const greeting = opts.clientName?.trim() ? `Hi ${opts.clientName.trim()},` : "Hi,";
 
-  const hasActivity = opts.githubEvents.length > 0 || opts.customContext?.trim();
+  const hasActivity =
+    opts.githubEvents.length > 0 ||
+    opts.customContext?.trim() ||
+    opts.linearActivity?.trim() ||
+    opts.vercelActivity?.trim();
 
   if (!hasActivity) {
     const rawMarkdown = `${greeting}
@@ -390,6 +414,8 @@ ${sender}`;
     sender,
     projectName: opts.projectName,
     projectContext,
+    linearActivity: opts.linearActivity,
+    vercelActivity: opts.vercelActivity,
     weekStart,
     weekEnd,
     activityBlock,

@@ -21,6 +21,8 @@ import portalRouter from "./routes/portal.js";
 import webhooksRouter from "./routes/webhooks.js";
 import adminRouter from "./routes/admin.js";
 import billingRouter from "./routes/billing.js";
+import linearRouter from "./routes/linear.js";
+import vercelRouter from "./routes/vercel.js";
 
 const app = express();
 
@@ -118,6 +120,8 @@ app.use("/api/portal", portalRouter);
 app.use("/api/files", filesRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/billing", billingRouter);
+app.use("/api/linear", linearRouter);
+app.use("/api/projects", vercelRouter);
 
 const clientDistPath = path.join(__dirname, "../../client/dist");
 const clientDistExists = fs.existsSync(path.join(clientDistPath, "index.html"));
