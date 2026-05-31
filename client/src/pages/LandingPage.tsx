@@ -153,8 +153,8 @@ const PRICING = [
       { label: "GitHub integration + DNS verification" },
       { label: "Everything in Solo" },
       { label: "Priority support" },
-      { label: "Team seats", soon: true },
-      { label: "Linear & Vercel sync", soon: true },
+      { label: "Team seats (up to 5 members)" },
+      { label: "Linear & Vercel sync" },
     ],
     highlight: true,
   },
@@ -721,21 +721,8 @@ export function LandingPage() {
                 <ul className="space-y-2.5 mb-7 flex-1">
                   {plan.features.map((feature) => (
                     <li key={feature.label} className="flex items-center gap-2.5 text-sm">
-                      {feature.soon ? (
-                        <span className="h-4 w-4 flex-shrink-0 flex items-center justify-center">
-                          <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
-                        </span>
-                      ) : (
-                        <CheckCircle className="h-4 w-4 text-emerald-400 flex-shrink-0" />
-                      )}
-                      <span className={feature.soon ? "text-white/30" : "text-white/70"}>
-                        {feature.label}
-                      </span>
-                      {feature.soon && (
-                        <span className="ml-auto text-[10px] font-medium text-white/25 border border-white/10 rounded px-1 py-0.5 leading-none flex-shrink-0">
-                          soon
-                        </span>
-                      )}
+                      <CheckCircle className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                      <span className="text-white/70">{feature.label}</span>
                     </li>
                   ))}
                 </ul>

@@ -38,6 +38,6 @@ export const PLAN_FEATURES: Record<Exclude<Plan, "FREE">, string[]> = {
     "Everything in Solo",
     "Priority support",
     "Team seats (up to 5 members)",
-    "Linear & Vercel sync (coming soon)",
+    "Linear & Vercel sync",
   ],
 };
