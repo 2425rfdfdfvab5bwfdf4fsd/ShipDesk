@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { PLAN_FEATURES, PLAN_PRICES } from "@/lib/planFeatures";
 import { TeamTab } from "@/components/workspace/TeamTab";
+import { useGitHubStatus } from "@/hooks/useGitHub";
 
 const TABS = [
   { key: "workspace", label: "Workspace", icon: Globe },
@@ -255,6 +256,7 @@ function IntegrationsTab() {
     queryFn: () => api.get("/api/billing/status").then((r) => r.data),
     staleTime: 60_000,
   });
+  const { data: ghStatus, isLoading: ghLoading } = useGitHubStatus();
 
   const isAdminOverride = !!billing?.adminPlanOverride;
   const isOnTrial = billing && !billing.lsSubscriptionId && !isAdminOverride && !!billing.trialEndsAt;
@@ -269,17 +271,35 @@ function IntegrationsTab() {
       : "FREE"
     : "FREE";
   const canUseGitHub = effectivePlan === "STARTER" || effectivePlan === "SOLO" || effectivePlan === "AGENCY";
+  const ghConnected = !!ghStatus?.connected;
+  const ghLogin = ghStatus?.login ?? null;
+
+  function githubStatusLabel(): string {
+    if (!canUseGitHub) return "Requires Starter plan";
+    if (ghLoading) return "Checking…";
+    if (ghConnected && ghLogin) return `Connected as @${ghLogin}`;
+    if (ghConnected) return "Connected";
+    return "Not connected";
+  }
+
+  function githubStatusStyle(): string {
+    if (!canUseGitHub) return "bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:text-amber-400";
+    if (ghLoading) return "bg-muted text-muted-foreground";
+    if (ghConnected) return "bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:text-emerald-400";
+    return "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800";
+  }
 
   const integrations = [
     {
       name: "GitHub",
       icon: Github,
-      description: "Connect your GitHub account to enable AI report generation from commit history, PRs, and releases.",
-      statusLabel: canUseGitHub ? "Connect from Project Settings" : "Requires Solo plan",
-      statusStyle: canUseGitHub
-        ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800"
-        : "bg-amber-500/10 text-amber-600 border border-amber-500/20 dark:text-amber-400",
+      description: ghConnected
+        ? `Your GitHub account (@${ghLogin ?? "connected"}) is linked. Connect repos to individual projects from the project's Settings tab.`
+        : "Connect your GitHub account to enable AI report generation from commit history, PRs, and releases.",
+      statusLabel: githubStatusLabel(),
+      statusStyle: githubStatusStyle(),
       locked: !canUseGitHub,
+      lockedMessage: "Upgrade to Starter to unlock GitHub integration →",
     },
     {
       name: "Linear",
@@ -288,6 +308,7 @@ function IntegrationsTab() {
       statusLabel: "Coming in v1.1",
       statusStyle: "bg-muted text-muted-foreground",
       locked: false,
+      lockedMessage: null,
     },
     {
       name: "Vercel",
@@ -296,6 +317,7 @@ function IntegrationsTab() {
       statusLabel: "Coming in v1.1",
       statusStyle: "bg-muted text-muted-foreground",
       locked: false,
+      lockedMessage: null,
     },
   ];
 
@@ -329,9 +351,9 @@ function IntegrationsTab() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">{integration.description}</p>
-              {integration.locked && (
+              {integration.locked && integration.lockedMessage && (
                 <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs mt-1 text-amber-600 dark:text-amber-400">
-                  <a href="/billing">Upgrade to Solo to unlock →</a>
+                  <a href="/billing">{integration.lockedMessage}</a>
                 </Button>
               )}
             </div>

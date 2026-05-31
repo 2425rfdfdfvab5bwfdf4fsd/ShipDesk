@@ -1,18 +1,24 @@
-import { useState, useEffect } from "react";
-import { Loader2, Copy, Check } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Loader2, Copy, Check, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrandingEditor } from "@/components/workspace/BrandingEditor";
-import { useWorkspace, useUpdateWorkspace } from "@/hooks/useWorkspace";
+import { useWorkspace, useUpdateWorkspace, useCheckSubdomain } from "@/hooks/useWorkspace";
 import { toast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 
 interface WorkspaceSettingsFormProps {
   showBranding?: boolean;
   showBrandingOnly?: boolean;
+}
+
+function getPortalBase(): string {
+  const envUrl = import.meta.env.VITE_FRONTEND_URL as string | undefined;
+  if (envUrl) return envUrl.replace(/\/$/, "");
+  return window.location.origin;
 }
 
 export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = false }: WorkspaceSettingsFormProps) {
@@ -24,9 +30,15 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
   const [primaryColor, setPrimaryColor] = useState("#6366F1");
   const [logoUrl, setLogoUrl] = useState("");
   const [slug, setSlug] = useState("");
+  const [debouncedSlug, setDebouncedSlug] = useState("");
   const [slugError, setSlugError] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const slugChanged = slug !== (workspace?.slug ?? "");
+  const { data: slugCheck, isFetching: checkingSlug } = useCheckSubdomain(
+    debouncedSlug.length >= 3 && slugChanged ? debouncedSlug : ""
+  );
 
   useEffect(() => {
     if (workspace) {
@@ -35,8 +47,20 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
       setPrimaryColor(workspace.primaryColor || "#6366F1");
       setLogoUrl(workspace.logoUrl || "");
       setSlug(workspace.slug || "");
+      setDebouncedSlug(workspace.slug || "");
     }
   }, [workspace]);
+
+  const debouncedSlugUpdate = useCallback(
+    (() => {
+      let timer: ReturnType<typeof setTimeout>;
+      return (val: string) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => setDebouncedSlug(val), 600);
+      };
+    })(),
+    []
+  );
 
   const handleSlugChange = (val: string) => {
     const cleaned = val.toLowerCase().replace(/[^a-z0-9-]/g, "");
@@ -48,7 +72,11 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
     } else {
       setSlugError(null);
     }
+    debouncedSlugUpdate(cleaned);
   };
+
+  const slugTaken = slugChanged && !checkingSlug && debouncedSlug.length >= 3 && slugCheck?.available === false;
+  const slugAvailable = slugChanged && !checkingSlug && debouncedSlug.length >= 3 && slugCheck?.available === true;
 
   const handleLogoUpload = async (file: File) => {
     if (file.size > 2 * 1024 * 1024) {
@@ -60,7 +88,7 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
       const sigResp = await api.get("/api/workspace/logo-upload-signature");
       const sig = sigResp.data as {
         apiKey: string; timestamp: number; signature: string;
-        folder: string; uploadPreset: string; cloudName: string;
+        folder: string; uploadPreset: string | null; cloudName: string;
       };
 
       if (!sig.cloudName || !sig.apiKey) {
@@ -96,7 +124,7 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
   };
 
   const handleSave = async () => {
-    if (slugError || !slug.trim()) return;
+    if (slugError || !slug.trim() || slugTaken) return;
     try {
       await updateWorkspace.mutateAsync({
         name: name.trim(),
@@ -118,10 +146,19 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
 
   const handleCopySlug = () => {
     if (!workspace?.slug) return;
-    navigator.clipboard.writeText(`https://shipdesk-nine.vercel.app/portal/${workspace.slug}`);
+    const url = `${getPortalBase()}/portal/${workspace.slug}`;
+    navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const isSaveDisabled =
+    !name.trim() ||
+    !slug.trim() ||
+    !!slugError ||
+    slugTaken ||
+    checkingSlug ||
+    updateWorkspace.isPending;
 
   if (isLoading) {
     return (
@@ -169,26 +206,46 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
             <div className="space-y-2">
               <Label htmlFor="ws-slug">Portal URL</Label>
               <div className="flex items-center gap-2">
-                <div className="flex items-center flex-1 border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-0">
+                <div className={`flex items-center flex-1 border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-0 ${slugError || slugTaken ? "border-destructive" : slugAvailable ? "border-emerald-500" : ""}`}>
                   <span className="px-3 py-2 text-xs font-mono text-muted-foreground bg-muted border-r select-none whitespace-nowrap">
-                    shipdesk-nine.vercel.app/portal/
+                    {getPortalBase().replace(/^https?:\/\//, "")}/portal/
                   </span>
                   <Input
                     id="ws-slug"
                     value={slug}
                     onChange={(e) => handleSlugChange(e.target.value)}
-                    className={`border-0 rounded-none shadow-none font-mono text-sm focus-visible:ring-0 min-w-0 ${slugError ? "text-destructive" : ""}`}
+                    className={`border-0 rounded-none shadow-none font-mono text-sm focus-visible:ring-0 min-w-0 ${slugError || slugTaken ? "text-destructive" : ""}`}
                     placeholder="your-slug"
                     maxLength={30}
                     data-testid="input-portal-slug"
                   />
+                  <div className="px-2 flex-shrink-0">
+                    {checkingSlug && debouncedSlug.length >= 3 ? (
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground animate-pulse" />
+                    ) : slugAvailable ? (
+                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                    ) : slugTaken ? (
+                      <XCircle className="h-3.5 w-3.5 text-destructive" />
+                    ) : null}
+                  </div>
                 </div>
-                <Button variant="outline" size="icon" onClick={handleCopySlug} className="flex-shrink-0" data-testid="button-copy-portal-url">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopySlug}
+                  className="flex-shrink-0"
+                  data-testid="button-copy-portal-url"
+                  title="Copy portal URL"
+                >
                   {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
               {slugError ? (
                 <p className="text-xs text-destructive">{slugError}</p>
+              ) : slugTaken ? (
+                <p className="text-xs text-destructive">This subdomain is already taken</p>
+              ) : slugAvailable ? (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400">This subdomain is available</p>
               ) : (
                 <p className="text-xs text-muted-foreground">Only lowercase letters, numbers, and hyphens. Min 3 characters.</p>
               )}
@@ -208,6 +265,7 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
               logoUrl={logoUrl}
               primaryColor={primaryColor}
               onLogoChange={handleLogoUpload}
+              onLogoRemove={() => setLogoUrl("")}
               onColorChange={setPrimaryColor}
               uploadingLogo={uploadingLogo}
             />
@@ -217,7 +275,7 @@ export function WorkspaceSettingsForm({ showBranding = true, showBrandingOnly = 
 
       <Button
         onClick={handleSave}
-        disabled={!name.trim() || updateWorkspace.isPending}
+        disabled={isSaveDisabled}
         className="w-full"
         data-testid="button-save-changes"
       >

@@ -171,7 +171,7 @@ export function TeamTab() {
     CANNOT_INVITE_SELF: "You cannot invite yourself.",
   };
 
-  function handleInvite(e: React.FormEvent) {
+  function handleInvite(e: React.MouseEvent | React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
     inviteMutation.mutate(email.trim(), {
@@ -186,7 +186,7 @@ export function TeamTab() {
     });
   }
 
-  function handleCopyLink(e: React.FormEvent) {
+  function handleCopyLink(e: React.MouseEvent | React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
     setCopyingId("form");
