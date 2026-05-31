@@ -10,6 +10,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    "import.meta.env.VITE_CLERK_PUBLISHABLE_KEY": JSON.stringify(
+      process.env.VITE_CLERK_PUBLISHABLE_KEY ?? ""
+    ),
+    "import.meta.env.VITE_API_BASE_URL": JSON.stringify(
+      process.env.VITE_API_BASE_URL ?? ""
+    ),
+  },
   build: {
     outDir: "dist",
     emptyOutDir: true,
