@@ -18,7 +18,7 @@ export function useUploadSignature(projectId: string) {
     apiKey: string;
     cloudName: string;
     folder: string;
-    uploadPreset: string;
+    uploadPreset: string | null;
   }>({
     queryKey: ["upload-signature", projectId],
     queryFn: () =>
@@ -26,7 +26,8 @@ export function useUploadSignature(projectId: string) {
         .get("/api/files/upload-signature", { params: { projectId } })
         .then((r) => r.data),
     enabled: !!projectId,
-    staleTime: 50000,
+    staleTime: 30 * 60 * 1000,
+    retry: false,
   });
 }
 

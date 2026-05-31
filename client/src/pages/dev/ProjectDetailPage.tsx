@@ -230,8 +230,12 @@ export function ProjectDetailPage() {
   }, [reportsData]);
 
   const handleUploadFile = async (file: File) => {
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ variant: "destructive", title: "File too large", description: "Maximum file size is 50 MB." });
+      return;
+    }
     if (!uploadSig) {
-      toast({ variant: "destructive", title: "Upload signature unavailable", description: "Configure Cloudinary to enable file uploads." });
+      toast({ variant: "destructive", title: "Upload unavailable", description: "Configure Cloudinary credentials to enable file uploads." });
       return;
     }
     const formData = new FormData();
@@ -240,7 +244,9 @@ export function ProjectDetailPage() {
     formData.append("timestamp", String(uploadSig.timestamp));
     formData.append("signature", uploadSig.signature);
     formData.append("folder", uploadSig.folder);
-    formData.append("upload_preset", uploadSig.uploadPreset);
+    if (uploadSig.uploadPreset) {
+      formData.append("upload_preset", uploadSig.uploadPreset);
+    }
     setUploadProgress(0);
     try {
       const data = await new Promise<{ secure_url: string; public_id: string; bytes: number; format: string }>((resolve, reject) => {
@@ -252,17 +258,19 @@ export function ProjectDetailPage() {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve(JSON.parse(xhr.responseText));
           } else {
-            reject(new Error(`Upload failed: ${xhr.status}`));
+            let msg = `Upload failed (${xhr.status})`;
+            try { msg = JSON.parse(xhr.responseText)?.error?.message || msg; } catch { /* ignore */ }
+            reject(new Error(msg));
           }
         });
-        xhr.addEventListener("error", () => reject(new Error("Network error")));
-        xhr.open("POST", `https://api.cloudinary.com/v1_1/${uploadSig.cloudName}/raw/upload`);
+        xhr.addEventListener("error", () => reject(new Error("Network error during upload")));
+        xhr.open("POST", `https://api.cloudinary.com/v1_1/${uploadSig.cloudName}/auto/upload`);
         xhr.send(formData);
       });
       await createFile.mutateAsync({ projectId: id, fileName: file.name, fileSize: file.size, mimeType: file.type, cloudinaryPublicId: data.public_id, cloudinarySecureUrl: data.secure_url });
       toast({ title: "File uploaded" });
-    } catch {
-      toast({ variant: "destructive", title: "Upload failed" });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Upload failed", description: err instanceof Error ? err.message : "Please try again." });
     } finally {
       setUploadProgress(null);
     }
