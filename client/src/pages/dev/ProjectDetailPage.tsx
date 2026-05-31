@@ -34,6 +34,7 @@ import { useScopeChanges, useSubmitQuote, useMarkScopeChangePaid } from "@/hooks
 import { useMessages, useSendMessage, useMarkMessagesRead } from "@/hooks/useMessages";
 import { useFiles, useCreateFile, useDeleteFile, useUploadSignature } from "@/hooks/useFiles";
 import { useProjectClients, useInviteClient, useRevokeClientAccess } from "@/hooks/useClients";
+import { useVercelStatus, useConnectVercel, useDisconnectVercel } from "@/hooks/useVercel";
 import { usePlan } from "@/hooks/usePlan";
 import { PlanGate } from "@/components/ui/PlanGate";
 import { toast } from "@/hooks/use-toast";
@@ -161,6 +162,9 @@ export function ProjectDetailPage() {
   const [editName, setEditName] = useState("");
   const [editClientName, setEditClientName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [showVercelForm, setShowVercelForm] = useState(false);
+  const [vercelApiToken, setVercelApiToken] = useState("");
+  const [vercelProjectId, setVercelProjectId] = useState("");
 
   const { capabilities } = usePlan();
 
@@ -173,6 +177,9 @@ export function ProjectDetailPage() {
   const { data: uploadSig } = useUploadSignature(id);
   const { data: githubStatus, isLoading: githubStatusLoading } = useGitHubStatus();
   const { data: githubRepos, isLoading: reposLoading, error: reposError } = useGitHubRepos(repoSearch || undefined, showRepoPicker);
+  const { data: vercelStatus, isLoading: vercelStatusLoading } = useVercelStatus(id);
+  const connectVercel = useConnectVercel();
+  const disconnectVercel = useDisconnectVercel();
 
   const markRead = useMarkMessagesRead();
   const sendMessage = useSendMessage();
@@ -1012,6 +1019,131 @@ export function ProjectDetailPage() {
                 ) : (
                   <Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs" onClick={() => setShowRepoPicker(true)}>
                     <Github className="h-3 w-3" /> Select Repository
+                  </Button>
+                )}
+              </div>
+
+              {/* Vercel */}
+              <div className="bg-card border rounded-lg p-4 space-y-3">
+                <div>
+                  <p className="text-xs font-semibold">Vercel Deployment</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Show clients when new versions ship — deployment activity appears in AI reports.
+                  </p>
+                </div>
+                {vercelStatusLoading ? (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground py-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Checking…
+                  </div>
+                ) : vercelStatus?.connected ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 bg-muted/60 rounded px-2.5 py-2">
+                      <Server className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="font-mono text-xs flex-1 truncate">{vercelStatus.vercelProjectId}</span>
+                      <Badge variant="success" className="text-[10px] px-1.5 py-0.5 shrink-0">Connected</Badge>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1 text-muted-foreground hover:text-destructive text-xs h-7"
+                      onClick={async () => {
+                        try {
+                          await disconnectVercel.mutateAsync(project.id);
+                          toast({ title: "Vercel disconnected" });
+                        } catch {
+                          toast({ variant: "destructive", title: "Failed to disconnect Vercel" });
+                        }
+                      }}
+                      disabled={disconnectVercel.isPending}
+                      data-testid="button-vercel-disconnect"
+                    >
+                      {disconnectVercel.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Unlink className="h-3 w-3" />}
+                      Disconnect
+                    </Button>
+                  </div>
+                ) : showVercelForm ? (
+                  <div className="space-y-2.5">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs" htmlFor="vercel-token">Vercel API Token</Label>
+                      <Input
+                        id="vercel-token"
+                        type="password"
+                        className="h-7 text-xs font-mono"
+                        placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                        value={vercelApiToken}
+                        onChange={(e) => setVercelApiToken(e.target.value)}
+                        data-testid="input-vercel-token"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Create one at{" "}
+                        <a
+                          href="https://vercel.com/account/tokens"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-foreground"
+                        >
+                          vercel.com/account/tokens
+                        </a>
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs" htmlFor="vercel-project-id">Vercel Project Name or ID</Label>
+                      <Input
+                        id="vercel-project-id"
+                        className="h-7 text-xs font-mono"
+                        placeholder="my-project or prj_xxxxxxxxxxxx"
+                        value={vercelProjectId}
+                        onChange={(e) => setVercelProjectId(e.target.value)}
+                        data-testid="input-vercel-project-id"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Found in your Vercel dashboard project settings.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs"
+                        disabled={!vercelApiToken.trim() || !vercelProjectId.trim() || connectVercel.isPending}
+                        data-testid="button-vercel-connect-save"
+                        onClick={async () => {
+                          try {
+                            const result = await connectVercel.mutateAsync({
+                              projectId: project.id,
+                              apiToken: vercelApiToken.trim(),
+                              vercelProjectId: vercelProjectId.trim(),
+                            });
+                            setShowVercelForm(false);
+                            setVercelApiToken("");
+                            setVercelProjectId("");
+                            toast({ title: "Vercel connected", description: result.projectName ? `Project: ${result.projectName}` : undefined });
+                          } catch (err: unknown) {
+                            const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+                            toast({ variant: "destructive", title: "Connection failed", description: msg || "Check your token and project ID." });
+                          }
+                        }}
+                      >
+                        {connectVercel.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Connect"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => { setShowVercelForm(false); setVercelApiToken(""); setVercelProjectId(""); }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 h-7 text-xs"
+                    onClick={() => setShowVercelForm(true)}
+                    data-testid="button-vercel-connect"
+                  >
+                    <Server className="h-3 w-3" /> Connect Vercel
                   </Button>
                 )}
               </div>

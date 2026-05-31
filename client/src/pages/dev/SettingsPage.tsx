@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@clerk/clerk-react";
 import { useSEO } from "@/lib/seo";
-import { Github, Palette, Globe, Shield, CreditCard, CheckCircle, ArrowRight, Star, Zap, Building2, Loader2, Lock, Users, Timer } from "lucide-react";
+import { Github, Palette, Globe, Shield, CreditCard, CheckCircle, ArrowRight, Star, Zap, Building2, Loader2, Lock, Users, ExternalLink, LogOut, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WorkspaceSettingsForm } from "@/components/workspace/WorkspaceSettingsForm";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ import { api } from "@/lib/api";
 import { PLAN_FEATURES, PLAN_PRICES } from "@/lib/planFeatures";
 import { TeamTab } from "@/components/workspace/TeamTab";
 import { useGitHubStatus } from "@/hooks/useGitHub";
+import { useLinearStatus, useDisconnectLinear } from "@/hooks/useLinear";
+import { toast } from "@/hooks/use-toast";
 
 const TABS = [
   { key: "workspace", label: "Workspace", icon: Globe },
@@ -251,12 +254,16 @@ function PlanTab() {
 }
 
 function IntegrationsTab() {
+  const { getToken } = useAuth();
   const { data: billing } = useQuery<BillingStatus>({
     queryKey: ["billing-status"],
     queryFn: () => api.get("/api/billing/status").then((r) => r.data),
     staleTime: 60_000,
   });
   const { data: ghStatus, isLoading: ghLoading } = useGitHubStatus();
+  const { data: linearStatus, isLoading: linearLoading } = useLinearStatus();
+  const disconnectLinear = useDisconnectLinear();
+  const [linearDisconnecting, setLinearDisconnecting] = useState(false);
 
   const isAdminOverride = !!billing?.adminPlanOverride;
   const isOnTrial = billing && !billing.lsSubscriptionId && !isAdminOverride && !!billing.trialEndsAt;
@@ -273,6 +280,7 @@ function IntegrationsTab() {
   const canUseGitHub = effectivePlan === "STARTER" || effectivePlan === "SOLO" || effectivePlan === "AGENCY";
   const ghConnected = !!ghStatus?.connected;
   const ghLogin = ghStatus?.login ?? null;
+  const linearConnected = !!linearStatus?.connected;
 
   function githubStatusLabel(): string {
     if (!canUseGitHub) return "Requires Starter plan";
@@ -289,37 +297,26 @@ function IntegrationsTab() {
     return "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800";
   }
 
-  const integrations = [
-    {
-      name: "GitHub",
-      icon: Github,
-      description: ghConnected
-        ? `Your GitHub account (@${ghLogin ?? "connected"}) is linked. Connect repos to individual projects from the project's Settings tab.`
-        : "Connect your GitHub account to enable AI report generation from commit history, PRs, and releases.",
-      statusLabel: githubStatusLabel(),
-      statusStyle: githubStatusStyle(),
-      locked: !canUseGitHub,
-      lockedMessage: "Upgrade to Starter to unlock GitHub integration →",
-    },
-    {
-      name: "Linear",
-      icon: Shield,
-      description: "Pull Linear issue activity into weekly reports alongside GitHub data.",
-      statusLabel: "Coming in v1.1",
-      statusStyle: "bg-muted text-muted-foreground",
-      locked: false,
-      lockedMessage: null,
-    },
-    {
-      name: "Vercel",
-      icon: Globe,
-      description: "Include deployment activity in your reports — show clients when new versions ship.",
-      statusLabel: "Coming in v1.1",
-      statusStyle: "bg-muted text-muted-foreground",
-      locked: false,
-      lockedMessage: null,
-    },
-  ];
+  async function handleLinearConnect() {
+    const token = await getToken();
+    if (!token) return;
+    const apiBase = import.meta.env.PROD
+      ? (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "")
+      : "";
+    window.location.href = `${apiBase}/api/linear/connect?token=${token}`;
+  }
+
+  async function handleLinearDisconnect() {
+    setLinearDisconnecting(true);
+    try {
+      await disconnectLinear.mutateAsync();
+      toast({ title: "Linear disconnected" });
+    } catch {
+      toast({ variant: "destructive", title: "Failed to disconnect Linear" });
+    } finally {
+      setLinearDisconnecting(false);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -328,38 +325,116 @@ function IntegrationsTab() {
         <p className="text-xs text-muted-foreground">Connect third-party services to enhance your reports.</p>
       </div>
 
-      {integrations.map((integration) => {
-        const Icon = integration.icon;
-        return (
-          <div key={integration.name} className={cn(
-            "bg-card border rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4",
-            integration.locked && "opacity-70"
-          )}>
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 relative">
-              <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-              {integration.locked && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
-                  <Lock className="h-2 w-2 text-amber-600 dark:text-amber-400" />
-                </div>
-              )}
+      {/* GitHub */}
+      <div className={cn("bg-card border rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4", !canUseGitHub && "opacity-70")}>
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 relative">
+          <Github className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+          {!canUseGitHub && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+              <Lock className="h-2 w-2 text-amber-600 dark:text-amber-400" />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <p className="text-sm font-semibold">{integration.name}</p>
-                <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", integration.statusStyle)}>
-                  {integration.statusLabel}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">{integration.description}</p>
-              {integration.locked && integration.lockedMessage && (
-                <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs mt-1 text-amber-600 dark:text-amber-400">
-                  <a href="/billing">{integration.lockedMessage}</a>
-                </Button>
-              )}
-            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <p className="text-sm font-semibold">GitHub</p>
+            <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", githubStatusStyle())}>
+              {githubStatusLabel()}
+            </span>
           </div>
-        );
-      })}
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {ghConnected
+              ? `Your GitHub account (@${ghLogin ?? "connected"}) is linked. Connect repos to individual projects from the project's Settings tab.`
+              : "Connect your GitHub account to enable AI report generation from commit history, PRs, and releases."}
+          </p>
+          {!canUseGitHub && (
+            <Button asChild variant="link" size="sm" className="h-auto p-0 text-xs mt-1 text-amber-600 dark:text-amber-400">
+              <a href="/billing">Upgrade to Starter to unlock GitHub integration →</a>
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Linear */}
+      <div className="bg-card border rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+          <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <p className="text-sm font-semibold">Linear</p>
+            {linearLoading ? (
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">Checking…</span>
+            ) : linearConnected ? (
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:text-emerald-400">
+                Connected
+              </span>
+            ) : (
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800">
+                Not connected
+              </span>
+            )}
+          </div>
+          {linearConnected ? (
+            <>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Linear is connected
+                {linearStatus?.organizationName ? ` to ${linearStatus.organizationName}` : ""}.
+                Issue activity is included in your weekly AI reports.
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 h-7 text-xs text-muted-foreground hover:text-destructive mt-2"
+                disabled={linearDisconnecting}
+                onClick={handleLinearDisconnect}
+                data-testid="button-linear-disconnect"
+              >
+                {linearDisconnecting ? <Loader2 className="h-3 w-3 animate-spin" /> : <LogOut className="h-3 w-3" />}
+                Disconnect
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Pull Linear issue activity into weekly reports alongside GitHub data.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 h-7 text-xs mt-2"
+                onClick={handleLinearConnect}
+                data-testid="button-linear-connect"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Connect Linear
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Vercel */}
+      <div className="bg-card border rounded-xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+          <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <p className="text-sm font-semibold">Vercel</p>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
+              Per project
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Include deployment activity in your reports — show clients when new versions ship. Connect a Vercel project from each project's Settings tab.
+          </p>
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+            <AlertCircle className="h-3 w-3 shrink-0" />
+            <span>Open any project → Settings → Vercel to connect</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -368,9 +443,30 @@ export function SettingsPage() {
   useSEO({ title: "Settings", noindex: true });
   const [activeTab, setActiveTab] = useState<Tab>("workspace");
   const [, setTick] = useState(0);
+  const [, navigate] = useLocation();
+  const search = useSearch();
+
   useEffect(() => {
     const id = setInterval(() => setTick(n => n + 1), 60_000);
     return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const tabParam = params.get("tab") as Tab | null;
+    if (tabParam && TABS.some((t) => t.key === tabParam)) {
+      setActiveTab(tabParam);
+    }
+    const linearParam = params.get("linear");
+    if (linearParam === "connected") {
+      toast({ title: "Linear connected successfully!" });
+    } else if (linearParam === "error") {
+      toast({ variant: "destructive", title: "Linear connection failed", description: "Please try again or check your Linear OAuth credentials." });
+    }
+    if (tabParam || linearParam) {
+      navigate("/settings", { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
