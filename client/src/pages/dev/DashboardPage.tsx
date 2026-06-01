@@ -65,7 +65,7 @@ export function DashboardPage() {
   const [newDesc, setNewDesc] = useState("");
 
   const { data: workspace } = useWorkspace();
-  const { data: projects, isLoading } = useProjects(showArchived ? "COMPLETED" : undefined);
+  const { data: projects, isLoading, isError: projectsError } = useProjects(showArchived ? "COMPLETED" : undefined);
   const { data: allProjects } = useProjects();
   const { data: invoicesData } = useInvoices();
   const { data: scopeChanges } = useScopeChanges();
@@ -242,6 +242,14 @@ export function DashboardPage() {
               {[...Array(3)].map((_, i) => (
                 <Skeleton key={i} className="h-28 rounded-xl" />
               ))}
+            </div>
+          ) : projectsError ? (
+            <div className="text-center py-14 bg-destructive/5 rounded-xl border border-dashed border-destructive/20">
+              <FolderOpen className="h-8 w-8 mx-auto text-destructive/30 mb-2" />
+              <p className="text-xs text-destructive/70 mb-3">Couldn't load projects. Check your connection or try signing out and back in.</p>
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
             </div>
           ) : filteredProjects.length === 0 ? (
             <div className="text-center py-14 bg-muted/20 rounded-xl border border-dashed">

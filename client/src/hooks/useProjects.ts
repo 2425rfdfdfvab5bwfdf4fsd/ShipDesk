@@ -1,14 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@clerk/clerk-react";
 import { api } from "../lib/api";
 import { Project } from "../types";
 
 export function useProjects(status?: string) {
+  const { isSignedIn } = useAuth();
   return useQuery<Project[]>({
     queryKey: ["projects", status],
     queryFn: () =>
       api
         .get("/api/projects", { params: { status } })
         .then((r) => r.data),
+    enabled: !!isSignedIn,
   });
 }
 
