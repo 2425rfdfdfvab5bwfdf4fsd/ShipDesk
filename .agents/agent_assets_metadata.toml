@@ -36,3 +36,9 @@ id = "QBFpLtVGCCEll4AE-oY8W"
 uri = "file://freelancer-comment.md"
 type = "text"
 title = "Freelancer Hiring Comment"
+
+[[outputs]]
+id = "0RHTxBaIRyuN-m-gZzZTj"
+uri = "file://linkedin-post.md"
+type = "text"
+title = "Improved ShipDesk LinkedIn Post"
