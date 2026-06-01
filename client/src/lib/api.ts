@@ -27,6 +27,21 @@ function getClientSessionToken(): string | null {
   try { return sessionStorage.getItem(SESSION_KEY); } catch { return null; }
 }
 
+// Module-level reference to Clerk's getToken function.
+// Registered by TokenSync before any routes render; the interceptor awaits it
+// directly so every request always carries a fresh, valid JWT regardless of
+// when the component tree mounts.
+let _getToken: (() => Promise<string | null>) | null = null;
+
+export function registerTokenGetter(fn: (() => Promise<string | null>) | null) {
+  _getToken = fn;
+}
+
+// Kept for backward compat — still used by AdminPage to warm the cache.
+export function setApiToken(token: string) {
+  (window as { __clerkToken?: string }).__clerkToken = token;
+}
+
 export const api = axios.create({
   baseURL: import.meta.env.PROD
     ? normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL ?? "")
@@ -36,10 +51,25 @@ export const api = axios.create({
 
 api.interceptors.request.use(async (config) => {
   if (typeof window !== "undefined") {
-    const clerkToken = (window as { __clerkToken?: string }).__clerkToken;
-    if (clerkToken) {
-      config.headers.Authorization = `Bearer ${clerkToken}`;
+    let token: string | null = null;
+
+    if (_getToken) {
+      // Preferred path: call getToken() directly — Clerk serves from its
+      // internal cache (fast) and auto-refreshes when the JWT nears expiry.
+      token = await _getToken();
     }
+
+    // Fallback: use the cached value written by setApiToken (AdminPage path)
+    if (!token) {
+      token = (window as { __clerkToken?: string }).__clerkToken ?? null;
+    }
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      // Keep the cache warm for non-interceptor consumers
+      (window as { __clerkToken?: string }).__clerkToken = token;
+    }
+
     const sessionToken = getClientSessionToken();
     if (sessionToken) {
       config.headers["X-Client-Session-Token"] = sessionToken;
@@ -70,7 +100,3 @@ api.interceptors.response.use(
     return Promise.reject(err);
   }
 );
-
-export function setApiToken(token: string) {
-  (window as { __clerkToken?: string }).__clerkToken = token;
-}

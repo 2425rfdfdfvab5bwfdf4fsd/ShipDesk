@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Switch, Route, Router, useLocation } from "wouter";
 import { useAuth } from "@clerk/clerk-react";
-import { api, setApiToken } from "./lib/api";
+import { api, setApiToken, registerTokenGetter } from "./lib/api";
 
 import { AppShell } from "./components/layout/AppShell";
 import { ClientPortalLayout } from "./components/layout/ClientPortalLayout";
@@ -66,15 +66,27 @@ function isSubdomainPortal(): boolean {
 
 function TokenSync() {
   const { getToken } = useAuth();
+
+  // Register synchronously in the render body — TokenSync renders before any
+  // sibling routes, so _getToken is set before DashboardPage ever mounts and
+  // fires its first useQuery. The interceptor awaits getToken() directly so
+  // every request always gets a fresh Clerk JWT with zero race-condition risk.
+  registerTokenGetter(getToken);
+
   useEffect(() => {
+    // Warm the legacy window cache for non-interceptor consumers (AdminPage).
     const sync = async () => {
       const token = await getToken();
       if (token) setApiToken(token);
     };
     sync();
     const interval = setInterval(sync, 50_000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      registerTokenGetter(null);
+    };
   }, [getToken]);
+
   return null;
 }
 
