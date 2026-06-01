@@ -3,15 +3,27 @@ import { useParams } from "wouter";
 import { Link } from "wouter";
 import {
   ArrowLeft, AlertTriangle, Clock, GitCommit, GitMerge, Tag,
-  TrendingUp, TrendingDown, Minus, Copy, Check, Printer, Share2,
+  TrendingUp, TrendingDown, Minus, Check, Printer, Share2,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useClientReport } from "@/hooks/useClientPortal";
+import { useClientReport, useClientProject } from "@/hooks/useClientPortal";
+import { usePortalBranding } from "@/hooks/usePortalBranding";
 import { formatDate } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { PortalErrorBanner } from "@/components/layout/PortalErrorBanner";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { printReport } from "@/lib/printReport";
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function getWorkspaceSlug(): string | null {
+  const host = window.location.hostname;
+  const parts = host.split(".");
+  if (parts.length >= 3 && parts[1] === "portal") return parts[0];
+  const match = window.location.pathname.match(/^\/portal\/([a-z0-9-]+)/);
+  return match ? match[1] : null;
+}
 
 interface ReportStats {
   pushEvents: number;
@@ -37,19 +49,14 @@ function readingTime(text: string): string {
 }
 
 function computeHealth(stats: ReportStats | undefined): {
-  label: string;
-  color: string;
-  icon: typeof TrendingUp;
-  description: string;
+  label: string; color: string; icon: typeof TrendingUp; description: string;
 } {
   if (!stats) return { label: "Unknown", color: "text-muted-foreground border-border bg-muted/30", icon: Minus, description: "No activity data" };
   const { totalCommits, prsMerged, releases } = stats;
-  if (releases >= 1 || prsMerged >= 3 || totalCommits >= 10) {
+  if (releases >= 1 || prsMerged >= 3 || totalCommits >= 10)
     return { label: "High Activity", color: "text-green-700 border-green-200 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950/40", icon: TrendingUp, description: "Strong momentum this week" };
-  }
-  if (prsMerged >= 1 || totalCommits >= 3) {
+  if (prsMerged >= 1 || totalCommits >= 3)
     return { label: "Moderate Activity", color: "text-amber-700 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-800 dark:bg-amber-950/40", icon: TrendingUp, description: "Steady progress this week" };
-  }
   return { label: "Low Activity", color: "text-slate-500 border-slate-200 bg-slate-50 dark:text-slate-400 dark:border-slate-700 dark:bg-slate-900/40", icon: TrendingDown, description: "Quiet week — less GitHub activity recorded" };
 }
 
@@ -139,9 +146,17 @@ function CopyLinkButton() {
   );
 }
 
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export function ClientReportViewerPage() {
   const { id, reportId } = useParams<{ id: string; reportId: string }>();
-  const { data: report, isLoading, isError } = useClientReport(id, reportId);
+  const workspaceSlug = getWorkspaceSlug();
+
+  const { data: report,   isLoading: reportLoading,  isError } = useClientReport(id, reportId);
+  const { data: project,  isLoading: projectLoading          } = useClientProject(id);
+  const { data: branding                                      } = usePortalBranding(workspaceSlug ?? "");
+
+  const isLoading = reportLoading || projectLoading;
 
   if (isLoading) {
     return (
@@ -158,10 +173,7 @@ export function ClientReportViewerPage() {
   if (isError) {
     return (
       <div className="px-1 space-y-4">
-        <Link
-          href={`/projects/${id}/reports`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
+        <Link href={`/projects/${id}/reports`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back to Reports
         </Link>
         <PortalErrorBanner />
@@ -172,10 +184,7 @@ export function ClientReportViewerPage() {
   if (!report) {
     return (
       <div className="px-1">
-        <Link
-          href={`/projects/${id}/reports`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4"
-        >
+        <Link href={`/projects/${id}/reports`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
           <ArrowLeft className="h-4 w-4" /> Back to Reports
         </Link>
         <p className="text-muted-foreground text-sm">Report not found.</p>
@@ -190,14 +199,30 @@ export function ClientReportViewerPage() {
   const HealthIcon = health.icon;
   const readTime = content.rawMarkdown ? readingTime(content.rawMarkdown) : null;
 
+  const handlePrint = () => {
+    printReport({
+      title:         report.title,
+      weekStartDate: report.weekStartDate,
+      weekEndDate:   report.weekEndDate,
+      projectName:   project?.name ?? undefined,
+      summary:       content.summary,
+      highlights:    content.highlights,
+      nextSteps:     content.nextSteps,
+      rawMarkdown:   content.rawMarkdown,
+      stats:         stats,
+      branding:      branding
+        ? { agencyName: branding.agencyName, logoUrl: branding.logoUrl, primaryColor: branding.primaryColor }
+        : undefined,
+      generatedDate: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+    });
+  };
+
   return (
     <div className="min-w-0 w-full space-y-5 pb-10">
-      {/* Top bar: back + actions */}
+
+      {/* Top bar */}
       <div className="flex items-center justify-between gap-3">
-        <Link
-          href={`/projects/${id}/reports`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
+        <Link href={`/projects/${id}/reports`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 shrink-0" /> Back to Reports
         </Link>
         <div className="flex items-center gap-2">
@@ -206,35 +231,32 @@ export function ClientReportViewerPage() {
             variant="outline"
             size="sm"
             className="gap-1.5 h-8 text-xs"
-            onClick={() => window.print()}
+            onClick={handlePrint}
             data-testid="button-print-report"
-            title="Print or save as PDF"
+            title="Open print-ready PDF preview"
           >
             <Printer className="h-3.5 w-3.5" />
-            Print / PDF
+            Export PDF
           </Button>
         </div>
       </div>
 
       {/* Title + meta */}
       <div>
-        <h1 className="text-lg font-bold leading-snug break-words sm:text-xl">
-          {report.title}
-        </h1>
+        <h1 className="text-lg font-bold leading-snug break-words sm:text-xl">{report.title}</h1>
         <div className="flex flex-wrap items-center gap-3 mt-1.5">
           <p className="text-sm text-muted-foreground">
             {formatDate(report.weekStartDate)} – {formatDate(report.weekEndDate)}
           </p>
           {readTime && (
             <span className="flex items-center gap-1 text-xs text-muted-foreground" data-testid="text-reading-time">
-              <Clock className="h-3 w-3" />
-              {readTime}
+              <Clock className="h-3 w-3" />{readTime}
             </span>
           )}
         </div>
       </div>
 
-      {/* Health indicator + activity stats */}
+      {/* Health + stats */}
       <div className="flex flex-wrap items-center gap-2" data-testid="section-stats">
         <div
           className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-medium ${health.color}`}
@@ -246,11 +268,11 @@ export function ClientReportViewerPage() {
         </div>
         {hasStats && (
           <>
-            <StatPill icon={GitCommit} label="commits" value={stats!.totalCommits} color="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-400" />
-            <StatPill icon={GitMerge} label="PRs merged" value={stats!.prsMerged} color="border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-400" />
-            <StatPill icon={Tag} label="release" value={stats!.releases} color="border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-400" />
+            <StatPill icon={GitCommit} label="commits"   value={stats!.totalCommits} color="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-400" />
+            <StatPill icon={GitMerge}  label="PRs merged" value={stats!.prsMerged}    color="border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-400" />
+            <StatPill icon={Tag}       label="release"    value={stats!.releases}     color="border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-400" />
             {stats!.prsOpened > 0 && (
-              <StatPill icon={Copy} label="PRs open" value={stats!.prsOpened} color="border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-400" />
+              <StatPill icon={GitMerge} label="PRs open" value={stats!.prsOpened} color="border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-400" />
             )}
           </>
         )}
