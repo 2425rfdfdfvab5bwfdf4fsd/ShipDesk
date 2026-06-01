@@ -1088,12 +1088,12 @@ export function ProjectDetailPage() {
                       <p className="text-[10px] text-muted-foreground">
                         Create one at{" "}
                         <a
-                          href="https://vercel.com/account/tokens"
+                          href="https://vercel.com/account/settings/tokens"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="underline hover:text-foreground"
                         >
-                          vercel.com/account/tokens
+                          vercel.com/account/settings/tokens
                         </a>
                       </p>
                     </div>
