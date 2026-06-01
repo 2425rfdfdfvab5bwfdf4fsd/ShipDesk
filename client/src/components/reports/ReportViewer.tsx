@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, AlertTriangle, Edit2, Eye, Save, Loader2, Trash2, Copy, Check, GitCommit, GitMerge, Tag, FileText, MessageSquare, Minimize2 } from "lucide-react";
+import {
+  CheckCircle, AlertTriangle, Edit2, Eye, Save, Loader2, Trash2,
+  Copy, Check, GitCommit, GitMerge, Tag, FileText, MessageSquare,
+  Minimize2, Clock, TrendingUp, TrendingDown, Minus,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +44,29 @@ const TONE_LABELS: Record<string, { label: string; icon: typeof FileText }> = {
   friendly: { label: "Friendly", icon: MessageSquare },
   brief:    { label: "Brief",    icon: Minimize2 },
 };
+
+function readingTime(text: string): string {
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  const mins = Math.max(1, Math.round(words / 200));
+  return `${mins} min read`;
+}
+
+function computeHealth(stats: ReportContent["stats"]): {
+  label: string;
+  color: string;
+  icon: typeof TrendingUp;
+  description: string;
+} {
+  if (!stats) return { label: "Unknown", color: "text-muted-foreground border-border bg-muted/30", icon: Minus, description: "No activity data" };
+  const { totalCommits, prsMerged, releases } = stats;
+  if (releases >= 1 || prsMerged >= 3 || totalCommits >= 10) {
+    return { label: "High Activity", color: "text-green-700 border-green-300 bg-green-50 dark:text-green-400 dark:border-green-800 dark:bg-green-950/40", icon: TrendingUp, description: "Strong momentum this week" };
+  }
+  if (prsMerged >= 1 || totalCommits >= 3) {
+    return { label: "Moderate Activity", color: "text-amber-700 border-amber-300 bg-amber-50 dark:text-amber-400 dark:border-amber-800 dark:bg-amber-950/40", icon: TrendingUp, description: "Steady progress this week" };
+  }
+  return { label: "Low Activity", color: "text-slate-500 border-slate-300 bg-slate-50 dark:text-slate-400 dark:border-slate-700 dark:bg-slate-900/40", icon: TrendingDown, description: "Quiet week — less GitHub activity recorded" };
+}
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -110,8 +137,10 @@ export function ReportViewer({ report, clientName, onPublish, onEdit, onDelete, 
   const stats = content?.stats;
   const tone = content?.tone;
   const toneConfig = tone ? TONE_LABELS[tone] : null;
-
   const hasStats = stats && (stats.totalCommits > 0 || stats.prsMerged > 0 || stats.releases > 0);
+  const health = computeHealth(stats);
+  const HealthIcon = health.icon;
+  const readTime = rawMarkdown ? readingTime(rawMarkdown) : null;
 
   return (
     <motion.div
@@ -135,6 +164,12 @@ export function ReportViewer({ report, clientName, onPublish, onEdit, onDelete, 
                 <toneConfig.icon className="h-2.5 w-2.5" />
                 {toneConfig.label}
               </Badge>
+            )}
+            {readTime && (
+              <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                {readTime}
+              </span>
             )}
           </div>
         </div>
@@ -203,6 +238,30 @@ export function ReportViewer({ report, clientName, onPublish, onEdit, onDelete, 
         </div>
       </div>
 
+      {/* Health indicator + stats row */}
+      {!editMode && (
+        <div className="flex flex-wrap items-center gap-2">
+          <div
+            className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-medium ${health.color}`}
+            title={health.description}
+            data-testid="badge-report-health"
+          >
+            <HealthIcon className="h-3 w-3" />
+            {health.label}
+          </div>
+          {hasStats && (
+            <>
+              <StatPill icon={GitCommit} label="commits" value={stats!.totalCommits} color="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-400" />
+              <StatPill icon={GitMerge} label="PRs merged" value={stats!.prsMerged} color="border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-400" />
+              <StatPill icon={Tag} label="release" value={stats!.releases} color="border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-400" />
+              {stats!.prsOpened > 0 && (
+                <StatPill icon={GitMerge} label="PRs open" value={stats!.prsOpened} color="border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-400" />
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {/* Generation warning */}
       {content?.generationWarning && (
         <div className="flex gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-800 dark:text-amber-300">
@@ -211,18 +270,6 @@ export function ReportViewer({ report, clientName, onPublish, onEdit, onDelete, 
             <p className="font-medium">Generation warning</p>
             <p className="text-xs mt-0.5 opacity-80 break-words">{content.generationWarning}</p>
           </div>
-        </div>
-      )}
-
-      {/* Activity stats bar */}
-      {hasStats && !editMode && (
-        <div className="flex flex-wrap gap-2">
-          <StatPill icon={GitCommit} label="commits" value={stats!.totalCommits} color="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-400" />
-          <StatPill icon={GitMerge} label="PRs merged" value={stats!.prsMerged} color="border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-400" />
-          <StatPill icon={Tag} label="release" value={stats!.releases} color="border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/40 dark:text-green-400" />
-          {stats!.prsOpened > 0 && (
-            <StatPill icon={GitMerge} label="PRs open" value={stats!.prsOpened} color="border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-400" />
-          )}
         </div>
       )}
 
