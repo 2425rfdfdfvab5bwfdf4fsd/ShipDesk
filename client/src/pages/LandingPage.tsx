@@ -114,6 +114,7 @@ const PRICING = [
     price: "$10",
     period: "/month",
     description: "Get your first client portal live in minutes.",
+    savePercent: 50,
     features: [
       { label: "3 client projects" },
       { label: "10 AI status reports/month" },
@@ -130,6 +131,7 @@ const PRICING = [
     price: "$29",
     period: "/month",
     description: "Everything a freelancer needs to look like a studio.",
+    savePercent: 40,
     features: [
       { label: "Up to 10 client projects" },
       { label: "Unlimited AI reports" },
@@ -146,6 +148,7 @@ const PRICING = [
     price: "$79",
     period: "/month",
     description: "Scale your client operations without the overhead.",
+    savePercent: 30,
     features: [
       { label: "Unlimited projects" },
       { label: "Unlimited AI reports" },
@@ -678,7 +681,7 @@ export function LandingPage() {
               </span>
               {isYearly && (
                 <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/20">
-                  Save 50%
+                  Up to 50% off
                 </span>
               )}
             </div>
@@ -715,7 +718,7 @@ export function LandingPage() {
                     <span className="text-white/50 text-sm">/mo</span>
                   </div>
                   {isYearly && (
-                    <p className="text-[11px] text-emerald-400 mt-1 font-medium">Billed annually · Save 50%</p>
+                    <p className="text-[11px] text-emerald-400 mt-1 font-medium">Billed annually · Save {plan.savePercent}%</p>
                   )}
                 </div>
                 <ul className="space-y-2.5 mb-7 flex-1">
