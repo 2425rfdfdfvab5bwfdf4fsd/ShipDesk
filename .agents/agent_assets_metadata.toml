@@ -24,3 +24,9 @@ id = "qVy_Yd5eXo6b9fv4Gceaj"
 uri = "file://PROMO_POSTS.md"
 type = "text"
 title = "ShipDesk Promo Posts — Copy & Paste Ready"
+
+[[outputs]]
+id = "dT3QGn-W7IJucea_6WfJd"
+uri = "file://indie-hackers-post.md"
+type = "text"
+title = "Indie Hackers Post — ShipDesk"
