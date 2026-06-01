@@ -8,8 +8,8 @@ export const PLAN_PRICES: Record<Exclude<Plan, "FREE">, string> = {
 
 export const PLAN_PRICES_YEARLY: Record<Exclude<Plan, "FREE">, string> = {
   STARTER: "$5",
-  SOLO: "$14",
-  AGENCY: "$39",
+  SOLO: "$17",
+  AGENCY: "$55",
 };
 
 export const PLAN_FEATURES: Record<Exclude<Plan, "FREE">, string[]> = {
