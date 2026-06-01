@@ -30,3 +30,9 @@ id = "dT3QGn-W7IJucea_6WfJd"
 uri = "file://indie-hackers-post.md"
 type = "text"
 title = "Improved Indie Hackers Post — ShipDesk"
+
+[[outputs]]
+id = "QBFpLtVGCCEll4AE-oY8W"
+uri = "file://freelancer-comment.md"
+type = "text"
+title = "Freelancer Hiring Comment"
