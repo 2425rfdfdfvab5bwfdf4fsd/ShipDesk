@@ -42,3 +42,9 @@ id = "0RHTxBaIRyuN-m-gZzZTj"
 uri = "file://linkedin-post.md"
 type = "text"
 title = "Improved ShipDesk LinkedIn Post"
+
+[[outputs]]
+id = "tOoVAYGkYQZ2btthZpMRm"
+uri = "file://reddit-post.md"
+type = "text"
+title = "ShipDesk Reddit Post"
