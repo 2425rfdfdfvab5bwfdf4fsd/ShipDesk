@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/clerk-react";
 import {
   LayoutDashboard, DollarSign, GitMerge, Settings,
-  Menu, X, Sun, Moon, LogOut, MessageSquare, CreditCard, Lock, ShieldCheck, Clock,
+  Menu, X, Sun, Moon, LogOut, MessageSquare, CreditCard, Lock, ShieldCheck,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -321,41 +321,6 @@ export function AppShell({ children }: AppShellProps) {
           <div className="w-8" />
         </header>
 
-        {/* Trial banner */}
-        {workspace && !workspace.lsSubscriptionId && !workspace.adminPlanOverride && workspace.trialEndsAt && (() => {
-          const remaining = daysLeft(workspace.trialEndsAt!);
-          const active = new Date(workspace.trialEndsAt!) > new Date();
-          if (!active) return null;
-          const urgent = remaining <= 3;
-          return (
-            <div className={cn(
-              "flex items-center justify-between gap-3 px-4 py-2.5 text-sm flex-shrink-0",
-              urgent
-                ? "bg-red-500/10 border-b border-red-500/20"
-                : "bg-amber-500/10 border-b border-amber-500/20"
-            )}>
-              <div className="flex items-center gap-2">
-                <Clock className={cn("h-4 w-4 flex-shrink-0", urgent ? "text-red-500" : "text-amber-500")} />
-                <span className={cn("font-medium", urgent ? "text-red-600 dark:text-red-400" : "text-amber-700 dark:text-amber-400")}>
-                  {remaining === 0
-                    ? "Your trial expires today!"
-                    : `${remaining} day${remaining !== 1 ? "s" : ""} remaining in your free trial`}
-                </span>
-              </div>
-              <Link
-                href="/billing"
-                className={cn(
-                  "text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap transition-colors",
-                  urgent
-                    ? "bg-red-500 text-white hover:bg-red-600"
-                    : "bg-amber-500 text-white hover:bg-amber-600"
-                )}
-              >
-                Upgrade now
-              </Link>
-            </div>
-          );
-        })()}
 
         <main className="flex-1 overflow-auto">
           {children}
