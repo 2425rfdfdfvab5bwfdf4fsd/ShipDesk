@@ -168,7 +168,7 @@ function PlanTab() {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              {remaining} of 14 days remaining
+              {remaining} days remaining
             </p>
           </div>
         )}

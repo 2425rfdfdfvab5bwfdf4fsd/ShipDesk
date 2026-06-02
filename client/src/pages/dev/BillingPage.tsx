@@ -423,7 +423,7 @@ export function BillingPage() {
                   />
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  {TRIAL_TOTAL_DAYS - trialDays} of {TRIAL_TOTAL_DAYS} days used
+                  {trialDays} days remaining
                 </p>
               </div>
             )}
