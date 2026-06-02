@@ -92,6 +92,7 @@ function TokenSync() {
 
 interface BillingStatus {
   plan: "FREE" | "STARTER" | "SOLO" | "AGENCY";
+  adminPlanOverride: boolean;
   lsSubscriptionId: string | null;
   trialEndsAt: string | null;
 }
@@ -108,6 +109,7 @@ function TrialGate({ children }: { children: React.ReactNode }) {
   if (
     isSignedIn &&
     billing &&
+    !billing.adminPlanOverride &&
     !billing.lsSubscriptionId &&
     billing.trialEndsAt != null &&
     new Date(billing.trialEndsAt) < new Date()
