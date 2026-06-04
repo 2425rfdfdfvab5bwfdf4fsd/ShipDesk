@@ -26,9 +26,9 @@ Every reaction counts toward 500. 👇
 
 Pricing (after 14-day free trial):
 
-  • Starter  →  $2/mo
-  • Solo     →  $6/mo
-  • Agency   →  $15/mo
+  • Starter  →  $5/mo
+  • Solo     →  $10/mo
+  • Agency   →  $25/mo
 
 🔗 Try it free → shipdesk-nine.vercel.app
 

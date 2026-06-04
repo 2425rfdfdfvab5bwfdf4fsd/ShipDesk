@@ -111,7 +111,7 @@ const STATS = [
 const PRICING = [
   {
     name: "Starter",
-    price: "$2",
+    price: "$5",
     period: "/month",
     description: "Get your first client portal live in minutes.",
     savePercent: 50,
@@ -128,7 +128,7 @@ const PRICING = [
   },
   {
     name: "Solo",
-    price: "$6",
+    price: "$10",
     period: "/month",
     description: "Everything a freelancer needs to look like a studio.",
     savePercent: 40,
@@ -145,7 +145,7 @@ const PRICING = [
   },
   {
     name: "Agency",
-    price: "$15",
+    price: "$25",
     period: "/month",
     description: "Scale your client operations without the overhead.",
     savePercent: 30,

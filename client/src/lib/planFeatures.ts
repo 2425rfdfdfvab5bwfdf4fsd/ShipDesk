@@ -1,15 +1,15 @@
 import type { Plan } from "@/types";
 
 export const PLAN_PRICES: Record<Exclude<Plan, "FREE">, string> = {
-  STARTER: "$2",
-  SOLO: "$6",
-  AGENCY: "$15",
+  STARTER: "$5",
+  SOLO: "$10",
+  AGENCY: "$25",
 };
 
 export const PLAN_PRICES_YEARLY: Record<Exclude<Plan, "FREE">, string> = {
-  STARTER: "$1",
-  SOLO: "$4",
-  AGENCY: "$10",
+  STARTER: "$3",
+  SOLO: "$7",
+  AGENCY: "$18",
 };
 
 export const PLAN_FEATURES: Record<Exclude<Plan, "FREE">, string[]> = {
