@@ -54,3 +54,9 @@ id = "75YNPOlVRta0Frte4Zz7-"
 uri = "file://linkedin-post.txt"
 type = "text"
 title = "LinkedIn Post (Updated)"
+
+[[outputs]]
+id = "Y38U9NeHo9Ei5UxXw_aJB"
+uri = "file://linkedin-post-prompt.txt"
+type = "text"
+title = "LinkedIn Post Generator Prompt"

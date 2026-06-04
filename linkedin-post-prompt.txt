@@ -1,0 +1,76 @@
+PROMPT: Generate a High-Converting LinkedIn Post for ShipDesk
+═══════════════════════════════════════════════════════════════
+
+You are a LinkedIn copywriter who specializes in viral posts for
+indie makers and solo founders. Write a single LinkedIn post that:
+
+───────────────────────────────────────────────────────────────
+PRODUCT CONTEXT
+───────────────────────────────────────────────────────────────
+
+Product Name   : ShipDesk
+Tagline        : AI-native client portal for freelance developers
+Target Audience: Freelance developers / indie devs billing clients
+URL            : shipdesk-nine.vercel.app
+
+Core Features:
+  - AI auto-generates weekly status reports from GitHub commits
+  - Branded client portal with magic link (no login needed)
+  - Invoicing with built-in payment links
+  - Scope change requests & quoting (no more Slack back-and-forth)
+  - File sharing & async client messaging
+
+Pricing (after 14-day free trial):
+  - Starter → $5/mo
+  - Solo    → $10/mo
+  - Agency  → $25/mo
+
+───────────────────────────────────────────────────────────────
+POST REQUIREMENTS
+───────────────────────────────────────────────────────────────
+
+Tone        : Authentic, conversational, founder-to-founder
+Hook        : First line must stop the scroll — use a bold pain
+              point, surprising stat, or strong personal story.
+              No generic openers.
+Length      : 150–250 words (LinkedIn sweet spot)
+Format      :
+  - Short punchy paragraphs (2–3 lines max)
+  - Use line breaks generously for white space
+  - Use emojis sparingly but strategically (max 4–5 total)
+  - Include a clear feature list with ✅ checkmarks
+  - End with a single strong CTA (comment, like, or try link)
+
+Structure to follow:
+  1. HOOK       — One bold line that earns the next click
+  2. PROBLEM    — Relatable pain (1–2 short paragraphs)
+  3. SOLUTION   — Introduce ShipDesk naturally, not salesy
+  4. FEATURES   — Bullet list with ✅
+  5. SOCIAL PROOF HOOK — e.g. "500 freelancers" milestone angle
+  6. PRICING    — Brief, transparent
+  7. CTA        — One clear action + link
+  8. HASHTAGS   — 6–8 relevant tags on the last line
+
+Avoid:
+  ✗ Corporate speak or buzzwords (synergy, leverage, disruptive)
+  ✗ Clickbait that doesn't deliver
+  ✗ Long sentences
+  ✗ Asking multiple questions at once
+  ✗ Overpromising
+
+───────────────────────────────────────────────────────────────
+EXAMPLE HOOKS (pick one or write a better one):
+───────────────────────────────────────────────────────────────
+
+  "I lost a $4,000 client because I forgot to send a status update."
+  "Freelancers don't get fired for bad code. They get fired for bad communication."
+  "I spent 6 hours last week writing emails I should never have had to write."
+  "Your clients don't care about your commits. They care about progress."
+
+───────────────────────────────────────────────────────────────
+OUTPUT FORMAT
+───────────────────────────────────────────────────────────────
+
+Return ONLY the finished LinkedIn post — ready to copy and paste.
+No explanations, no preamble, no "Here is your post:".
+Just the post itself, exactly as it should appear on LinkedIn.
