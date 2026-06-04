@@ -1,43 +1,38 @@
-🚀 I built a tool that writes your client updates for you — try it free for 14 days
+As a freelance dev, I was drowning in "what's the status?" emails,
+chasing invoices, and losing scope change convos in Slack.
+
+So I built ShipDesk — an AI-native client portal that handles all of it.
 
 ─────────────────────────────────────────────
 
-Every week, freelance devs waste hours turning GitHub commits into
-client-friendly status emails.
+✅ AI status reports auto-generated from your GitHub commits
+✅ Branded client portal for files, messages & updates
+✅ Invoicing with built-in payment links
+✅ Scope change requests & quoting — no more back-and-forth
+✅ Magic link login — zero friction for clients
 
-ShipDesk does it automatically.
-
-Connect your GitHub → AI reads your commits & PRs → generates a polished
-report your client actually understands.
-
-They get a branded portal.
-You get your Sunday nights back.
+Less managing. More building.
 
 ─────────────────────────────────────────────
 
-What's included:
+🎯 My promise: I'll launch the moment 500 freelancers say they want it.
 
-✅ AI-generated weekly status reports
-✅ Branded client portal (magic link — no login needed)
-✅ Invoicing + payment links
-✅ File sharing & async messaging
-✅ Scope change requests & approvals
+No hype. Just real demand from real people.
+
+If this speaks to you — drop "I'm in" below or hit like.
+Every reaction counts toward 500. 👇
 
 ─────────────────────────────────────────────
 
-Not officially launched yet — first 500 freelancers get in free for 14 days.
+Pricing (after 14-day free trial):
 
-Pricing (after trial):
   • Starter  →  $2/mo
   • Solo     →  $6/mo
   • Agency   →  $15/mo
 
-👉 Try free: shipdesk-nine.vercel.app
-💬 DM me to lock in early pricing via PayPal.
+🔗 Try it free → shipdesk-nine.vercel.app
 
 ─────────────────────────────────────────────
 
-Solo founder — I respond to everyone personally. 🙌
-
-#freelance #freelancedeveloper #saas #buildinpublic #indiedev
-#ai #github #shipdesk
+#freelancing #softwaredevelopment #buildinpublic
+#freelancedeveloper #productlaunch #indiemaker #saas
