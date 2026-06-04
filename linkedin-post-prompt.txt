@@ -1,76 +1,121 @@
-PROMPT: Generate a High-Converting LinkedIn Post for ShipDesk
+ULTIMATE LINKEDIN POST GENERATOR PROMPT
+═══════════════════════════════════════════════════════════════
+Copy this prompt into ChatGPT, Claude, or Gemini.
+Fill in the [BRACKETS] with your own details, then run it.
 ═══════════════════════════════════════════════════════════════
 
-You are a LinkedIn copywriter who specializes in viral posts for
-indie makers and solo founders. Write a single LinkedIn post that:
 
 ───────────────────────────────────────────────────────────────
-PRODUCT CONTEXT
+PROMPT (copy everything below this line)
 ───────────────────────────────────────────────────────────────
 
-Product Name   : ShipDesk
-Tagline        : AI-native client portal for freelance developers
-Target Audience: Freelance developers / indie devs billing clients
-URL            : shipdesk-nine.vercel.app
+You are an expert LinkedIn copywriter who specializes in writing
+viral, high-engagement posts for founders, creators, and
+professionals. Your posts feel human, not corporate.
 
-Core Features:
-  - AI auto-generates weekly status reports from GitHub commits
-  - Branded client portal with magic link (no login needed)
-  - Invoicing with built-in payment links
-  - Scope change requests & quoting (no more Slack back-and-forth)
-  - File sharing & async client messaging
+Write a LinkedIn post based on the details I provide below.
 
-Pricing (after 14-day free trial):
-  - Starter → $5/mo
-  - Solo    → $10/mo
-  - Agency  → $25/mo
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MY DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-───────────────────────────────────────────────────────────────
-POST REQUIREMENTS
-───────────────────────────────────────────────────────────────
+Post Type     : [Choose one: Product Launch / Personal Story /
+                 Industry Insight / Lesson Learned / Hot Take /
+                 How-To / Milestone / Motivational]
 
-Tone        : Authentic, conversational, founder-to-founder
-Hook        : First line must stop the scroll — use a bold pain
-              point, surprising stat, or strong personal story.
-              No generic openers.
-Length      : 150–250 words (LinkedIn sweet spot)
-Format      :
-  - Short punchy paragraphs (2–3 lines max)
-  - Use line breaks generously for white space
-  - Use emojis sparingly but strategically (max 4–5 total)
-  - Include a clear feature list with ✅ checkmarks
-  - End with a single strong CTA (comment, like, or try link)
+Topic / Idea  : [Describe what your post is about in 1–3 sentences]
 
-Structure to follow:
-  1. HOOK       — One bold line that earns the next click
-  2. PROBLEM    — Relatable pain (1–2 short paragraphs)
-  3. SOLUTION   — Introduce ShipDesk naturally, not salesy
-  4. FEATURES   — Bullet list with ✅
-  5. SOCIAL PROOF HOOK — e.g. "500 freelancers" milestone angle
-  6. PRICING    — Brief, transparent
-  7. CTA        — One clear action + link
-  8. HASHTAGS   — 6–8 relevant tags on the last line
+Target Audience: [Who should stop scrolling? e.g. "freelance
+                  developers", "startup founders", "HR managers"]
 
-Avoid:
-  ✗ Corporate speak or buzzwords (synergy, leverage, disruptive)
-  ✗ Clickbait that doesn't deliver
-  ✗ Long sentences
-  ✗ Asking multiple questions at once
-  ✗ Overpromising
+Key Message   : [The one thing you want readers to walk away
+                  believing or feeling]
 
-───────────────────────────────────────────────────────────────
-EXAMPLE HOOKS (pick one or write a better one):
-───────────────────────────────────────────────────────────────
+Your Angle    : [Your personal take, experience, or opinion on
+                  this topic — what makes YOUR perspective unique?]
 
-  "I lost a $4,000 client because I forgot to send a status update."
-  "Freelancers don't get fired for bad code. They get fired for bad communication."
-  "I spent 6 hours last week writing emails I should never have had to write."
-  "Your clients don't care about your commits. They care about progress."
+Call to Action: [What should readers do? e.g. "comment their
+                  opinion", "visit a link", "share with someone",
+                  "follow for more", "DM me"]
 
-───────────────────────────────────────────────────────────────
-OUTPUT FORMAT
-───────────────────────────────────────────────────────────────
+Tone          : [e.g. Conversational / Inspiring / Bold /
+                  Vulnerable / Educational / Provocative]
+
+Hashtags      : [List 5–8 relevant hashtags, or write "suggest some"]
+
+Extra context : [Anything else — stats, quotes, links, product
+                  details, pricing — paste it here]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FORMAT RULES (always apply these)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Structure:
+  1. HOOK      — First line must stop the scroll. Make it bold,
+                 surprising, or deeply relatable. No "I am excited
+                 to share" openers. Ever.
+  2. BODY      — Tell the story or share the insight. Short
+                 paragraphs. Max 2–3 lines each.
+  3. VALUE     — The takeaway, lesson, or list that makes people
+                 save or share the post.
+  4. CTA       — One clear, frictionless action.
+  5. HASHTAGS  — On the very last line, space-separated.
+
+Formatting:
+  - Keep sentences short and punchy
+  - Use blank lines between every paragraph (LinkedIn cuts off
+    long blocks — white space keeps people reading)
+  - Use emojis sparingly: max 4–5, only where they add meaning
+  - Use ✅ or → for lists (clean and readable in-feed)
+  - Total length: 150–250 words for most posts
+    (How-To or Insight posts can go up to 350 words)
+
+Tone rules:
+  - Write like a real person, not a brand
+  - No buzzwords: synergy, leverage, disruptive, game-changer
+  - No empty filler: "In today's fast-paced world..."
+  - Be specific — numbers, names, and real situations beat vague claims
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HOOK EXAMPLES BY POST TYPE (use as inspiration)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Product Launch:
+  "I quit my job to build this. Here's what happened 6 months in."
+  "Nobody asked for this tool. Then 400 people signed up in a week."
+
+Personal Story:
+  "I failed publicly in front of 300 people. Best thing that ever happened."
+  "3 years ago I was broke. Here's the one decision that changed everything."
+
+Industry Insight:
+  "Most [job title]s are doing [common thing] wrong. Here's why."
+  "The [industry] advice everyone gives is actually terrible."
+
+Lesson Learned:
+  "I wasted $12,000 on ads before learning this one thing."
+  "Nobody told me [hard truth]. I had to learn it the hard way."
+
+Hot Take:
+  "[Popular belief] is a lie. Here's the truth."
+  "Unpopular opinion: [your take]."
+
+How-To:
+  "Here's how I [achieved result] in [timeframe] without [common obstacle]."
+  "5 years of [skill] taught me this [number]-step process."
+
+Motivational:
+  "The difference between people who make it and people who don't is not talent."
+  "Stop waiting for permission. Nobody is coming to hand it to you."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT INSTRUCTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Return ONLY the finished LinkedIn post — ready to copy and paste.
-No explanations, no preamble, no "Here is your post:".
-Just the post itself, exactly as it should appear on LinkedIn.
+No explanations. No "Here is your post:". No commentary after.
+Just the post, exactly as it should appear on LinkedIn.
+
+Also give me 2 alternative hook options at the end, labeled:
+  Hook Option B:
+  Hook Option C:
