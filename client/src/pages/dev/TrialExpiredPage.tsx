@@ -99,7 +99,7 @@ export function TrialExpiredPage() {
               <p className="text-xs text-white/35 mt-1">Your trial plan · Keep everything</p>
             </div>
             <div className="text-right">
-              <p className="text-4xl font-bold tracking-tight">$10</p>
+              <p className="text-4xl font-bold tracking-tight">{PLAN_PRICES.STARTER}</p>
               <p className="text-xs text-white/35 mt-0.5">per month</p>
             </div>
           </div>
