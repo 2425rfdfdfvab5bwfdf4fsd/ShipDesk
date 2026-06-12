@@ -1,0 +1,63 @@
+I have a problem with my Vercel-hosted website/app.
+
+Problem:
+The dashboard loads successfully, but the Active Projects section fails to load and displays the error:
+
+"Couldn't load projects. Check your connection or try signing out and back in."
+
+The statistics cards (Active, Unpaid, Scope, Portal) load, but project data is not being fetched or rendered. The application is deployed on Vercel.
+
+It happens when I:
+
+Log in to the application.
+Open the Dashboard page.
+Wait for projects to load.
+The project list fails to load and shows the retry error message.
+
+I attached the screenshot/error/logs here:
+Attached screenshot showing the Dashboard page with the project loading error.
+
+Please analyze this properly and find the real root cause first. Do not guess and do not apply random fixes.
+
+Check everything related, including:
+
+Frontend code
+Backend/API routes
+Authentication/session
+Database connection
+Environment variables
+Vercel deployment settings
+Build logs and runtime logs
+Dependencies/packages
+Routing, middleware, and config files
+
+After finding the root cause, fix it properly from A to Z.
+
+Please provide:
+
+The exact root cause
+Why this problem is happening
+Which files/configs need to be changed
+The correct fix with code/config changes
+Any Vercel environment variables/settings I need to update
+How to test and verify the issue is fixed after deployment
+
+If you need more information, ask only for the exact file, log, or screenshot needed.
+
+Important: Do not expose or print any secret keys, tokens, passwords, or private environment variables.
+
+To actually find the root cause, I would need these specific files/logs next:
+
+Browser Console errors (F12 → Console)
+Network tab screenshot showing the failed API request
+Vercel Runtime Logs
+Vercel Build Logs
+middleware.ts
+Dashboard page file (e.g. app/dashboard/page.tsx)
+Project fetching code (React Query/SWR/fetch/axios)
+API route handling projects (e.g. app/api/projects/route.ts)
+Authentication setup (NextAuth, Clerk, Supabase Auth, etc.)
+Database client file (prisma.ts, Supabase client, Drizzle, etc.)
+Relevant environment variable names (names only, values hidden)
+
+Based on the screenshot alone, the most likely failure is occurring in the projects API request, authentication/session validation, database query, or missing production environment variables, but the logs are required to determine the exact cause.
